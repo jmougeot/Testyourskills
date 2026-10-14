@@ -1,0 +1,187 @@
+{
+  "version": "0.1.1",
+  "_doc": "Barème versionné (SPEC §4.4, §4.5). Échelles : points [x, note], interpolation linéaire, arrondi, bornes 1..99. Changer un point = changer la version.",
+  "bounds": { "min": 1, "max": 99 },
+  "weights": { "TEC": 0.3, "SHIP": 0.2, "ARCH": 0.2, "DOC": 0.15, "XP": 0.15 },
+  "reliability": { "perAxis": 19, "max": 95 },
+  "special": {
+    "wonderkid": { "xpBelow": 45, "tecAtLeast": 70 },
+    "flashback": { "oldShareAtLeast": 0.6, "olderThanYears": 5, "minContributions": 50, "maxWeeksActive": 26 }
+  },
+
+  "github": {
+    "activeRepos": 5,
+    "readRepos": 3,
+    "activity": { "recencyPoints": 6, "recencyHalfLifeDays": 120 },
+    "mainLanguage": {
+      "_doc": "Langage principal = somme, sur les repos où il est principal, de repoBase + activityLogWeight × ln(1 + activité). Balisage ignoré s'il y a autre chose.",
+      "repoBase": 1,
+      "activityLogWeight": 1,
+      "ignore": ["HTML", "CSS", "SCSS", "Less", "Makefile", "Dockerfile", "Batchfile", "TeX", "Roff"]
+    },
+    "lazyCommit": {
+      "minLength": 8,
+      "pattern": "^(fix|wip|update|test|final|stuff|asdf|changes|minor)[\\s\\d.!]*$"
+    },
+    "tutorial": {
+      "pattern": "todo|tutorial|hello-world|clone|portfolio-v\\d|test-?\\d*|learn",
+      "maxCommits": 5
+    },
+    "nightHours": { "from": 1, "to": 5 },
+    "fridayEveningFromHour": 18,
+    "aliveWithinDays": 365,
+
+    "SHIP": {
+      "scale": [[0, 20], [13, 50], [26, 70], [40, 85], [52, 99]],
+      "releaseBonus": 5,
+      "releasesAtLeast": 3,
+      "releasesWithinDays": 365
+    },
+    "ARCH": {
+      "weights": { "tests": 50, "ci": 30, "tooling": 20 },
+      "scale": [[0, 25], [100, 99]],
+      "sufficientActiveRepos": 2,
+      "activeWithinDays": 730
+    },
+    "DOC": {
+      "readmeWordsAtLeast": 300,
+      "weights": { "readme": 60, "commits": 40 },
+      "scale": [[0, 25], [100, 99]],
+      "lazyShareWhenUnknown": 0.5,
+      "readableCommitsPerRepo": 5,
+      "sufficientRepos": 2
+    },
+    "XP": {
+      "scale": [[0, 25], [1, 40], [3, 60], [5, 75], [8, 88], [12, 99]],
+      "breadthMinBytes": 10240,
+      "breadthBonus": [[4, 4], [6, 8]],
+      "sufficientRepoCommits": 10
+    },
+    "TEC": {
+      "levelScale": [[1, 35], [2, 50], [3, 65], [4, 80], [5, 95]],
+      "fallback": 50,
+      "externalPrBonus": 4,
+      "externalPrsAtLeast": 5,
+      "sufficientRepoCommits": 20
+    },
+    "BUZZ": {
+      "weights": { "tutorials": 50, "lazy": 50 },
+      "scale": [[0, 10], [100, 99]]
+    }
+  },
+
+  "cv": {
+    "TEC": {
+      "seniority": { "junior": 50, "mid": 65, "senior": 80, "lead": 88, "staff": 88 },
+      "perDescribedTechno": 2
+    },
+    "SHIP": { "scale": [[0, 35], [1, 50], [3, 70], [5, 85], [8, 95]] },
+    "ARCH": { "scale": [[0, 35], [1, 60], [2, 75], [3, 90]] },
+    "DOC": {
+      "scale": [[1, 30], [2, 50], [3, 65], [4, 80], [5, 95]],
+      "longCvWords": 1200,
+      "longCvPenalty": 10
+    },
+    "XP": { "_doc": "Même échelle que github.XP.scale, sans bonus de largeur." },
+    "BUZZ": { "scale": [[0, 10], [1, 40], [2, 65], [3, 85], [4, 99]] },
+    "sufficiency": { "minWords": 150 },
+    "cto": {
+      "titlePattern": "\\b(cto|chief technology officer|directeur technique|directrice technique)\\b",
+      "unknownCompanyPattern": "^(|-|n/?a|stealth.*|confidential|confidentiel|startup|start-up|ma startup|my startup|freelance|ind[ée]pendante?|independent|self[- ]employed|auto[- ]?entrepreneur|side project|projet personnel|en cr[ée]ation|fondateur|founder|co-?founder|cofondateur)$"
+    },
+    "languages": [
+      "typescript", "javascript", "python", "go", "rust", "java", "kotlin", "swift", "c", "c++", "c#",
+      "ruby", "php", "scala", "elixir", "dart", "haskell", "ocaml", "clojure", "r", "julia", "lua", "zig", "solidity", "objective-c"
+    ],
+    "aiDeps": ["torch", "tensorflow", "keras", "transformers", "jax", "openai", "anthropic", "@anthropic-ai/sdk", "langchain", "llama-index", "scikit-learn", "sklearn"],
+    "aiTopics": ["ai", "ml", "machine-learning", "deep-learning", "llm", "nlp", "artificial-intelligence", "neural-network", "gpt", "rag"]
+  },
+
+  "position": {
+    "_doc": "Score par poste = somme des signaux. Langages : part des octets × poids. Dépendances : depWeight par dépendance distincte reconnue, au plus maxDepsPerRepo par repo et par poste. Marqueurs d'arbre et topics : poids fixe par repo. FS si FE et BE sont tous deux au-dessus de fsRatio du meilleur.",
+    "default": "FS",
+    "fsRatio": 0.5,
+    "languages": {
+      "TypeScript": { "FE": 0.5, "BE": 0.5 },
+      "JavaScript": { "FE": 0.6, "BE": 0.4 },
+      "HTML": { "FE": 1 },
+      "CSS": { "FE": 1 },
+      "SCSS": { "FE": 1 },
+      "Vue": { "FE": 1 },
+      "Svelte": { "FE": 1 },
+      "Astro": { "FE": 1 },
+      "Python": { "BE": 0.5, "DATA": 0.3, "ML": 0.2 },
+      "Jupyter Notebook": { "DATA": 0.6, "ML": 0.4 },
+      "R": { "DATA": 1 },
+      "Julia": { "DATA": 0.5, "ML": 0.5 },
+      "Go": { "BE": 0.8, "OPS": 0.2 },
+      "Rust": { "BE": 0.5, "EMB": 0.5 },
+      "C": { "EMB": 1 },
+      "C++": { "EMB": 0.6, "BE": 0.4 },
+      "Assembly": { "EMB": 1 },
+      "Zig": { "EMB": 0.6, "BE": 0.4 },
+      "Java": { "BE": 0.8, "MOB": 0.2 },
+      "Kotlin": { "MOB": 0.6, "BE": 0.4 },
+      "Swift": { "MOB": 1 },
+      "Objective-C": { "MOB": 1 },
+      "Dart": { "MOB": 1 },
+      "C#": { "BE": 1 },
+      "Ruby": { "BE": 1 },
+      "PHP": { "BE": 1 },
+      "Elixir": { "BE": 1 },
+      "Scala": { "BE": 0.6, "DATA": 0.4 },
+      "HCL": { "OPS": 1 },
+      "Shell": { "OPS": 1 },
+      "Dockerfile": { "OPS": 1 },
+      "Nix": { "OPS": 1 },
+      "Solidity": { "BE": 1 }
+    },
+    "languageWeight": 10,
+    "depWeight": 3,
+    "maxDepsPerRepo": 3,
+    "deps": {
+      "FE": ["react", "react-dom", "vue", "@angular/core", "svelte", "solid-js", "preact", "lit", "@builder.io/qwik", "ember-source", "backbone", "jquery", "tailwindcss", "vite", "webpack"],
+      "FS": ["next", "nuxt", "@remix-run/react", "@sveltejs/kit", "astro", "gatsby", "@trpc/server", "blitz"],
+      "BE": ["express", "fastify", "koa", "@nestjs/core", "hono", "@hapi/hapi", "fastapi", "django", "flask", "starlette", "sqlalchemy", "prisma", "@prisma/client", "typeorm", "sequelize", "gin", "gin-gonic/gin", "echo", "fiber", "actix-web", "axum", "rocket", "tokio", "diesel", "rails", "sinatra", "laravel/framework", "symfony/symfony", "spring-boot-starter-web", "pg", "mongoose", "redis", "graphql"],
+      "DATA": ["pandas", "numpy", "polars", "scipy", "matplotlib", "seaborn", "plotly", "pyspark", "dbt-core", "airflow", "apache-airflow", "duckdb", "sqlalchemy-utils"],
+      "ML": ["torch", "tensorflow", "keras", "jax", "transformers", "scikit-learn", "sklearn", "xgboost", "lightgbm", "onnx", "onnxruntime", "openai", "anthropic", "langchain", "llama-index", "diffusers", "accelerate", "tch", "candle-core"],
+      "OPS": ["@pulumi/pulumi", "pulumi", "aws-cdk-lib", "ansible", "boto3", "kubernetes", "@kubernetes/client-node", "k8s.io/client-go", "client-go", "docker", "terraform"],
+      "MOB": ["react-native", "expo", "flutter-app", "@ionic/core", "@capacitor/core", "android", "nativescript"],
+      "SEC": ["scapy", "pwntools", "impacket"],
+      "EMB": ["embedded-hal", "cortex-m", "cortex-m-rt", "esp-idf-sys", "esp-idf-hal", "embassy-executor", "rp2040-hal", "stm32f4xx-hal", "arduino", "micropython", "pyserial", "platformio"]
+    },
+    "markers": {
+      "dockerfile": { "OPS": 1 },
+      "terraform": { "OPS": 3 },
+      "k8s": { "OPS": 3 },
+      "android": { "MOB": 3 },
+      "ios": { "MOB": 3 },
+      "flutter": { "MOB": 3 },
+      "embedded": { "EMB": 3 },
+      "notebook": { "DATA": 1, "ML": 1 }
+    },
+    "topics": {
+      "SEC": ["security", "pentest", "pentesting", "ctf", "exploit", "fuzzing", "infosec", "reverse-engineering", "malware-analysis"],
+      "ML": ["machine-learning", "deep-learning", "llm", "pytorch", "tensorflow", "neural-network"],
+      "DATA": ["data-science", "data-engineering", "etl", "analytics"],
+      "OPS": ["devops", "kubernetes", "terraform", "infrastructure-as-code", "sre"],
+      "EMB": ["embedded", "arduino", "firmware", "microcontroller", "esp32", "stm32", "raspberry-pi"],
+      "MOB": ["android", "ios", "flutter", "react-native", "mobile"]
+    },
+    "topicWeight": 2
+  },
+
+  "frontFrameworks": {
+    "_doc": "Familles de frameworks front pour « Migre de framework chaque année ». Une famille compte une fois.",
+    "react": ["react", "next", "gatsby", "@remix-run/react", "preact"],
+    "vue": ["vue", "nuxt", "lang:Vue"],
+    "angular": ["@angular/core", "angular"],
+    "svelte": ["svelte", "@sveltejs/kit", "lang:Svelte"],
+    "solid": ["solid-js"],
+    "ember": ["ember-source"],
+    "backbone": ["backbone"],
+    "astro": ["astro", "lang:Astro"],
+    "qwik": ["@builder.io/qwik"],
+    "lit": ["lit"]
+  }
+}

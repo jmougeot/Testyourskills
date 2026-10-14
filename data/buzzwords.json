@@ -1,0 +1,22 @@
+{
+  "version": "0.1.0",
+  "_doc": "Mots creux comptés dans le texte du CV (SPEC §4.5). Comparaison sans casse ni accents, sur mots entiers ; les expressions sont comptées comme un mot creux. Les mentions d'IA ne comptent que si aucun projet IA n'est décrit (décision prise par le barème CV).",
+  "words": {
+    "fr": [
+      "passionné", "passionnée", "dynamique", "agile", "synergie", "synergies", "disruptif", "disruptive",
+      "innovant", "innovante", "expert", "experte", "ninja", "rockstar", "10x", "proactif", "proactive",
+      "force de proposition", "polyvalent", "polyvalente", "visionnaire", "orienté résultats", "orientée résultats",
+      "esprit d'équipe", "savoir-être", "game changer", "état d'esprit de croissance", "multitâche", "motivé", "motivée"
+    ],
+    "en": [
+      "passionate", "dynamic", "synergy", "synergies", "disruptive", "innovative", "ninja", "rockstar", "guru",
+      "proactive", "self-starter", "team player", "results-driven", "results-oriented", "thought leader", "go-getter",
+      "visionary", "cutting-edge", "best-in-class", "growth mindset", "detail-oriented", "motivated", "wizard"
+    ]
+  },
+  "ai": {
+    "caseSensitive": ["IA", "AI", "A.I.", "I.A.", "GenAI"],
+    "caseInsensitive": ["intelligence artificielle", "artificial intelligence"]
+  },
+  "passionStems": ["passion"]
+}

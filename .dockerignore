@@ -1,0 +1,14 @@
+node_modules
+dist
+var
+.git
+.env
+.env.*
+!.env.example
+*.db
+*.db-*
+**/*.test.ts
+.DS_Store
+**/.DS_Store
+docker-compose.yml
+caddy-snippet.txt

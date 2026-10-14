@@ -1,0 +1,19 @@
+# >>> Site de skills.azerit.tech pour le Caddy du VPS (ruby-caddy). Sur le VPS,
+# ce bloc est le fichier /opt/caddy-sites/testyourskills.caddy : un fichier par
+# app, importé par /opt/caddy-sites/Caddyfile (comme azerit.caddy pour App).
+# HTTPS auto via Let's Encrypt dès que skills.azerit.tech pointe sur le serveur
+# (enregistrement A ou CNAME chez OVH).
+# Après modification, dans cet ordre :
+#   docker exec ruby-caddy caddy validate --config /etc/caddy/Caddyfile
+#   docker exec ruby-caddy caddy reload --config /etc/caddy/Caddyfile
+#
+# Caddy remplace X-Forwarded-For par l'IP du client : l'app s'en sert pour la
+# limite de 20 cartes par IP et par jour.
+skills.azerit.tech {
+	encode gzip
+	request_body {
+		max_size 6MB            # CV en PDF : 5 Mo maximum, plus l'enveloppe multipart
+	}
+	reverse_proxy testyourskills:8787
+}
+# <<< fin du bloc

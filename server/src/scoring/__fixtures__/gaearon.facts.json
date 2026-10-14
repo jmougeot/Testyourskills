@@ -1,0 +1,3294 @@
+{
+  "schema": 1,
+  "login": "gaearon",
+  "collectedAt": "2026-10-14T14:41:05.387Z",
+  "profile": {
+    "login": "gaearon",
+    "name": "dan",
+    "avatarUrl": "https://avatars.githubusercontent.com/u/810438?v=4",
+    "bio": null,
+    "company": null,
+    "followers": 93919,
+    "createdAt": "2011-05-25T18:18:31Z",
+    "publicRepos": 301
+  },
+  "repoCount": 61,
+  "reposTruncated": false,
+  "repos": [
+    {
+      "name": "conway-refinement",
+      "fullName": "gaearon/conway-refinement",
+      "description": "A proof of Conway's refinement conjecture in Lean",
+      "language": "Lean",
+      "stars": 55,
+      "forks": 5,
+      "pushedAt": "2026-09-03T21:05:48Z",
+      "createdAt": "2026-08-28T03:27:04Z",
+      "archived": false,
+      "topics": [
+        "lean4"
+      ],
+      "license": "Apache-2.0",
+      "sizeKb": 1264,
+      "defaultBranch": "main",
+      "recentUserCommits": 263,
+      "activity": 267.74,
+      "commitCount": 9,
+      "languages": {
+        "Lean": 6576153,
+        "TypeScript": 72599,
+        "Python": 65461,
+        "Shell": 48652,
+        "JavaScript": 37258,
+        "CSS": 32697,
+        "TeX": 10348,
+        "HTML": 526,
+        "Perl": 181
+      },
+      "deps": [],
+      "externalContributors": null,
+      "readmeWords": 2531,
+      "releaseDates": []
+    },
+    {
+      "name": "overreacted.io",
+      "fullName": "gaearon/overreacted.io",
+      "description": "Personal blog by Dan Abramov.",
+      "language": "TypeScript",
+      "stars": 7274,
+      "forks": 1704,
+      "pushedAt": "2026-09-18T20:38:22Z",
+      "createdAt": "2018-11-30T20:44:08Z",
+      "archived": false,
+      "topics": [],
+      "license": null,
+      "sizeKb": 205051,
+      "defaultBranch": "main",
+      "recentUserCommits": 84,
+      "activity": 89.17,
+      "commitCount": 334,
+      "languages": {
+        "TypeScript": 25782,
+        "JavaScript": 20291,
+        "CSS": 3294
+      },
+      "deps": [
+        "@types/node",
+        "autoprefixer",
+        "colorjs.io",
+        "eslint",
+        "eslint-config-next",
+        "feed",
+        "gray-matter",
+        "next",
+        "next-mdx-remote-client",
+        "next-plausible",
+        "overnight",
+        "patch-package",
+        "postcss",
+        "react",
+        "react-dom",
+        "rehype-autolink-headings",
+        "rehype-pretty-code",
+        "rehype-slug",
+        "remark-gfm",
+        "remark-smartypants",
+        "shiki",
+        "tailwindcss"
+      ],
+      "externalContributors": 22,
+      "readmeWords": 0,
+      "releaseDates": []
+    },
+    {
+      "name": "rscexplorer",
+      "fullName": "gaearon/rscexplorer",
+      "description": "A tool for people curious about the React Server Components protocol",
+      "language": "TypeScript",
+      "stars": 1113,
+      "forks": 30,
+      "pushedAt": "2026-01-05T15:06:33Z",
+      "createdAt": "2025-12-16T09:57:01Z",
+      "archived": false,
+      "topics": [],
+      "license": "MIT",
+      "sizeKb": 489,
+      "defaultBranch": "main",
+      "recentUserCommits": 51,
+      "activity": 52.18,
+      "commitCount": 44,
+      "languages": {
+        "TypeScript": 178875,
+        "CSS": 26018,
+        "JavaScript": 11739,
+        "HTML": 7390
+      },
+      "deps": [
+        "@babel/standalone",
+        "@babel/types",
+        "@codemirror/autocomplete",
+        "@codemirror/commands",
+        "@codemirror/lang-javascript",
+        "@codemirror/language",
+        "@codemirror/state",
+        "@codemirror/theme-one-dark",
+        "@codemirror/view",
+        "@eslint/js",
+        "@lezer/highlight",
+        "@types/babel__core",
+        "@types/babel__standalone",
+        "@types/node",
+        "@types/react",
+        "@types/react-dom",
+        "@vitejs/plugin-react",
+        "@vitest/browser",
+        "@vitest/browser-playwright",
+        "codemirror",
+        "eslint",
+        "eslint-plugin-react-hooks",
+        "husky",
+        "lint-staged",
+        "playwright",
+        "prettier",
+        "react",
+        "react-dom",
+        "react-server-dom-webpack",
+        "rolldown",
+        "start-server-and-test",
+        "typescript",
+        "typescript-eslint",
+        "vite",
+        "vitest",
+        "web-streams-polyfill",
+        "wrangler"
+      ],
+      "externalContributors": null,
+      "readmeWords": 233,
+      "releaseDates": []
+    },
+    {
+      "name": "woodshed",
+      "fullName": "gaearon/woodshed",
+      "description": "Create, run, rate, and iterate on your Claude Skills",
+      "language": "TypeScript",
+      "stars": 71,
+      "forks": 0,
+      "pushedAt": "2026-01-13T02:17:59Z",
+      "createdAt": "2026-01-12T14:31:27Z",
+      "archived": false,
+      "topics": [
+        "claude-skills"
+      ],
+      "license": "MIT",
+      "sizeKb": 302,
+      "defaultBranch": "main",
+      "recentUserCommits": 50,
+      "activity": 51.23,
+      "commitCount": 1,
+      "languages": {
+        "TypeScript": 71222,
+        "JavaScript": 24325,
+        "Shell": 1178
+      },
+      "deps": [
+        "@inquirer/prompts",
+        "@types/node",
+        "@types/react",
+        "husky",
+        "ink",
+        "lint-staged",
+        "prettier",
+        "react",
+        "typescript",
+        "vitest"
+      ],
+      "externalContributors": null,
+      "readmeWords": 259,
+      "releaseDates": []
+    },
+    {
+      "name": "next-bug-repro",
+      "fullName": "gaearon/next-bug-repro",
+      "description": null,
+      "language": "TypeScript",
+      "stars": 5,
+      "forks": 0,
+      "pushedAt": "2025-11-30T09:09:26Z",
+      "createdAt": "2025-11-30T08:02:25Z",
+      "archived": false,
+      "topics": [],
+      "license": null,
+      "sizeKb": 23,
+      "defaultBranch": "main",
+      "recentUserCommits": 5,
+      "activity": 5.95,
+      "commitCount": 5,
+      "languages": {
+        "TypeScript": 1064,
+        "JavaScript": 559,
+        "CSS": 488
+      },
+      "deps": [
+        "@types/node",
+        "@types/react",
+        "next",
+        "react",
+        "react-dom",
+        "typescript"
+      ],
+      "externalContributors": null,
+      "readmeWords": 142,
+      "releaseDates": []
+    },
+    {
+      "name": "next-cc-activity-problem",
+      "fullName": "gaearon/next-cc-activity-problem",
+      "description": null,
+      "language": "JavaScript",
+      "stars": 3,
+      "forks": 0,
+      "pushedAt": "2026-07-09T21:07:49Z",
+      "createdAt": "2026-07-09T00:30:05Z",
+      "archived": false,
+      "topics": [],
+      "license": null,
+      "sizeKb": 10,
+      "defaultBranch": "main",
+      "recentUserCommits": 0,
+      "activity": 3.43,
+      "commitCount": null,
+      "languages": {
+        "JavaScript": 3453
+      },
+      "deps": [
+        "next",
+        "react",
+        "react-dom"
+      ],
+      "externalContributors": null,
+      "readmeWords": null,
+      "releaseDates": []
+    },
+    {
+      "name": "turbopack-seal-bug",
+      "fullName": "gaearon/turbopack-seal-bug",
+      "description": null,
+      "language": "JavaScript",
+      "stars": 3,
+      "forks": 0,
+      "pushedAt": "2026-06-16T19:52:30Z",
+      "createdAt": "2026-06-16T19:51:53Z",
+      "archived": false,
+      "topics": [],
+      "license": null,
+      "sizeKb": 10,
+      "defaultBranch": "main",
+      "recentUserCommits": 0,
+      "activity": 3,
+      "commitCount": null,
+      "languages": {
+        "JavaScript": 2352
+      },
+      "deps": [
+        "next",
+        "react",
+        "react-dom"
+      ],
+      "externalContributors": null,
+      "readmeWords": null,
+      "releaseDates": []
+    },
+    {
+      "name": "react-udv-bug",
+      "fullName": "gaearon/react-udv-bug",
+      "description": null,
+      "language": "TypeScript",
+      "stars": 4,
+      "forks": 0,
+      "pushedAt": "2026-03-24T01:04:13Z",
+      "createdAt": "2026-02-18T21:07:53Z",
+      "archived": false,
+      "topics": [],
+      "license": null,
+      "sizeKb": 11,
+      "defaultBranch": "main",
+      "recentUserCommits": 0,
+      "activity": 1.84,
+      "commitCount": null,
+      "languages": {
+        "TypeScript": 2455
+      },
+      "deps": [
+        "@types/node",
+        "@types/react",
+        "next",
+        "playwright",
+        "react",
+        "react-dom",
+        "typescript"
+      ],
+      "externalContributors": null,
+      "readmeWords": null,
+      "releaseDates": []
+    },
+    {
+      "name": "reanimated-repro-weird",
+      "fullName": "gaearon/reanimated-repro-weird",
+      "description": null,
+      "language": "Kotlin",
+      "stars": 7,
+      "forks": 0,
+      "pushedAt": "2024-11-08T18:28:56Z",
+      "createdAt": "2024-11-08T00:21:33Z",
+      "archived": false,
+      "topics": [],
+      "license": "MIT",
+      "sizeKb": 252,
+      "defaultBranch": "main",
+      "recentUserCommits": 0,
+      "activity": 0.1,
+      "commitCount": null,
+      "languages": {
+        "Kotlin": 2524,
+        "Objective-C": 2299,
+        "TypeScript": 1557,
+        "Ruby": 1476,
+        "JavaScript": 1013,
+        "Objective-C++": 805
+      },
+      "deps": [],
+      "externalContributors": null,
+      "readmeWords": null,
+      "releaseDates": []
+    },
+    {
+      "name": "rn-bug-loop",
+      "fullName": "gaearon/rn-bug-loop",
+      "description": null,
+      "language": "Kotlin",
+      "stars": 5,
+      "forks": 0,
+      "pushedAt": "2024-10-05T09:52:40Z",
+      "createdAt": "2024-10-05T09:36:55Z",
+      "archived": false,
+      "topics": [],
+      "license": "MIT",
+      "sizeKb": 994,
+      "defaultBranch": "main",
+      "recentUserCommits": 0,
+      "activity": 0.08,
+      "commitCount": null,
+      "languages": {
+        "Kotlin": 2443,
+        "Objective-C": 2299,
+        "Ruby": 1448,
+        "TypeScript": 1309,
+        "Objective-C++": 805,
+        "JavaScript": 793
+      },
+      "deps": [],
+      "externalContributors": null,
+      "readmeWords": null,
+      "releaseDates": []
+    },
+    {
+      "name": "test.react.dev",
+      "fullName": "gaearon/test.react.dev",
+      "description": "(Work in progress) React documentation website in Test Test TEst",
+      "language": null,
+      "stars": 9,
+      "forks": 0,
+      "pushedAt": "2023-04-28T22:42:43Z",
+      "createdAt": "2023-04-28T22:42:42Z",
+      "archived": false,
+      "topics": [],
+      "license": null,
+      "sizeKb": 0,
+      "defaultBranch": "main",
+      "recentUserCommits": 0,
+      "activity": 0,
+      "commitCount": 0,
+      "languages": {},
+      "deps": [],
+      "externalContributors": null,
+      "readmeWords": null,
+      "releaseDates": []
+    },
+    {
+      "name": "react-side-effect",
+      "fullName": "gaearon/react-side-effect",
+      "description": "Create components whose nested prop changes map to a global side effect",
+      "language": "JavaScript",
+      "stars": 1214,
+      "forks": 74,
+      "pushedAt": "2023-03-04T04:00:16Z",
+      "createdAt": "2015-02-13T14:22:12Z",
+      "archived": false,
+      "topics": [],
+      "license": "MIT",
+      "sizeKb": 902,
+      "defaultBranch": "master",
+      "recentUserCommits": 0,
+      "activity": 0,
+      "commitCount": null,
+      "languages": {
+        "JavaScript": 12108
+      },
+      "deps": [
+        "@babel/cli",
+        "@babel/core",
+        "@babel/node",
+        "@babel/plugin-proposal-class-properties",
+        "@babel/preset-env",
+        "@babel/preset-react",
+        "@babel/register",
+        "babel-plugin-add-module-exports",
+        "chai",
+        "create-react-class",
+        "enzyme",
+        "enzyme-adapter-react-16",
+        "gzip-size",
+        "isparta",
+        "jsdom",
+        "mocha",
+        "pretty-bytes",
+        "react",
+        "react-dom",
+        "rimraf",
+        "rollup",
+        "rollup-plugin-babel",
+        "rollup-plugin-uglify"
+      ],
+      "externalContributors": null,
+      "readmeWords": null,
+      "releaseDates": [
+        "2022-06-26T21:20:16Z",
+        "2020-11-01T18:42:20Z",
+        "2019-09-04T20:13:53Z",
+        "2019-08-31T16:51:48Z",
+        "2019-08-28T22:01:15Z",
+        "2017-01-08T19:23:23Z",
+        "2015-09-12T13:28:58Z",
+        "2015-09-02T14:37:00Z",
+        "2015-08-27T01:30:48Z",
+        "2015-08-25T19:30:30Z"
+      ]
+    },
+    {
+      "name": "react-hot-loader",
+      "fullName": "gaearon/react-hot-loader",
+      "description": "Tweak React components in real time. (Deprecated: use Fast Refresh instead.)",
+      "language": "JavaScript",
+      "stars": 12148,
+      "forks": 774,
+      "pushedAt": "2023-02-10T02:42:07Z",
+      "createdAt": "2014-07-12T23:49:43Z",
+      "archived": false,
+      "topics": [],
+      "license": "MIT",
+      "sizeKb": 9389,
+      "defaultBranch": "master",
+      "recentUserCommits": 0,
+      "activity": 0,
+      "commitCount": 1890,
+      "languages": {
+        "JavaScript": 348345,
+        "Shell": 1468
+      },
+      "deps": [
+        "@hot-loader/react-dom",
+        "@types/react",
+        "@wojtekmaj/enzyme-adapter-react-17",
+        "babel-cli",
+        "babel-core",
+        "babel-eslint",
+        "babel-jest",
+        "babel-plugin-dynamic-import-node",
+        "babel-plugin-external-helpers",
+        "babel-plugin-transform-class-properties",
+        "babel-plugin-transform-object-rest-spread",
+        "babel-polyfill",
+        "babel-preset-env",
+        "babel-preset-react",
+        "codecov",
+        "conventional-github-releaser",
+        "create-react-class",
+        "cross-env",
+        "enzyme",
+        "enzyme-adapter-react-15",
+        "enzyme-adapter-react-16",
+        "eslint",
+        "eslint-config-airbnb",
+        "eslint-config-prettier",
+        "eslint-plugin-import",
+        "eslint-plugin-jsx-a11y",
+        "eslint-plugin-react",
+        "fast-levenshtein",
+        "global",
+        "hoist-non-react-statics",
+        "husky",
+        "jest",
+        "lint-staged",
+        "loader-utils",
+        "prettier",
+        "prop-types",
+        "react",
+        "react-dom",
+        "react-lifecycles-compat",
+        "react-mount",
+        "react-test-renderer",
+        "recompose",
+        "rimraf",
+        "rollup",
+        "rollup-plugin-babel",
+        "rollup-plugin-commonjs",
+        "rollup-plugin-json",
+        "rollup-plugin-node-resolve",
+        "rollup-plugin-replace",
+        "rollup-plugin-uglify",
+        "shallowequal",
+        "source-map",
+        "standard-version",
+        "yarn-deduplicate"
+      ],
+      "externalContributors": 98,
+      "readmeWords": null,
+      "releaseDates": [
+        "2020-09-22T12:46:35Z",
+        "2020-01-22T09:19:15Z",
+        "2019-11-16T08:50:33Z",
+        "2019-11-12T07:51:51Z",
+        "2019-11-06T21:52:18Z",
+        "2019-10-08T00:46:51Z",
+        "2019-09-23T09:46:17Z",
+        "2019-09-12T10:04:21Z",
+        "2019-08-27T09:51:58Z",
+        "2019-08-12T02:21:09Z"
+      ]
+    },
+    {
+      "name": "react-deep-force-update",
+      "fullName": "gaearon/react-deep-force-update",
+      "description": "Force-updates React component tree recursively",
+      "language": "JavaScript",
+      "stars": 120,
+      "forks": 19,
+      "pushedAt": "2023-01-11T18:47:09Z",
+      "createdAt": "2015-09-16T20:47:39Z",
+      "archived": false,
+      "topics": [],
+      "license": "MIT",
+      "sizeKb": 569,
+      "defaultBranch": "master",
+      "recentUserCommits": 0,
+      "activity": 0,
+      "commitCount": null,
+      "languages": {
+        "JavaScript": 7902
+      },
+      "deps": [
+        "babel-cli",
+        "babel-core",
+        "babel-eslint",
+        "babel-plugin-add-module-exports",
+        "babel-preset-env",
+        "babel-preset-react",
+        "create-react-class",
+        "eslint",
+        "eslint-config-airbnb",
+        "eslint-config-prettier",
+        "eslint-plugin-import",
+        "eslint-plugin-jsx-a11y",
+        "eslint-plugin-react",
+        "jest",
+        "prettier",
+        "react",
+        "react-dom",
+        "rimraf"
+      ],
+      "externalContributors": null,
+      "readmeWords": null,
+      "releaseDates": [
+        "2015-12-28T19:52:05Z",
+        "2015-12-28T19:24:05Z",
+        "2015-10-19T15:27:16Z",
+        "2015-09-16T23:18:41Z"
+      ]
+    },
+    {
+      "name": "whatthefuck.is",
+      "fullName": "gaearon/whatthefuck.is",
+      "description": "An opinionated glossary of computer science terms for front-end developers. Written by Dan Abramov.",
+      "language": "CSS",
+      "stars": 3036,
+      "forks": 111,
+      "pushedAt": "2022-12-13T06:41:09Z",
+      "createdAt": "2020-07-10T21:53:30Z",
+      "archived": false,
+      "topics": [
+        "glossary",
+        "javascript"
+      ],
+      "license": null,
+      "sizeKb": 575,
+      "defaultBranch": "main",
+      "recentUserCommits": 0,
+      "activity": 0,
+      "commitCount": null,
+      "languages": {
+        "CSS": 31755,
+        "JavaScript": 25191
+      },
+      "deps": [
+        "@types/classnames",
+        "@types/node",
+        "@types/react",
+        "@typescript-eslint/eslint-plugin",
+        "@typescript-eslint/parser",
+        "babel-eslint",
+        "babel-plugin-module-resolver",
+        "classnames",
+        "eslint",
+        "eslint-plugin-import",
+        "eslint-plugin-react",
+        "eslint-plugin-react-hooks",
+        "gray-matter",
+        "intersection-observer",
+        "lodash.debounce",
+        "marked",
+        "next",
+        "next-remote-watch",
+        "nprogress",
+        "prettier",
+        "prism-react-renderer",
+        "react",
+        "react-dom",
+        "rss",
+        "swr",
+        "typescript"
+      ],
+      "externalContributors": null,
+      "readmeWords": null,
+      "releaseDates": []
+    },
+    {
+      "name": "gitbook-plugin-prism",
+      "fullName": "gaearon/gitbook-plugin-prism",
+      "description": "Gitbook plugin for Prism highlighting",
+      "language": "JavaScript",
+      "stars": 89,
+      "forks": 26,
+      "pushedAt": "2022-11-06T16:30:26Z",
+      "createdAt": "2015-09-12T15:32:30Z",
+      "archived": false,
+      "topics": [],
+      "license": "Apache-2.0",
+      "sizeKb": 72,
+      "defaultBranch": "master",
+      "recentUserCommits": 0,
+      "activity": 0,
+      "commitCount": null,
+      "languages": {
+        "JavaScript": 7291,
+        "CSS": 497
+      },
+      "deps": [
+        "cheerio",
+        "eslint",
+        "eslint-config-semistandard",
+        "eslint-config-standard",
+        "eslint-plugin-promise",
+        "eslint-plugin-react",
+        "eslint-plugin-standard",
+        "gitbook-tester",
+        "mkdirp",
+        "prismjs",
+        "tape"
+      ],
+      "externalContributors": null,
+      "readmeWords": null,
+      "releaseDates": [
+        "2018-07-26T14:20:35Z",
+        "2017-07-09T23:58:44Z",
+        "2017-03-10T00:00:17Z",
+        "2017-01-31T04:49:53Z",
+        "2017-01-28T03:23:28Z",
+        "2017-01-08T21:14:43Z",
+        "2016-11-30T03:56:17Z",
+        "2016-11-19T04:17:15Z",
+        "2016-09-03T01:41:28Z",
+        "2015-10-05T09:20:03Z"
+      ]
+    },
+    {
+      "name": "sc-bug-repro",
+      "fullName": "gaearon/sc-bug-repro",
+      "description": null,
+      "language": "CSS",
+      "stars": 15,
+      "forks": 1,
+      "pushedAt": "2022-05-23T20:50:54Z",
+      "createdAt": "2022-02-19T22:25:15Z",
+      "archived": false,
+      "topics": [],
+      "license": null,
+      "sizeKb": 159,
+      "defaultBranch": "main",
+      "recentUserCommits": 0,
+      "activity": 0,
+      "commitCount": null,
+      "languages": {
+        "CSS": 1973,
+        "JavaScript": 812
+      },
+      "deps": [
+        "eslint",
+        "eslint-config-next",
+        "next",
+        "react",
+        "react-dom"
+      ],
+      "externalContributors": null,
+      "readmeWords": null,
+      "releaseDates": []
+    },
+    {
+      "name": "react-lag-radar",
+      "fullName": "gaearon/react-lag-radar",
+      "description": null,
+      "language": "JavaScript",
+      "stars": 295,
+      "forks": 5,
+      "pushedAt": "2021-06-17T15:28:19Z",
+      "createdAt": "2021-06-15T19:05:01Z",
+      "archived": false,
+      "topics": [],
+      "license": null,
+      "sizeKb": 3,
+      "defaultBranch": "main",
+      "recentUserCommits": 0,
+      "activity": 0,
+      "commitCount": null,
+      "languages": {
+        "JavaScript": 546
+      },
+      "deps": [
+        "@gaearon/lag-radar",
+        "react"
+      ],
+      "externalContributors": null,
+      "readmeWords": null,
+      "releaseDates": []
+    },
+    {
+      "name": "suspense-experimental-github-demo",
+      "fullName": "gaearon/suspense-experimental-github-demo",
+      "description": "Sample project built with Suspense to demonstrate render-as-you-fetch",
+      "language": "JavaScript",
+      "stars": 795,
+      "forks": 40,
+      "pushedAt": "2020-12-28T22:21:14Z",
+      "createdAt": "2019-11-05T03:32:27Z",
+      "archived": true,
+      "topics": [],
+      "license": "MIT",
+      "sizeKb": 1480,
+      "defaultBranch": "master",
+      "recentUserCommits": 0,
+      "activity": 0,
+      "commitCount": null,
+      "languages": {
+        "JavaScript": 13320,
+        "HTML": 1828,
+        "CSS": 1442
+      },
+      "deps": [
+        "react",
+        "react-dom",
+        "react-scripts"
+      ],
+      "externalContributors": null,
+      "readmeWords": null,
+      "releaseDates": []
+    },
+    {
+      "name": "base16-js",
+      "fullName": "gaearon/base16-js",
+      "description": "Base16 themes in JS",
+      "language": "JavaScript",
+      "stars": 34,
+      "forks": 12,
+      "pushedAt": "2020-12-28T08:49:57Z",
+      "createdAt": "2015-09-24T15:42:49Z",
+      "archived": false,
+      "topics": [],
+      "license": "MIT",
+      "sizeKb": 13,
+      "defaultBranch": "master",
+      "recentUserCommits": 0,
+      "activity": 0,
+      "commitCount": null,
+      "languages": {
+        "JavaScript": 17893
+      },
+      "deps": [
+        "babel-cli",
+        "babel-core",
+        "babel-eslint",
+        "babel-preset-es2015",
+        "babel-preset-stage-0",
+        "eslint",
+        "eslint-config-airbnb",
+        "eslint-plugin-react",
+        "rimraf"
+      ],
+      "externalContributors": null,
+      "readmeWords": null,
+      "releaseDates": [
+        "2015-09-24T16:02:04Z"
+      ]
+    },
+    {
+      "name": "react-proxy",
+      "fullName": "gaearon/react-proxy",
+      "description": "Proxies React components without unmounting or losing their state",
+      "language": "JavaScript",
+      "stars": 453,
+      "forks": 42,
+      "pushedAt": "2020-09-04T21:33:19Z",
+      "createdAt": "2015-04-28T21:35:39Z",
+      "archived": false,
+      "topics": [],
+      "license": null,
+      "sizeKb": 281,
+      "defaultBranch": "1.x",
+      "recentUserCommits": 0,
+      "activity": 0,
+      "commitCount": null,
+      "languages": null,
+      "deps": null,
+      "externalContributors": null,
+      "readmeWords": null,
+      "releaseDates": null
+    },
+    {
+      "name": "react-transform-boilerplate",
+      "fullName": "gaearon/react-transform-boilerplate",
+      "description": "A new Webpack boilerplate with hot reloading React components, and error handling on module and component level.",
+      "language": "JavaScript",
+      "stars": 3327,
+      "forks": 412,
+      "pushedAt": "2020-08-21T15:47:58Z",
+      "createdAt": "2015-09-03T01:13:36Z",
+      "archived": true,
+      "topics": [],
+      "license": "CC0-1.0",
+      "sizeKb": 54,
+      "defaultBranch": "master",
+      "recentUserCommits": 0,
+      "activity": 0,
+      "commitCount": null,
+      "languages": null,
+      "deps": null,
+      "externalContributors": null,
+      "readmeWords": null,
+      "releaseDates": null
+    },
+    {
+      "name": "react-hot-boilerplate",
+      "fullName": "gaearon/react-hot-boilerplate",
+      "description": "Minimal live-editing example for React",
+      "language": "JavaScript",
+      "stars": 3880,
+      "forks": 852,
+      "pushedAt": "2020-08-21T15:47:32Z",
+      "createdAt": "2014-08-23T16:38:09Z",
+      "archived": false,
+      "topics": [],
+      "license": "MIT",
+      "sizeKb": 134,
+      "defaultBranch": "master",
+      "recentUserCommits": 0,
+      "activity": 0,
+      "commitCount": 99,
+      "languages": null,
+      "deps": null,
+      "externalContributors": 18,
+      "readmeWords": null,
+      "releaseDates": null
+    },
+    {
+      "name": "redux-devtools-dock-monitor",
+      "fullName": "gaearon/redux-devtools-dock-monitor",
+      "description": "A resizable and movable dock for Redux DevTools monitors",
+      "language": "JavaScript",
+      "stars": 401,
+      "forks": 44,
+      "pushedAt": "2020-06-24T18:43:06Z",
+      "createdAt": "2015-10-16T21:43:40Z",
+      "archived": false,
+      "topics": [],
+      "license": "MIT",
+      "sizeKb": 23,
+      "defaultBranch": "master",
+      "recentUserCommits": 0,
+      "activity": 0,
+      "commitCount": null,
+      "languages": null,
+      "deps": null,
+      "externalContributors": null,
+      "readmeWords": null,
+      "releaseDates": null
+    },
+    {
+      "name": "todos",
+      "fullName": "gaearon/todos",
+      "description": "Examples for “Idiomatic Redux”: one branch per lesson",
+      "language": "JavaScript",
+      "stars": 786,
+      "forks": 303,
+      "pushedAt": "2020-06-10T11:26:42Z",
+      "createdAt": "2016-05-02T18:18:13Z",
+      "archived": false,
+      "topics": [],
+      "license": null,
+      "sizeKb": 27,
+      "defaultBranch": "master",
+      "recentUserCommits": 0,
+      "activity": 0,
+      "commitCount": 1,
+      "languages": null,
+      "deps": null,
+      "externalContributors": null,
+      "readmeWords": null,
+      "releaseDates": null
+    },
+    {
+      "name": "myapp",
+      "fullName": "gaearon/myapp",
+      "description": "just testing lol",
+      "language": "JavaScript",
+      "stars": 8,
+      "forks": 2,
+      "pushedAt": "2020-01-29T14:16:41Z",
+      "createdAt": "2016-07-27T17:59:45Z",
+      "archived": false,
+      "topics": [],
+      "license": null,
+      "sizeKb": 440,
+      "defaultBranch": "master",
+      "recentUserCommits": 0,
+      "activity": 0,
+      "commitCount": null,
+      "languages": null,
+      "deps": null,
+      "externalContributors": null,
+      "readmeWords": null,
+      "releaseDates": null
+    },
+    {
+      "name": "redux-devtools-themes",
+      "fullName": "gaearon/redux-devtools-themes",
+      "description": "Color themes for Redux DevTools monitors",
+      "language": "JavaScript",
+      "stars": 35,
+      "forks": 7,
+      "pushedAt": "2019-11-06T18:14:55Z",
+      "createdAt": "2015-09-24T16:10:21Z",
+      "archived": false,
+      "topics": [],
+      "license": "MIT",
+      "sizeKb": 4,
+      "defaultBranch": "master",
+      "recentUserCommits": 0,
+      "activity": 0,
+      "commitCount": null,
+      "languages": null,
+      "deps": null,
+      "externalContributors": null,
+      "readmeWords": null,
+      "releaseDates": null
+    },
+    {
+      "name": "react-pure-render",
+      "fullName": "gaearon/react-pure-render",
+      "description": "[No Maintenance Intended] A function, a component and a mixin for React pure rendering",
+      "language": "JavaScript",
+      "stars": 447,
+      "forks": 26,
+      "pushedAt": "2019-10-29T17:47:17Z",
+      "createdAt": "2015-05-04T20:00:34Z",
+      "archived": false,
+      "topics": [],
+      "license": "MIT",
+      "sizeKb": 12,
+      "defaultBranch": "master",
+      "recentUserCommits": 0,
+      "activity": 0,
+      "commitCount": null,
+      "languages": null,
+      "deps": null,
+      "externalContributors": null,
+      "readmeWords": null,
+      "releaseDates": null
+    },
+    {
+      "name": "react-document-title",
+      "fullName": "gaearon/react-document-title",
+      "description": "Declarative, nested, stateful, isomorphic document.title for React",
+      "language": "JavaScript",
+      "stars": 1846,
+      "forks": 102,
+      "pushedAt": "2019-10-28T13:34:57Z",
+      "createdAt": "2014-10-08T19:51:49Z",
+      "archived": false,
+      "topics": [],
+      "license": "MIT",
+      "sizeKb": 32,
+      "defaultBranch": "master",
+      "recentUserCommits": 0,
+      "activity": 0,
+      "commitCount": 71,
+      "languages": null,
+      "deps": null,
+      "externalContributors": null,
+      "readmeWords": null,
+      "releaseDates": null
+    },
+    {
+      "name": "subliminal",
+      "fullName": "gaearon/subliminal",
+      "description": "An opinionated minimalistic VS Code theme for JavaScript",
+      "language": null,
+      "stars": 625,
+      "forks": 24,
+      "pushedAt": "2019-03-29T16:15:37Z",
+      "createdAt": "2018-04-30T02:01:00Z",
+      "archived": false,
+      "topics": [
+        "javascript",
+        "spacegray",
+        "sublime",
+        "vscode-theme"
+      ],
+      "license": "MIT",
+      "sizeKb": 739,
+      "defaultBranch": "master",
+      "recentUserCommits": 0,
+      "activity": 0,
+      "commitCount": null,
+      "languages": {},
+      "deps": null,
+      "externalContributors": null,
+      "readmeWords": null,
+      "releaseDates": []
+    },
+    {
+      "name": "hooks-perf-issues",
+      "fullName": "gaearon/hooks-perf-issues",
+      "description": "This repo demonstrates a situation where it is slower to use React hooks than classes",
+      "language": "JavaScript",
+      "stars": 14,
+      "forks": 9,
+      "pushedAt": "2019-03-03T00:47:39Z",
+      "createdAt": "2019-03-03T00:19:06Z",
+      "archived": false,
+      "topics": [],
+      "license": null,
+      "sizeKb": 504,
+      "defaultBranch": "master",
+      "recentUserCommits": 0,
+      "activity": 0,
+      "commitCount": null,
+      "languages": {
+        "JavaScript": 2541,
+        "HTML": 1712
+      },
+      "deps": null,
+      "externalContributors": null,
+      "readmeWords": null,
+      "releaseDates": []
+    },
+    {
+      "name": "babel-plugin-react-transform",
+      "fullName": "gaearon/babel-plugin-react-transform",
+      "description": "Babel plugin to instrument React components with custom transforms",
+      "language": "JavaScript",
+      "stars": 1071,
+      "forks": 86,
+      "pushedAt": "2018-09-03T17:07:41Z",
+      "createdAt": "2015-08-27T23:50:00Z",
+      "archived": true,
+      "topics": [],
+      "license": "MIT",
+      "sizeKb": 105,
+      "defaultBranch": "master",
+      "recentUserCommits": 0,
+      "activity": 0,
+      "commitCount": null,
+      "languages": null,
+      "deps": null,
+      "externalContributors": null,
+      "readmeWords": null,
+      "releaseDates": null
+    },
+    {
+      "name": "react-transform-hmr",
+      "fullName": "gaearon/react-transform-hmr",
+      "description": "A React Transform that enables hot reloading React classes using Hot Module Replacement API",
+      "language": "JavaScript",
+      "stars": 763,
+      "forks": 57,
+      "pushedAt": "2018-03-21T10:47:25Z",
+      "createdAt": "2015-09-02T23:37:25Z",
+      "archived": true,
+      "topics": [],
+      "license": null,
+      "sizeKb": 23,
+      "defaultBranch": "master",
+      "recentUserCommits": 0,
+      "activity": 0,
+      "commitCount": null,
+      "languages": null,
+      "deps": null,
+      "externalContributors": null,
+      "readmeWords": null,
+      "releaseDates": null
+    },
+    {
+      "name": "disposables",
+      "fullName": "gaearon/disposables",
+      "description": "Disposables let you safely compose resource disposal semantics",
+      "language": "JavaScript",
+      "stars": 63,
+      "forks": 7,
+      "pushedAt": "2018-01-07T12:07:31Z",
+      "createdAt": "2015-04-09T11:52:09Z",
+      "archived": false,
+      "topics": [],
+      "license": null,
+      "sizeKb": 13,
+      "defaultBranch": "master",
+      "recentUserCommits": 0,
+      "activity": 0,
+      "commitCount": null,
+      "languages": null,
+      "deps": null,
+      "externalContributors": null,
+      "readmeWords": null,
+      "releaseDates": null
+    },
+    {
+      "name": "react-blessed-hot-motion",
+      "fullName": "gaearon/react-blessed-hot-motion",
+      "description": "A console app demo using React for rendering, animation, and hot reloading",
+      "language": "JavaScript",
+      "stars": 277,
+      "forks": 17,
+      "pushedAt": "2017-11-17T03:00:37Z",
+      "createdAt": "2015-08-26T10:51:04Z",
+      "archived": false,
+      "topics": [],
+      "license": "MIT",
+      "sizeKb": 261,
+      "defaultBranch": "master",
+      "recentUserCommits": 0,
+      "activity": 0,
+      "commitCount": null,
+      "languages": null,
+      "deps": null,
+      "externalContributors": null,
+      "readmeWords": null,
+      "releaseDates": null
+    },
+    {
+      "name": "redux-devtools-log-monitor",
+      "fullName": "gaearon/redux-devtools-log-monitor",
+      "description": "The default monitor for Redux DevTools with a tree view",
+      "language": "JavaScript",
+      "stars": 305,
+      "forks": 65,
+      "pushedAt": "2017-11-11T18:58:39Z",
+      "createdAt": "2015-09-24T15:21:29Z",
+      "archived": false,
+      "topics": [],
+      "license": "MIT",
+      "sizeKb": 73,
+      "defaultBranch": "master",
+      "recentUserCommits": 0,
+      "activity": 0,
+      "commitCount": null,
+      "languages": null,
+      "deps": null,
+      "externalContributors": null,
+      "readmeWords": null,
+      "releaseDates": null
+    },
+    {
+      "name": "testcomp",
+      "fullName": "gaearon/testcomp",
+      "description": null,
+      "language": "JavaScript",
+      "stars": 9,
+      "forks": 1,
+      "pushedAt": "2017-10-28T18:07:45Z",
+      "createdAt": "2017-10-28T17:29:38Z",
+      "archived": false,
+      "topics": [],
+      "license": null,
+      "sizeKb": 3,
+      "defaultBranch": "master",
+      "recentUserCommits": 0,
+      "activity": 0,
+      "commitCount": 4,
+      "languages": null,
+      "deps": null,
+      "externalContributors": null,
+      "readmeWords": null,
+      "releaseDates": null
+    },
+    {
+      "name": "flux-react-router-example",
+      "fullName": "gaearon/flux-react-router-example",
+      "description": "A sample app showcasing Flux with React Router",
+      "language": "JavaScript",
+      "stars": 1418,
+      "forks": 171,
+      "pushedAt": "2017-08-25T15:09:09Z",
+      "createdAt": "2014-08-23T15:49:37Z",
+      "archived": false,
+      "topics": [],
+      "license": "MIT",
+      "sizeKb": 2555,
+      "defaultBranch": "master",
+      "recentUserCommits": 0,
+      "activity": 0,
+      "commitCount": 112,
+      "languages": {
+        "JavaScript": 32058,
+        "HTML": 240
+      },
+      "deps": null,
+      "externalContributors": null,
+      "readmeWords": null,
+      "releaseDates": [
+        "2014-09-19T10:41:28Z"
+      ]
+    },
+    {
+      "name": "draft-js-borked",
+      "fullName": "gaearon/draft-js-borked",
+      "description": null,
+      "language": "JavaScript",
+      "stars": 3,
+      "forks": 0,
+      "pushedAt": "2017-07-12T00:09:35Z",
+      "createdAt": "2017-07-12T00:08:36Z",
+      "archived": false,
+      "topics": [],
+      "license": null,
+      "sizeKb": 311,
+      "defaultBranch": "master",
+      "recentUserCommits": 0,
+      "activity": 0,
+      "commitCount": null,
+      "languages": null,
+      "deps": null,
+      "externalContributors": null,
+      "readmeWords": null,
+      "releaseDates": null
+    },
+    {
+      "name": "react-for-beginners",
+      "fullName": "gaearon/react-for-beginners",
+      "description": "This is my cloned version of the Wes Bos Series.",
+      "language": "CSS",
+      "stars": 20,
+      "forks": 17,
+      "pushedAt": "2017-04-03T15:17:11Z",
+      "createdAt": "2017-04-03T14:55:01Z",
+      "archived": false,
+      "topics": [],
+      "license": null,
+      "sizeKb": 204,
+      "defaultBranch": "master",
+      "recentUserCommits": 0,
+      "activity": 0,
+      "commitCount": null,
+      "languages": null,
+      "deps": null,
+      "externalContributors": null,
+      "readmeWords": null,
+      "releaseDates": null
+    },
+    {
+      "name": "jest-babel-issue",
+      "fullName": "gaearon/jest-babel-issue",
+      "description": null,
+      "language": "HTML",
+      "stars": 2,
+      "forks": 0,
+      "pushedAt": "2017-03-08T23:22:16Z",
+      "createdAt": "2017-03-08T23:21:59Z",
+      "archived": false,
+      "topics": [],
+      "license": null,
+      "sizeKb": 71,
+      "defaultBranch": "master",
+      "recentUserCommits": 0,
+      "activity": 0,
+      "commitCount": null,
+      "languages": null,
+      "deps": null,
+      "externalContributors": null,
+      "readmeWords": null,
+      "releaseDates": null
+    },
+    {
+      "name": "jest-mock-issue-repro",
+      "fullName": "gaearon/jest-mock-issue-repro",
+      "description": null,
+      "language": "JavaScript",
+      "stars": 2,
+      "forks": 0,
+      "pushedAt": "2017-03-05T18:40:20Z",
+      "createdAt": "2017-03-05T18:38:31Z",
+      "archived": false,
+      "topics": [],
+      "license": null,
+      "sizeKb": 1,
+      "defaultBranch": "master",
+      "recentUserCommits": 0,
+      "activity": 0,
+      "commitCount": null,
+      "languages": null,
+      "deps": null,
+      "externalContributors": null,
+      "readmeWords": null,
+      "releaseDates": null
+    },
+    {
+      "name": "the-redux-journey",
+      "fullName": "gaearon/the-redux-journey",
+      "description": "Slides from my talk at React Europe 2016",
+      "language": "JavaScript",
+      "stars": 87,
+      "forks": 15,
+      "pushedAt": "2017-02-18T01:02:14Z",
+      "createdAt": "2016-06-05T19:58:13Z",
+      "archived": false,
+      "topics": [],
+      "license": "MIT",
+      "sizeKb": 10230,
+      "defaultBranch": "master",
+      "recentUserCommits": 0,
+      "activity": 0,
+      "commitCount": null,
+      "languages": {
+        "JavaScript": 21781,
+        "CSS": 1814,
+        "HTML": 577
+      },
+      "deps": null,
+      "externalContributors": null,
+      "readmeWords": null,
+      "releaseDates": []
+    },
+    {
+      "name": "gaearon.github.io",
+      "fullName": "gaearon/gaearon.github.io",
+      "description": "Oh hi.",
+      "language": "HTML",
+      "stars": 3,
+      "forks": 1,
+      "pushedAt": "2017-01-24T10:35:44Z",
+      "createdAt": "2015-02-02T02:18:15Z",
+      "archived": false,
+      "topics": [],
+      "license": null,
+      "sizeKb": 98,
+      "defaultBranch": "master",
+      "recentUserCommits": 0,
+      "activity": 0,
+      "commitCount": null,
+      "languages": null,
+      "deps": null,
+      "externalContributors": null,
+      "readmeWords": null,
+      "releaseDates": null
+    },
+    {
+      "name": "react-makes-you-sad",
+      "fullName": "gaearon/react-makes-you-sad",
+      "description": "Here’s a flowchart to make you happy again!",
+      "language": "Makefile",
+      "stars": 2067,
+      "forks": 102,
+      "pushedAt": "2016-10-06T21:17:21Z",
+      "createdAt": "2016-02-29T16:13:39Z",
+      "archived": false,
+      "topics": [],
+      "license": null,
+      "sizeKb": 85,
+      "defaultBranch": "master",
+      "recentUserCommits": 0,
+      "activity": 0,
+      "commitCount": null,
+      "languages": null,
+      "deps": null,
+      "externalContributors": null,
+      "readmeWords": null,
+      "releaseDates": null
+    },
+    {
+      "name": "promise-loader",
+      "fullName": "gaearon/promise-loader",
+      "description": "A webpack bundle-loader ripoff with promise interface",
+      "language": "JavaScript",
+      "stars": 214,
+      "forks": 14,
+      "pushedAt": "2016-08-02T06:54:30Z",
+      "createdAt": "2014-07-07T18:09:16Z",
+      "archived": false,
+      "topics": [],
+      "license": null,
+      "sizeKb": 191,
+      "defaultBranch": "master",
+      "recentUserCommits": 0,
+      "activity": 0,
+      "commitCount": 16,
+      "languages": null,
+      "deps": null,
+      "externalContributors": null,
+      "readmeWords": null,
+      "releaseDates": null
+    },
+    {
+      "name": "HtmlWebpackReplaceManifestAssetsPlugin",
+      "fullName": "gaearon/HtmlWebpackReplaceManifestAssetsPlugin",
+      "description": "A subplugin of the HtmlWebpackPlugin for replacing, in a html template, the assets with theis hashed versions",
+      "language": "JavaScript",
+      "stars": 1,
+      "forks": 1,
+      "pushedAt": "2016-07-16T22:05:07Z",
+      "createdAt": "2016-07-26T16:32:41Z",
+      "archived": false,
+      "topics": [],
+      "license": "MIT",
+      "sizeKb": 4,
+      "defaultBranch": "master",
+      "recentUserCommits": 0,
+      "activity": 0,
+      "commitCount": null,
+      "languages": null,
+      "deps": null,
+      "externalContributors": null,
+      "readmeWords": null,
+      "releaseDates": null
+    },
+    {
+      "name": "ulonkaFrontend01",
+      "fullName": "gaearon/ulonkaFrontend01",
+      "description": null,
+      "language": "JavaScript",
+      "stars": 1,
+      "forks": 3,
+      "pushedAt": "2016-06-14T14:54:46Z",
+      "createdAt": "2016-06-14T13:47:05Z",
+      "archived": false,
+      "topics": [],
+      "license": null,
+      "sizeKb": 4,
+      "defaultBranch": "master",
+      "recentUserCommits": 0,
+      "activity": 0,
+      "commitCount": null,
+      "languages": null,
+      "deps": null,
+      "externalContributors": null,
+      "readmeWords": null,
+      "releaseDates": null
+    },
+    {
+      "name": "workshop",
+      "fullName": "gaearon/workshop",
+      "description": "React Europe 2016 workshop repo",
+      "language": "JavaScript",
+      "stars": 85,
+      "forks": 13,
+      "pushedAt": "2016-06-01T13:46:36Z",
+      "createdAt": "2016-05-29T13:16:31Z",
+      "archived": false,
+      "topics": [],
+      "license": null,
+      "sizeKb": 65,
+      "defaultBranch": "master",
+      "recentUserCommits": 0,
+      "activity": 0,
+      "commitCount": null,
+      "languages": null,
+      "deps": null,
+      "externalContributors": null,
+      "readmeWords": null,
+      "releaseDates": null
+    },
+    {
+      "name": "redux-bootstrap",
+      "fullName": "gaearon/redux-bootstrap",
+      "description": "Bootstrapping function for Redux applications.",
+      "language": "TypeScript",
+      "stars": 6,
+      "forks": 2,
+      "pushedAt": "2016-04-21T15:36:02Z",
+      "createdAt": "2016-04-21T14:54:33Z",
+      "archived": false,
+      "topics": [],
+      "license": "MIT",
+      "sizeKb": 65,
+      "defaultBranch": "master",
+      "recentUserCommits": 0,
+      "activity": 0,
+      "commitCount": null,
+      "languages": null,
+      "deps": null,
+      "externalContributors": null,
+      "readmeWords": null,
+      "releaseDates": null
+    },
+    {
+      "name": "react-transform-catch-errors",
+      "fullName": "gaearon/react-transform-catch-errors",
+      "description": "React Transform that catches errors inside React components",
+      "language": "JavaScript",
+      "stars": 184,
+      "forks": 20,
+      "pushedAt": "2016-04-18T12:47:27Z",
+      "createdAt": "2015-09-03T00:47:30Z",
+      "archived": false,
+      "topics": [],
+      "license": null,
+      "sizeKb": 27,
+      "defaultBranch": "master",
+      "recentUserCommits": 0,
+      "activity": 0,
+      "commitCount": null,
+      "languages": null,
+      "deps": null,
+      "externalContributors": null,
+      "readmeWords": null,
+      "releaseDates": null
+    },
+    {
+      "name": "react-hot-api",
+      "fullName": "gaearon/react-hot-api",
+      "description": "(Deprecated) A generic library implementing hot reload for React components without unmounting or losing their state",
+      "language": "JavaScript",
+      "stars": 88,
+      "forks": 21,
+      "pushedAt": "2016-03-14T18:06:17Z",
+      "createdAt": "2014-12-11T21:40:02Z",
+      "archived": false,
+      "topics": [],
+      "license": null,
+      "sizeKb": 458,
+      "defaultBranch": "master",
+      "recentUserCommits": 0,
+      "activity": 0,
+      "commitCount": null,
+      "languages": null,
+      "deps": null,
+      "externalContributors": null,
+      "readmeWords": null,
+      "releaseDates": null
+    },
+    {
+      "name": "react-stateful",
+      "fullName": "gaearon/react-stateful",
+      "description": "[No Maintenance Intended] A higher-order React component for lifting state",
+      "language": "JavaScript",
+      "stars": 85,
+      "forks": 4,
+      "pushedAt": "2016-03-13T01:18:51Z",
+      "createdAt": "2015-04-23T17:21:47Z",
+      "archived": false,
+      "topics": [],
+      "license": "MIT",
+      "sizeKb": 6,
+      "defaultBranch": "master",
+      "recentUserCommits": 0,
+      "activity": 0,
+      "commitCount": null,
+      "languages": null,
+      "deps": null,
+      "externalContributors": null,
+      "readmeWords": null,
+      "releaseDates": null
+    },
+    {
+      "name": "library-boilerplate",
+      "fullName": "gaearon/library-boilerplate",
+      "description": "An opinionated boilerplate for React libraries including ESLint, Mocha, Babel, Webpack and an example powered by Webpack Dev Server and React Hot Loader",
+      "language": "JavaScript",
+      "stars": 383,
+      "forks": 38,
+      "pushedAt": "2016-02-28T20:39:47Z",
+      "createdAt": "2015-07-14T17:43:36Z",
+      "archived": false,
+      "topics": [],
+      "license": "MIT",
+      "sizeKb": 146,
+      "defaultBranch": "master",
+      "recentUserCommits": 0,
+      "activity": 0,
+      "commitCount": null,
+      "languages": null,
+      "deps": null,
+      "externalContributors": null,
+      "readmeWords": null,
+      "releaseDates": null
+    },
+    {
+      "name": "react-dnd-touch-backend",
+      "fullName": "gaearon/react-dnd-touch-backend",
+      "description": "Touch Backend for react-dnd",
+      "language": "JavaScript",
+      "stars": 3,
+      "forks": 111,
+      "pushedAt": "2015-10-14T21:46:05Z",
+      "createdAt": "2015-10-14T21:14:43Z",
+      "archived": false,
+      "topics": [],
+      "license": "MIT",
+      "sizeKb": 103,
+      "defaultBranch": "master",
+      "recentUserCommits": 0,
+      "activity": 0,
+      "commitCount": null,
+      "languages": null,
+      "deps": null,
+      "externalContributors": null,
+      "readmeWords": null,
+      "releaseDates": null
+    },
+    {
+      "name": "react-elmish-example",
+      "fullName": "gaearon/react-elmish-example",
+      "description": "My personal attempt at understanding Elm architecture",
+      "language": "HTML",
+      "stars": 170,
+      "forks": 10,
+      "pushedAt": "2015-10-04T18:22:09Z",
+      "createdAt": "2015-10-04T17:15:21Z",
+      "archived": false,
+      "topics": [],
+      "license": "MIT",
+      "sizeKb": 760,
+      "defaultBranch": "master",
+      "recentUserCommits": 0,
+      "activity": 0,
+      "commitCount": null,
+      "languages": {
+        "HTML": 358
+      },
+      "deps": null,
+      "externalContributors": null,
+      "readmeWords": null,
+      "releaseDates": []
+    },
+    {
+      "name": "playtronica",
+      "fullName": "gaearon/playtronica",
+      "description": "A side project for a friend",
+      "language": "JavaScript",
+      "stars": 7,
+      "forks": 3,
+      "pushedAt": "2015-09-12T12:56:34Z",
+      "createdAt": "2015-09-12T12:27:38Z",
+      "archived": false,
+      "topics": [],
+      "license": null,
+      "sizeKb": 788,
+      "defaultBranch": "master",
+      "recentUserCommits": 0,
+      "activity": 0,
+      "commitCount": null,
+      "languages": {
+        "JavaScript": 13260,
+        "HTML": 792
+      },
+      "deps": null,
+      "externalContributors": null,
+      "readmeWords": null,
+      "releaseDates": []
+    },
+    {
+      "name": "react-transform",
+      "fullName": "gaearon/react-transform",
+      "description": "A specification for tools instrumenting React components",
+      "language": null,
+      "stars": 69,
+      "forks": 2,
+      "pushedAt": "2015-09-03T02:15:06Z",
+      "createdAt": "2015-09-03T01:03:43Z",
+      "archived": false,
+      "topics": [],
+      "license": null,
+      "sizeKb": 200,
+      "defaultBranch": "master",
+      "recentUserCommits": 0,
+      "activity": 0,
+      "commitCount": null,
+      "languages": null,
+      "deps": null,
+      "externalContributors": null,
+      "readmeWords": null,
+      "releaseDates": null
+    },
+    {
+      "name": "react-dnd-example",
+      "fullName": "gaearon/react-dnd-example",
+      "description": null,
+      "language": null,
+      "stars": 4,
+      "forks": 2,
+      "pushedAt": "2014-11-06T01:40:06Z",
+      "createdAt": "2014-11-06T01:36:44Z",
+      "archived": false,
+      "topics": [],
+      "license": null,
+      "sizeKb": 698,
+      "defaultBranch": "master",
+      "recentUserCommits": 0,
+      "activity": 0,
+      "commitCount": 4,
+      "languages": {},
+      "deps": null,
+      "externalContributors": null,
+      "readmeWords": null,
+      "releaseDates": []
+    },
+    {
+      "name": "react-webpack",
+      "fullName": "gaearon/react-webpack",
+      "description": "A starter template for building with React, Gulp and Webpack",
+      "language": null,
+      "stars": 2,
+      "forks": 7,
+      "pushedAt": "2014-07-31T09:19:11Z",
+      "createdAt": "2014-07-12T20:45:13Z",
+      "archived": false,
+      "topics": [],
+      "license": "MIT",
+      "sizeKb": 111,
+      "defaultBranch": "master",
+      "recentUserCommits": 0,
+      "activity": 0,
+      "commitCount": 3,
+      "languages": null,
+      "deps": null,
+      "externalContributors": null,
+      "readmeWords": null,
+      "releaseDates": null
+    },
+    {
+      "name": "tictactoe",
+      "fullName": "gaearon/tictactoe",
+      "description": "A LINQy TicTacToe implementation in C# for StackOverflow",
+      "language": "C#",
+      "stars": 8,
+      "forks": 4,
+      "pushedAt": "2014-01-05T19:19:28Z",
+      "createdAt": "2013-05-20T16:04:40Z",
+      "archived": false,
+      "topics": [],
+      "license": null,
+      "sizeKb": 200,
+      "defaultBranch": "master",
+      "recentUserCommits": 0,
+      "activity": 0,
+      "commitCount": 23,
+      "languages": null,
+      "deps": null,
+      "externalContributors": null,
+      "readmeWords": null,
+      "releaseDates": null
+    }
+  ],
+  "activeRepos": [
+    "conway-refinement",
+    "overreacted.io",
+    "rscexplorer",
+    "woodshed",
+    "next-bug-repro"
+  ],
+  "calendar": {
+    "available": true,
+    "weeksActive": 35,
+    "weeks": 52,
+    "totalContributions": 856
+  },
+  "activityByYear": [
+    {
+      "yearsAgo": 0,
+      "contributions": 856
+    },
+    {
+      "yearsAgo": 1,
+      "contributions": 1531
+    },
+    {
+      "yearsAgo": 2,
+      "contributions": 1738
+    },
+    {
+      "yearsAgo": 3,
+      "contributions": 8137
+    },
+    {
+      "yearsAgo": 4,
+      "contributions": 17325
+    },
+    {
+      "yearsAgo": 5,
+      "contributions": 1614
+    },
+    {
+      "yearsAgo": 6,
+      "contributions": 5203
+    },
+    {
+      "yearsAgo": 7,
+      "contributions": 7909
+    },
+    {
+      "yearsAgo": 8,
+      "contributions": 14226
+    },
+    {
+      "yearsAgo": 9,
+      "contributions": 9018
+    },
+    {
+      "yearsAgo": 10,
+      "contributions": 5643
+    },
+    {
+      "yearsAgo": 11,
+      "contributions": 4402
+    },
+    {
+      "yearsAgo": 12,
+      "contributions": 522
+    },
+    {
+      "yearsAgo": 13,
+      "contributions": 293
+    },
+    {
+      "yearsAgo": 14,
+      "contributions": 2
+    },
+    {
+      "yearsAgo": 15,
+      "contributions": 1
+    }
+  ],
+  "commits": [
+    {
+      "repo": "conway-refinement",
+      "oid": "264445c93b78554c408e99e4e7f663693b4e91ab",
+      "message": "Correct proof-blueprint descriptions (#5)",
+      "date": "2026-09-03T21:05:48Z"
+    },
+    {
+      "repo": "conway-refinement",
+      "oid": "63797aae79c09df5be6bfa066f147fa39e63b6cd",
+      "message": "Use cache-backed Lean 4.31 release",
+      "date": "2026-09-02T22:08:58Z"
+    },
+    {
+      "repo": "conway-refinement",
+      "oid": "1ffbf5e471f2cf9ca76cb55abcab8eaf5ae220fc",
+      "message": "Move extractor into isolated package",
+      "date": "2026-09-02T20:49:24Z"
+    },
+    {
+      "repo": "conway-refinement",
+      "oid": "512507ed614ee09b077e9c02dfc56a167e3e28e7",
+      "message": "Isolate SubVerso blueprint tooling",
+      "date": "2026-09-02T20:13:19Z"
+    },
+    {
+      "repo": "conway-refinement",
+      "oid": "aa860765945373089f69d6bc238d8ea9b9ceb4a0",
+      "message": "Use illustration with embedded credit",
+      "date": "2026-09-02T16:48:18Z"
+    },
+    {
+      "repo": "conway-refinement",
+      "oid": "619285e51038d7a358289821bd5dbf18855dec59",
+      "message": "Fix README image",
+      "date": "2026-09-02T11:24:43Z"
+    },
+    {
+      "repo": "conway-refinement",
+      "oid": "566a9614aeebbf377b6484fda8525d4f1bca2b9c",
+      "message": "Add mathematical glue to the proof guide (#2)",
+      "date": "2026-09-02T10:59:35Z"
+    },
+    {
+      "repo": "conway-refinement",
+      "oid": "0bedae1517c16383a47d4627257326256e4616ae",
+      "message": "Fix Palomar comparator compatibility (#1)",
+      "date": "2026-09-02T10:01:31Z"
+    },
+    {
+      "repo": "conway-refinement",
+      "oid": "0617481fe52775e2db8b89772b36f03ab0c2efb2",
+      "message": "Prove Conway's refinement conjecture",
+      "date": "2026-09-01T03:06:18Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "28b60689a69b11892bad7c4456edb9c63868ce0b",
+      "message": "fix",
+      "date": "2026-09-18T20:38:16Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "4e53c9bf33a4a856f8216ff644461b2c49d0cfd3",
+      "message": "link",
+      "date": "2026-09-18T19:10:09Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "c05c6f4e7cde5a6d551b8e78ce2aea298c67c7dd",
+      "message": "twk",
+      "date": "2026-09-18T16:51:05Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "2edf4cb6d8602b67c935fca60ce012b01f9cf9ec",
+      "message": "twk",
+      "date": "2026-09-18T16:42:55Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "b6a5a50847146c8108808173c26daea033345d28",
+      "message": "twek",
+      "date": "2026-09-18T16:23:15Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "fd08ba23a061085e3ccb7bfd66d453e882888cfd",
+      "message": "twk",
+      "date": "2026-09-18T15:49:21Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "f7ea41986c078f99f4496c9c7c15520e430111e0",
+      "message": "illustrate",
+      "date": "2026-09-18T15:30:58Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "7de70f9681b7845b29910fbef0d2fb0cee3a005a",
+      "message": "bla",
+      "date": "2026-09-18T15:06:14Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "d4b15ec80fef1ad60dcc9734031abf118086ca00",
+      "message": "twk",
+      "date": "2026-09-18T14:47:52Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "2301e3a34df91101af40dece2d6ab0ae0ecf3713",
+      "message": "bla",
+      "date": "2026-09-18T14:32:06Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "f224964f90c00dca1e50e2107c4eaba3af57e293",
+      "message": "new post",
+      "date": "2026-09-18T14:13:44Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "ac1ad4fe9168b350d3dc59ac0cbe0d53405702bf",
+      "message": "fix",
+      "date": "2026-06-19T17:28:01Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "c4bd2b04bcc9b55081e8c1df5b2a610f364eee58",
+      "message": "oops",
+      "date": "2026-06-19T15:43:59Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "582b1b430ced6cdbc63b24403f1e2b02551a4217",
+      "message": "twk",
+      "date": "2026-06-19T15:22:23Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "f3f6f098a3c1af8d95e851a62e100a68bb4f6f0a",
+      "message": "typo",
+      "date": "2026-06-19T15:06:40Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "1b6dc71d50fbcad32f617ce3571fd6a19753be3a",
+      "message": "typo",
+      "date": "2026-06-19T15:05:30Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "ec9807110cd83d023a02c628736739ab8acdd855",
+      "message": "typo",
+      "date": "2026-06-19T15:02:46Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "25fd5bcab93f88199d0764e049e04b36c857b526",
+      "message": "there are no instances in atproto",
+      "date": "2026-06-19T14:30:34Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "674b28b74217c17fd7fa3b31f174337650592f7c",
+      "message": "twk",
+      "date": "2026-04-15T19:24:38Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "99ba897a4456b622540898e2d055ccc04a4714ce",
+      "message": "twk",
+      "date": "2026-04-14T19:35:02Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "fe5222ba48fa07c6d6d24d07d121b7e3867383ec",
+      "message": "fix link",
+      "date": "2026-02-03T04:37:20Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "521661ef951f5c2ade0d9782e9f528734dff3540",
+      "message": "fiex lexicon example",
+      "date": "2026-01-25T20:54:12Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "e4e3181508e524d644a1bf9ceaaeb531b84dcd44",
+      "message": "inline",
+      "date": "2026-01-20T19:38:19Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "5f4f1dcc8d1f7fd36d820565459862c41128a0e7",
+      "message": "add llms.txt",
+      "date": "2026-01-20T16:32:29Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "87a80218f9b667d8c1b8779a413a3cc0e07f2855",
+      "message": "pdsfs",
+      "date": "2026-01-20T13:20:02Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "22e87254653f41cecc386b9a9ff314952c431c0a",
+      "message": "bla",
+      "date": "2026-01-19T12:46:48Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "bee167836e292a0e85cde49b5cd12451e32c27aa",
+      "message": "twk",
+      "date": "2026-01-19T12:43:46Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "d6c0094e9a819eb677dfb5cca7d79cc9829ef87e",
+      "message": "blento",
+      "date": "2026-01-19T11:39:43Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "d328d8e7901d3b6d648889665a4386d589f578c4",
+      "message": "tweak",
+      "date": "2026-01-19T11:14:17Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "eb37c55d4009c78879f6c67f6528b25480fb2e05",
+      "message": "link",
+      "date": "2026-01-18T23:55:29Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "a9231f22f18f7ea3071d6e3d02689125348d4414",
+      "message": "bla",
+      "date": "2026-01-18T22:10:30Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "a7970c1d7a05d720a49294c9fdb891684425bc25",
+      "message": "twek",
+      "date": "2026-01-18T22:01:44Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "14192f3f8c60ca79e07247849df3139bae011800",
+      "message": "twk",
+      "date": "2026-01-18T21:32:56Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "a61e96f2e94f9fbdbde569e7a4045e8e406b0b48",
+      "message": "nit",
+      "date": "2026-01-18T15:48:00Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "c6ed94fc700ed565292edc7adf2e493ce8a691b1",
+      "message": "bla",
+      "date": "2026-01-18T14:52:57Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "2b99920defed7f319b1df91788cb72fa2bca7b47",
+      "message": "bla",
+      "date": "2026-01-18T14:32:19Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "780ce10d942faf96e4c46408ed3237e73ed770fe",
+      "message": "yea",
+      "date": "2026-01-18T14:10:24Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "de6c78b52eb826434de92486a58b50acadef06f7",
+      "message": "bla",
+      "date": "2026-01-18T14:08:58Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "b39de6c08d585f8f32efa33c95158efc57d2f80b",
+      "message": "twk",
+      "date": "2026-01-18T14:07:09Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "46e3656362d7b9bdef7b35572be51210956dfa01",
+      "message": "bleh",
+      "date": "2026-01-18T14:03:48Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "06dc249402c300bce1b9fbeb61cc0f7355072026",
+      "message": "yea",
+      "date": "2026-01-18T14:01:37Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "84ebc6069aaa8e2f3f0c32e0fada944a76467d48",
+      "message": "bleh",
+      "date": "2026-01-18T13:54:52Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "151b6c9bd72c392e79214a77bead00f669308baa",
+      "message": "meh",
+      "date": "2026-01-18T13:52:52Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "9970bf040848c60d71a38a64a666f986c15c4881",
+      "message": "try add posters",
+      "date": "2026-01-18T13:49:09Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "88aa50b56a31d0935a4de87a2475ca690803e344",
+      "message": "bla",
+      "date": "2026-01-18T13:39:48Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "0f93f8df5adfbf229ea9a78e652f4e08b40205ce",
+      "message": "twk",
+      "date": "2026-01-18T13:27:07Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "54947072757c1c78b0001bc22a4afbea783b24a0",
+      "message": "fix",
+      "date": "2026-01-18T13:25:42Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "69922c8bde3cad05bd74ef9ca22654541ddddb12",
+      "message": "twk",
+      "date": "2026-01-18T13:14:19Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "c4199ff4e9da78be91c88c7be7ef3cd081e98b1e",
+      "message": "bla",
+      "date": "2026-01-18T13:09:30Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "3f0cc0976862d3cddca790b18e63321541641977",
+      "message": "bla",
+      "date": "2026-01-18T13:06:23Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "7497b76b4e7a74e5d662a1742fbd52f3fce7e20a",
+      "message": "bla",
+      "date": "2026-01-18T12:36:09Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "0453903294a46e17a609fc5a2dd2b1e24e81bc06",
+      "message": "twk",
+      "date": "2026-01-18T12:35:36Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "ab053473c5420033b3b61ceeebf799052c1cb219",
+      "message": "tap",
+      "date": "2026-01-18T12:11:52Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "ba1aad68fcb97171069c50885810f1aeb86aad04",
+      "message": "tweak",
+      "date": "2026-01-18T12:11:31Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "b1ca88c7b503eaac44107a9d04aa828b1dc14f5a",
+      "message": "twk",
+      "date": "2026-01-18T12:09:14Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "eca1bae0647bbe15d67e2ebf99f48aed39139ca2",
+      "message": "twk",
+      "date": "2026-01-18T12:08:54Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "6af49cdc2880847ea0a6cd22acf40e6c1486043b",
+      "message": "twk",
+      "date": "2026-01-18T12:03:26Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "ef576c190295ab3870173f1da19f5a96d418a91f",
+      "message": "twk",
+      "date": "2026-01-18T12:01:26Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "a8034484a3d9c91b98cc2407db933026f47cb094",
+      "message": "nit",
+      "date": "2026-01-18T11:21:20Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "7ca6857944f72c71ad0f3abfc68d3dce53ddf03b",
+      "message": "oops",
+      "date": "2026-01-18T11:09:55Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "3155545c0e570442b51bf359a563cdc9de30baf8",
+      "message": "link",
+      "date": "2026-01-18T07:29:17Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "62c56ddaf9375b33337d15866fe803a251b8da31",
+      "message": "oops",
+      "date": "2026-01-18T07:22:57Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "ce9152800458f49943eee75ce07288e4e4549792",
+      "message": "oops",
+      "date": "2026-01-18T07:08:45Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "ee4f26a20d819409635c36cfc893d77eea8af8f9",
+      "message": "A Social Filesystem",
+      "date": "2026-01-18T06:24:30Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "4ee531337417019c33988783c010d14012bfd997",
+      "message": "link",
+      "date": "2025-12-25T09:00:51Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "f74d32115e33871473f6c457d9c589efb2de49a8",
+      "message": "oops",
+      "date": "2025-12-25T03:33:33Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "ce2ff10cbee6c84add31bfaa86f54babaf99a81c",
+      "message": "tweak examples",
+      "date": "2025-12-24T17:31:21Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "c91bf108c20d53a0bc41d78e3296925628ea7e4d",
+      "message": "fix dead link",
+      "date": "2025-12-21T09:57:04Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "ba7aaf3068c205109a941ba9330953e0a6a0b413",
+      "message": "pdsls",
+      "date": "2025-12-20T17:31:17Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "2e51081bfd3a5100355db6887a9e0f53d3031dca",
+      "message": "twk links",
+      "date": "2025-12-20T16:44:00Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "d70202743df941019be99836d7f29a68fbb1d434",
+      "message": "oopsie",
+      "date": "2025-12-18T17:09:09Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "e51c3b1ba5301ee22497560e8d9d834816421b13",
+      "message": "tweaks",
+      "date": "2025-12-18T16:54:52Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "8623aa102daff0b391f09f67f871611f36086fbf",
+      "message": "Introducing RSC Explorer",
+      "date": "2025-12-18T16:48:16Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "2f5f5500039dcb285078be98c7f1159b1e4265e6",
+      "message": "simplify styling",
+      "date": "2025-12-17T11:19:08Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "95f90b31c266e0b59e6369dd20769fc922098fee",
+      "message": "nit",
+      "date": "2025-11-10T16:44:54Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "bed69c76597a5e3b0f77e018bbc9503ffc271f4c",
+      "message": "Hire Me in Japan",
+      "date": "2025-11-10T15:19:10Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "3c48c934959ba2a1da146360882001506c8a7567",
+      "message": "nit",
+      "date": "2025-10-21T08:10:19Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "2e647e98792737983c1ca0ff84b7c18181280b09",
+      "message": "nit",
+      "date": "2025-10-21T00:57:39Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "6d31add9f2a51680de2d12c956545ef6562e090b",
+      "message": "oops",
+      "date": "2025-10-21T00:40:42Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "409c9e60179cf6136d1d5c71be4abb05848be837",
+      "message": "link",
+      "date": "2025-10-21T00:36:04Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "606c0b102ba5f6c441f3d4e02d1f6a581f26a358",
+      "message": "How to Fix Any Bug",
+      "date": "2025-10-21T00:33:40Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "e46a658760d543bc3034e8b05ef4ddbaae0b4470",
+      "message": "exercise",
+      "date": "2025-10-03T01:10:06Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "1857a43db2392522a550eb6ca65ed0ef8a2e3d05",
+      "message": "oops",
+      "date": "2025-10-02T22:08:59Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "ba3976ce928ce8b064253d2fe972520ed16e1669",
+      "message": "sigh",
+      "date": "2025-10-02T21:30:49Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "9f768e96c19623a8ae5d7fda86543be3ddae4050",
+      "message": "nit",
+      "date": "2025-10-02T21:20:56Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "09b4c3cc1a2ac8db4da3a2d86a44c7c36f12fb38",
+      "message": "link",
+      "date": "2025-10-02T20:59:34Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "8c1c826416fee6acef0167da386a9300b0e5eb20",
+      "message": "nit",
+      "date": "2025-10-02T20:53:03Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "174f3912fba57508554eb8a37a2940862598f642",
+      "message": "nit",
+      "date": "2025-10-02T20:29:07Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "096692e3d0a26e35a3a3dc0588e828cbd54f049c",
+      "message": "wip",
+      "date": "2025-10-02T20:26:17Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "0e07ed7bfaf9a5c6ce52e0724d83c8c12bb6e842",
+      "message": "Where It's at://",
+      "date": "2025-10-02T20:17:14Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "d9aceba786e133746f0cc5399e0006dada05a2bd",
+      "message": "mention",
+      "date": "2025-09-30T16:14:46Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "2bde992693b4a68f105f579446376dfcf69a57ce",
+      "message": "nit",
+      "date": "2025-09-28T15:42:26Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "4d015fd29c9bab814329d902ce590d5d37374a70",
+      "message": "grammar",
+      "date": "2025-09-28T15:41:54Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "6dbb2c07bae076d394053213c0c9a81f16118609",
+      "message": "nits",
+      "date": "2025-09-28T15:41:06Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "44a059d349c292237909d52d1e555494ccaa714b",
+      "message": "nit",
+      "date": "2025-09-28T15:36:21Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "3b7560e717dd5135f03320c17a42373f1ec5701f",
+      "message": "moar links",
+      "date": "2025-09-28T15:19:49Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "4a97da8b02c59d3995e59a5015ef6c10e5f625c1",
+      "message": "tangled",
+      "date": "2025-09-28T14:41:08Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "6aa7caaa89523c31e2e4e108b6f2580f46e75485",
+      "message": "nit",
+      "date": "2025-09-28T14:25:54Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "49249bffbccb50afe9d2b4557d6d3e1eaf5e841e",
+      "message": "uh idk",
+      "date": "2025-09-28T14:23:09Z"
+    },
+    {
+      "repo": "overreacted.io",
+      "oid": "f275d504c30ba63d81b2f67baa5ac6bf082ccce4",
+      "message": "maybe this",
+      "date": "2025-09-28T14:20:24Z"
+    },
+    {
+      "repo": "rscexplorer",
+      "oid": "e18af292771e368d0a641d385fb271976ae6e196",
+      "message": "try to fix ci",
+      "date": "2025-12-25T09:02:01Z"
+    },
+    {
+      "repo": "rscexplorer",
+      "oid": "9c2c98fa2246cbe4fdddf78e5f8e09e12b193b83",
+      "message": "better display multiline jsx",
+      "date": "2025-12-25T08:52:38Z"
+    },
+    {
+      "repo": "rscexplorer",
+      "oid": "6350e23578ec49971d0d57a2fdb6f42524a38060",
+      "message": "initial binary implementation",
+      "date": "2025-12-25T06:06:19Z"
+    },
+    {
+      "repo": "rscexplorer",
+      "oid": "3e13d28826554957aac6a087ffa24c05e90e7516",
+      "message": "only highlight step if not playing",
+      "date": "2025-12-24T17:56:36Z"
+    },
+    {
+      "repo": "rscexplorer",
+      "oid": "b76404ecbd19e75d9cd2a60ece3c5c5088baa953",
+      "message": "make samples more mobile-friendly",
+      "date": "2025-12-24T17:22:05Z"
+    },
+    {
+      "repo": "rscexplorer",
+      "oid": "b53a60963153b239699053ce57004e11ec582723",
+      "message": "make play button sticky",
+      "date": "2025-12-24T17:07:25Z"
+    },
+    {
+      "repo": "rscexplorer",
+      "oid": "bc3d3200f838d0c19375913c33d59238b8ddae0d",
+      "message": "don't wait for stream to complete to display ui",
+      "date": "2025-12-24T16:20:57Z"
+    },
+    {
+      "repo": "rscexplorer",
+      "oid": "fb3c5d270ee9c483248d3422d3c15cc2693008fd",
+      "message": "verify error propagates in test",
+      "date": "2025-12-24T15:40:11Z"
+    },
+    {
+      "repo": "rscexplorer",
+      "oid": "bc896df5f85d9a6cd77581e7be3d74cd9306a781",
+      "message": "change default example back to paginator",
+      "date": "2025-12-20T08:50:36Z"
+    },
+    {
+      "repo": "rscexplorer",
+      "oid": "2da1977d8861c6945df3665fd31063e2276e481b",
+      "message": "more favicon",
+      "date": "2025-12-19T17:50:24Z"
+    },
+    {
+      "repo": "rscexplorer",
+      "oid": "9c434dbf1d24c724b6bcd4af9591db90dfd65936",
+      "message": "add help link",
+      "date": "2025-12-19T09:57:13Z"
+    },
+    {
+      "repo": "rscexplorer",
+      "oid": "0ebbbd6016301f1a6ceb5ecb44f95bc6ce9b8e18",
+      "message": "link to blog post",
+      "date": "2025-12-18T17:44:07Z"
+    },
+    {
+      "repo": "rscexplorer",
+      "oid": "07180a73eb04b5cb9b211aceb02705e65fb0aff5",
+      "message": "rm example",
+      "date": "2025-12-18T16:36:36Z"
+    },
+    {
+      "repo": "rscexplorer",
+      "oid": "58cee712d9223675d2c0e2c5b828b499150c2269",
+      "message": "tweak examples",
+      "date": "2025-12-18T15:09:32Z"
+    },
+    {
+      "repo": "rscexplorer",
+      "oid": "81037529f609f94c0e8c54575fd72762e0c11cb4",
+      "message": "more error handling",
+      "date": "2025-12-18T14:58:57Z"
+    },
+    {
+      "repo": "rscexplorer",
+      "oid": "01e38f87dca663e2a5d303e379cd2739f531a4e4",
+      "message": "improve bundle",
+      "date": "2025-12-18T10:20:06Z"
+    },
+    {
+      "repo": "rscexplorer",
+      "oid": "f4efa20ad0bb66e4e1c599dfbd9cd7c738c14938",
+      "message": "a11y tweaks",
+      "date": "2025-12-18T10:10:46Z"
+    },
+    {
+      "repo": "rscexplorer",
+      "oid": "9b26164e934e2bed3140b92dbdfb915dac83db24",
+      "message": "tweak styles and fix tests",
+      "date": "2025-12-18T10:01:07Z"
+    },
+    {
+      "repo": "rscexplorer",
+      "oid": "f10f49e43cccbf5533734e284be924a5a5a97fc6",
+      "message": "improve bundle",
+      "date": "2025-12-18T09:43:31Z"
+    },
+    {
+      "repo": "rscexplorer",
+      "oid": "d26d2427108ec2db3889fae0fe4e85306b5c6285",
+      "message": "tweak colors",
+      "date": "2025-12-18T09:31:05Z"
+    },
+    {
+      "repo": "rscexplorer",
+      "oid": "43aa9736c2d00eed4248be33177473a5aece79dc",
+      "message": "improve ux",
+      "date": "2025-12-18T09:24:47Z"
+    },
+    {
+      "repo": "rscexplorer",
+      "oid": "1e9eaa1a57a94ca95a69d3b98f5b676600d7ea17",
+      "message": "more responsive",
+      "date": "2025-12-18T06:21:18Z"
+    },
+    {
+      "repo": "rscexplorer",
+      "oid": "7c0f0eb1c7fef9ed2e4c38ebe0a25d804b67d1ae",
+      "message": "rework embeds",
+      "date": "2025-12-18T06:18:06Z"
+    },
+    {
+      "repo": "rscexplorer",
+      "oid": "08a0d0c6087460e3a5496d4d74bffc564db4b8a3",
+      "message": "fix playback panel jump",
+      "date": "2025-12-18T05:56:06Z"
+    },
+    {
+      "repo": "rscexplorer",
+      "oid": "0d671040380080b6f52558fd753425cfe7471b7e",
+      "message": "clean up more styles + add lint",
+      "date": "2025-12-18T05:35:14Z"
+    },
+    {
+      "repo": "rscexplorer",
+      "oid": "41b776d3c849d3b6ab972ca1d46249c7da70692f",
+      "message": "clean up styles",
+      "date": "2025-12-18T04:52:06Z"
+    },
+    {
+      "repo": "rscexplorer",
+      "oid": "c5e0c3928098d373ca8e38ac63a1b550440f4bd3",
+      "message": "tighten up worker sessions",
+      "date": "2025-12-18T03:58:31Z"
+    },
+    {
+      "repo": "rscexplorer",
+      "oid": "63d36ed71e05175f233c7cb80bc062cc21c5c7fc",
+      "message": "tighten up the code",
+      "date": "2025-12-17T11:16:31Z"
+    },
+    {
+      "repo": "rscexplorer",
+      "oid": "3c2298341f3fae6286f53d39ccd07be717ee4f7b",
+      "message": "don't steal scroll as embed",
+      "date": "2025-12-16T17:53:05Z"
+    },
+    {
+      "repo": "rscexplorer",
+      "oid": "ae926a067c3b75ec60ce4ff800b0a64b686c9ba1",
+      "message": "port to typescript",
+      "date": "2025-12-16T16:39:00Z"
+    },
+    {
+      "repo": "rscexplorer",
+      "oid": "0d57e79f6b9f420ff64afc4dc7fc75f07c753d5b",
+      "message": "favicon",
+      "date": "2025-12-16T16:14:15Z"
+    },
+    {
+      "repo": "rscexplorer",
+      "oid": "645c647715b89f3732c6c988f19c25f667bbaf97",
+      "message": "add ci and unflake tests",
+      "date": "2025-12-16T15:40:12Z"
+    },
+    {
+      "repo": "rscexplorer",
+      "oid": "fc7e4e64364a98de308340ddd867118ed73f0bcd",
+      "message": "suppress or solve existing issues",
+      "date": "2025-12-16T14:34:19Z"
+    },
+    {
+      "repo": "rscexplorer",
+      "oid": "c4cfc7736dec6745eac215c5cf4d29742f2f8c11",
+      "message": "add eslint and prettier",
+      "date": "2025-12-16T14:27:42Z"
+    },
+    {
+      "repo": "rscexplorer",
+      "oid": "277b96b977113ccc9d5cf69e2bf1e697feabfc93",
+      "message": "link to source",
+      "date": "2025-12-16T14:22:20Z"
+    },
+    {
+      "repo": "rscexplorer",
+      "oid": "e247f9cd62cf082428394a7f777aef05eecaabe2",
+      "message": "lock vite at 8 beta",
+      "date": "2025-12-16T14:03:59Z"
+    },
+    {
+      "repo": "rscexplorer",
+      "oid": "009553a92106c9065c5dac73f316f5f627d8f1ac",
+      "message": "thinkerer is not a word",
+      "date": "2025-12-16T13:59:05Z"
+    },
+    {
+      "repo": "rscexplorer",
+      "oid": "e22962b7f70a7dd51bfc5ae7a4ae1fde950aea17",
+      "message": "init",
+      "date": "2025-12-16T09:09:53Z"
+    }
+  ],
+  "utcOffsetMinutes": 60,
+  "externalMergedPRs": 2860,
+  "firstRealCommit": {
+    "repo": "tictactoe",
+    "date": "2013-05-20T16:04:40Z"
+  },
+  "trees": [
+    {
+      "repo": "conway-refinement",
+      "available": true,
+      "truncated": false,
+      "entries": 842,
+      "testFiles": 125,
+      "hasTests": true,
+      "hasCi": true,
+      "tooling": [],
+      "nodeModules": false,
+      "markers": [],
+      "sourceFiles": [
+        {
+          "path": "blueprint/src/web-reader/scripts/export-blueprint-source.mjs",
+          "size": 32679
+        },
+        {
+          "path": "blueprint/src/web-reader/src/App.tsx",
+          "size": 23752
+        },
+        {
+          "path": "scripts/audit-probes.sh",
+          "size": 23038
+        },
+        {
+          "path": "scripts/_blueprint.py",
+          "size": 20935
+        },
+        {
+          "path": "blueprint/src/web-reader/src/LeanSource.tsx",
+          "size": 17762
+        },
+        {
+          "path": "scripts/_blueprint_mermaid.py",
+          "size": 15630
+        },
+        {
+          "path": "blueprint/src/web-reader/src/MapView.tsx",
+          "size": 13972
+        },
+        {
+          "path": "scripts/lint-env.sh",
+          "size": 12723
+        },
+        {
+          "path": "scripts/generate-blueprint-web.py",
+          "size": 10681
+        },
+        {
+          "path": "blueprint/src/web-reader/src/routes.ts",
+          "size": 8339
+        },
+        {
+          "path": "scripts/fix-style.py",
+          "size": 7220
+        },
+        {
+          "path": "scripts/_blueprint_phases.py",
+          "size": 3812
+        },
+        {
+          "path": "scripts/_blueprint_revision.py",
+          "size": 3546
+        },
+        {
+          "path": "blueprint/src/web-reader/scripts/typeset-blueprint-data.mjs",
+          "size": 3413
+        },
+        {
+          "path": "blueprint/src/web-reader/src/data.ts",
+          "size": 3104
+        },
+        {
+          "path": "blueprint/src/web-reader/src/ResultPreview.tsx",
+          "size": 3019
+        },
+        {
+          "path": "scripts/source-modules.sh",
+          "size": 2394
+        },
+        {
+          "path": "scripts/check-blueprint-publication.sh",
+          "size": 2289
+        },
+        {
+          "path": "scripts/blueprint.sh",
+          "size": 2203
+        },
+        {
+          "path": "scripts/blueprint-review-ledger.py",
+          "size": 2188
+        },
+        {
+          "path": "scripts/check-palomar-challenge.sh",
+          "size": 2167
+        },
+        {
+          "path": "blueprint/src/web-reader/src/types.ts",
+          "size": 1995
+        },
+        {
+          "path": "scripts/publish-blueprint.sh",
+          "size": 1851
+        },
+        {
+          "path": "scripts/export-blueprint-data.py",
+          "size": 1449
+        },
+        {
+          "path": "blueprint/src/web-reader/scripts/embed-blueprint-reader.mjs",
+          "size": 1166
+        },
+        {
+          "path": "scripts/build-blueprint-reader.sh",
+          "size": 1091
+        },
+        {
+          "path": "scripts/release-audit.sh",
+          "size": 896
+        }
+      ]
+    },
+    {
+      "repo": "overreacted.io",
+      "available": true,
+      "truncated": false,
+      "entries": 370,
+      "testFiles": 0,
+      "hasTests": false,
+      "hasCi": false,
+      "tooling": [
+        "eslint"
+      ],
+      "nodeModules": false,
+      "markers": [],
+      "sourceFiles": [
+        {
+          "path": "app/[slug]/page.tsx",
+          "size": 8148
+        },
+        {
+          "path": "public/impossible-components/client.js",
+          "size": 5394
+        },
+        {
+          "path": "public/impossible-components/server.js",
+          "size": 4834
+        },
+        {
+          "path": "app/[slug]/markdown.tsx",
+          "size": 4278
+        },
+        {
+          "path": "og/generateImage.js",
+          "size": 3881
+        },
+        {
+          "path": "public/a-social-filesystem/components.js",
+          "size": 3585
+        },
+        {
+          "path": "app/posts.ts",
+          "size": 2065
+        },
+        {
+          "path": "app/page.tsx",
+          "size": 2045
+        },
+        {
+          "path": "app/[slug]/mdx.ts",
+          "size": 1767
+        },
+        {
+          "path": "public/react-for-two-computers/components.js",
+          "size": 1610
+        },
+        {
+          "path": "app/Link.tsx",
+          "size": 1596
+        },
+        {
+          "path": "app/layout.tsx",
+          "size": 1220
+        },
+        {
+          "path": "app/not-found.tsx",
+          "size": 1040
+        },
+        {
+          "path": "app/HomeLink.tsx",
+          "size": 950
+        },
+        {
+          "path": "public/the-two-reacts/post-preview.js",
+          "size": 701
+        },
+        {
+          "path": "app/llms.txt/route.ts",
+          "size": 586
+        },
+        {
+          "path": "app/[slug]/opengraph-image.tsx",
+          "size": 582
+        },
+        {
+          "path": "public/the-two-reacts/post-list.js",
+          "size": 454
+        },
+        {
+          "path": "public/the-two-reacts/counter.js",
+          "size": 383
+        },
+        {
+          "path": "app/TextLink.tsx",
+          "size": 323
+        },
+        {
+          "path": "app/fonts.ts",
+          "size": 319
+        }
+      ]
+    },
+    {
+      "repo": "rscexplorer",
+      "available": true,
+      "truncated": false,
+      "entries": 91,
+      "testFiles": 16,
+      "hasTests": true,
+      "hasCi": true,
+      "tooling": [
+        "eslint",
+        "prettier",
+        "tsconfig-strict"
+      ],
+      "nodeModules": false,
+      "markers": [],
+      "sourceFiles": [
+        {
+          "path": "src/client/ui/TreeView.tsx",
+          "size": 20442
+        },
+        {
+          "path": "src/client/samples.ts",
+          "size": 19244
+        },
+        {
+          "path": "src/client/ui/App.tsx",
+          "size": 15862
+        },
+        {
+          "path": "src/shared/compiler.ts",
+          "size": 11291
+        },
+        {
+          "path": "tests/helpers.ts",
+          "size": 10547
+        },
+        {
+          "path": "src/client/ui/ResizablePanes.tsx",
+          "size": 7554
+        },
+        {
+          "path": "src/client/ui/FlightLog.tsx",
+          "size": 7308
+        },
+        {
+          "path": "tests/kitchensink.spec.ts",
+          "size": 7233
+        },
+        {
+          "path": "src/client/ui/LivePreview.tsx",
+          "size": 6306
+        },
+        {
+          "path": "tests/pagination.spec.ts",
+          "size": 5980
+        },
+        {
+          "path": "src/server/worker-server.ts",
+          "size": 5072
+        },
+        {
+          "path": "src/client/runtime/steppable-stream.ts",
+          "size": 5051
+        },
+        {
+          "path": "src/client/runtime/flight-parser.ts",
+          "size": 4906
+        },
+        {
+          "path": "src/client/runtime/timeline.ts",
+          "size": 4243
+        },
+        {
+          "path": "vite.config.js",
+          "size": 4176
+        },
+        {
+          "path": "src/client/workspace-session.ts",
+          "size": 3731
+        },
+        {
+          "path": "src/client/ui/EmbedApp.tsx",
+          "size": 3589
+        },
+        {
+          "path": "eslint/no-mixed-class-prefixes.js",
+          "size": 3586
+        },
+        {
+          "path": "tests/bound.spec.ts",
+          "size": 3570
+        },
+        {
+          "path": "src/client/ui/Workspace.tsx",
+          "size": 3512
+        },
+        {
+          "path": "tests/actionerror.spec.ts",
+          "size": 3433
+        },
+        {
+          "path": "src/client/worker-client.ts",
+          "size": 3146
+        },
+        {
+          "path": "scripts/build-version.js",
+          "size": 2929
+        },
+        {
+          "path": "src/embed.ts",
+          "size": 2562
+        },
+        {
+          "path": "tests/binarytags.spec.ts",
+          "size": 2533
+        },
+        {
+          "path": "src/client/ui/codemirror.ts",
+          "size": 2334
+        },
+        {
+          "path": "tests/errors.spec.ts",
+          "size": 2139
+        },
+        {
+          "path": "src/client/ui/CodeEditor.tsx",
+          "size": 1927
+        },
+        {
+          "path": "tests/streaming.spec.ts",
+          "size": 1824
+        },
+        {
+          "path": "tests/refresh.spec.ts",
+          "size": 1569
+        },
+        {
+          "path": "tests/clientref.spec.ts",
+          "size": 1412
+        },
+        {
+          "path": "tests/form.spec.ts",
+          "size": 1352
+        },
+        {
+          "path": "tests/async.spec.ts",
+          "size": 1300
+        },
+        {
+          "path": "tests/binary.spec.ts",
+          "size": 1273
+        },
+        {
+          "path": "tests/globalSetup.ts",
+          "size": 1211
+        },
+        {
+          "path": "tests/counter.spec.ts",
+          "size": 1049
+        },
+        {
+          "path": "src/client/runtime/module-registry.ts",
+          "size": 1012
+        },
+        {
+          "path": "tests/hello.spec.ts",
+          "size": 724
+        },
+        {
+          "path": "eslint.config.js",
+          "size": 694
+        },
+        {
+          "path": "src/shared/webpack-shim.ts",
+          "size": 579
+        },
+        {
+          "path": "src/client/ui/Select.tsx",
+          "size": 435
+        },
+        {
+          "path": "src/client/runtime/index.ts",
+          "size": 412
+        },
+        {
+          "path": "src/shared/polyfill.ts",
+          "size": 396
+        },
+        {
+          "path": "src/client/ui/Pane.tsx",
+          "size": 329
+        }
+      ]
+    },
+    {
+      "repo": "woodshed",
+      "available": true,
+      "truncated": false,
+      "entries": 182,
+      "testFiles": 78,
+      "hasTests": true,
+      "hasCi": true,
+      "tooling": [
+        "prettier",
+        "tsconfig-strict"
+      ],
+      "nodeModules": false,
+      "markers": [],
+      "sourceFiles": [
+        {
+          "path": "src/cli.ts",
+          "size": 24325
+        },
+        {
+          "path": "src/index.ts",
+          "size": 20756
+        },
+        {
+          "path": "src/stats.ts",
+          "size": 17340
+        },
+        {
+          "path": "src/panel.tsx",
+          "size": 12362
+        },
+        {
+          "path": "src/claude.ts",
+          "size": 3833
+        },
+        {
+          "path": "src/hash.ts",
+          "size": 3154
+        },
+        {
+          "path": "src/init.ts",
+          "size": 3008
+        },
+        {
+          "path": "src/example.ts",
+          "size": 2916
+        },
+        {
+          "path": "src/results.ts",
+          "size": 2353
+        },
+        {
+          "path": "src/stream.ts",
+          "size": 2259
+        },
+        {
+          "path": "test/bench.test.ts",
+          "size": 1553
+        },
+        {
+          "path": "src/judge.ts",
+          "size": 1532
+        }
+      ]
+    },
+    {
+      "repo": "next-bug-repro",
+      "available": true,
+      "truncated": false,
+      "entries": 19,
+      "testFiles": 0,
+      "hasTests": false,
+      "hasCi": false,
+      "tooling": [
+        "eslint",
+        "tsconfig-strict"
+      ],
+      "nodeModules": false,
+      "markers": [],
+      "sourceFiles": [
+        {
+          "path": "app/layout.tsx",
+          "size": 699
+        },
+        {
+          "path": "eslint.config.mjs",
+          "size": 465
+        }
+      ]
+    }
+  ]
+}

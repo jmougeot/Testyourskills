@@ -1,0 +1,35 @@
+# Déploiement sur le VPS partagé (aux côtés des stacks "ruby", azerit-app et
+# sequence-mail). On NE lance PAS de Caddy : ruby-caddy détient déjà 80/443 et
+# route skills.azerit.tech vers ce conteneur PAR SON NOM, via le réseau
+# ruby_default (voir caddy-snippet.txt).
+#
+#   docker compose up -d --build
+#
+services:
+  testyourskills:
+    build: .
+    image: testyourskills
+    container_name: testyourskills
+    restart: unless-stopped
+    env_file: .env              # OPENROUTER_API_KEY, GITHUB_TOKEN, BASE_URL,
+                                # LEADS_ENDPOINT, AI_MODEL_CODE, AI_MODEL_CV,
+                                # AI_DAILY_BUDGET_USD, LINKEDIN_CLIENT_ID,
+                                # LINKEDIN_CLIENT_SECRET (voir .env.example)
+    environment:
+      - NODE_ENV=production
+      - PORT=8787
+      - DB_PATH=/data/cards.db  # le cache des PNG vit à côté, dans /data/og
+    volumes:
+      - testyourskills-data:/data
+    networks:
+      - ruby_default
+    expose:
+      - "8787"                  # joignable seulement par ruby-caddy, pas publié
+    stop_grace_period: 10s      # l'app laisse 8 s aux cartes en cours
+
+volumes:
+  testyourskills-data:
+
+networks:
+  ruby_default:
+    external: true              # réseau créé par la stack ruby existante

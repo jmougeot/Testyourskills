@@ -1,0 +1,192 @@
+{
+  "version": "0.1.0",
+  "_doc": "Catalogue des statuts (SPEC §5.2, §5.3). Ids stables : on ajoute, on ne supprime pas. `rule` = clé de règle implémentée dans server/src/scoring/rules.ts, `params` = seuils. Placeholders remplis par le code : {n}, {m}, {year}, {t} (seuil). Mode taquin uniquement. Jamais de statut sur la sécurité.",
+  "maxPerCard": 3,
+  "tonePriority": ["special", "gap", "negative", "positive"],
+  "statuses": [
+    {
+      "id": "gh_private_talent", "source": "github", "tone": "special", "rule": "few_public_repos", "params": { "below": 3 },
+      "label": { "fr": "Repo privé, talent privé", "en": "Private repos, private talent" },
+      "ruleText": { "fr": "{n} repo(s) public(s) hors forks (moins de {t}).", "en": "{n} public non-fork repo(s) (fewer than {t})." }
+    },
+    {
+      "id": "gh_archaeologist", "source": "github", "tone": "special", "rule": "old_activity", "params": {},
+      "label": { "fr": "Archéologue", "en": "Archaeologist" },
+      "ruleText": { "fr": "{n} % de l'activité a plus de 5 ans (seuil {t} %), peu d'activité cette année.", "en": "{n}% of activity is over 5 years old (threshold {t}%), little activity this year." }
+    },
+    {
+      "id": "gh_lazy_commits", "source": "github", "tone": "negative", "rule": "lazy_commits", "params": { "minShare": 0.4, "minSample": 10 },
+      "label": { "fr": "Commits : fix, fix2, final fix", "en": "Commits: fix, fix2, final fix" },
+      "ruleText": { "fr": "{n} % de commits paresseux (seuil {t} %).", "en": "{n}% lazy commits (threshold {t}%)." }
+    },
+    {
+      "id": "gh_no_tests", "source": "github", "tone": "negative", "rule": "no_tests", "params": { "minRepos": 1 },
+      "label": { "fr": "Tests : bientôt", "en": "Tests: coming soon" },
+      "ruleText": { "fr": "Aucun test sur les {n} repos actifs.", "en": "No tests across the {n} active repos." }
+    },
+    {
+      "id": "gh_readme_wip", "source": "github", "tone": "negative", "rule": "readme_wip", "params": { "maxWords": 50, "minAgeYears": 2 },
+      "label": { "fr": "README en construction depuis {year}", "en": "README under construction since {year}" },
+      "ruleText": { "fr": "README du repo principal : {n} mots (moins de {t}), repo créé en {year}.", "en": "Main repo README: {n} words (under {t}), repo created in {year}." }
+    },
+    {
+      "id": "gh_friday_push", "source": "github", "tone": "negative", "rule": "friday_evening", "params": { "minShare": 0.3, "minSample": 10 },
+      "label": { "fr": "Push sur main le vendredi soir", "en": "Pushes to main on Friday night" },
+      "ruleText": { "fr": "{n} % des commits le vendredi après 18 h (seuil {t} %).", "en": "{n}% of commits on Friday after 6pm (threshold {t}%)." }
+    },
+    {
+      "id": "gh_3am_commit", "source": "github", "tone": "negative", "rule": "night_commits", "params": { "minShare": 0.15, "minSample": 10 },
+      "label": { "fr": "Commit de 3 h du matin", "en": "3am committer" },
+      "ruleText": { "fr": "{n} % des commits entre 1 h et 5 h (seuil {t} %).", "en": "{n}% of commits between 1am and 5am (threshold {t}%)." }
+    },
+    {
+      "id": "gh_finished_tutorial", "source": "github", "tone": "negative", "rule": "tutorial_repos", "params": { "atLeast": 3 },
+      "label": { "fr": "A fini le tutoriel", "en": "Finished the tutorial" },
+      "ruleText": { "fr": "{n} repos tutoriels (seuil {t}).", "en": "{n} tutorial repos (threshold {t})." }
+    },
+    {
+      "id": "gh_repos_alive", "source": "github", "tone": "negative", "rule": "repos_alive", "params": { "minRepos": 10, "maxAliveShare": 0.2 },
+      "label": { "fr": "{n} repos, {m} {alive}", "en": "{n} repos, {m} {alive}" },
+      "ruleText": { "fr": "{m} repos poussés dans l'année sur {n} (au plus {t} %).", "en": "{m} of {n} repos pushed this year (at most {t}%)." }
+    },
+    {
+      "id": "gh_ghost_contributor", "source": "github", "tone": "negative", "rule": "ghost_contributor", "params": { "minAccountYears": 3 },
+      "label": { "fr": "Contributeur fantôme", "en": "Ghost contributor" },
+      "ruleText": { "fr": "Aucune PR fusionnée chez les autres en {n} ans de compte.", "en": "No merged PR elsewhere in {n} years on GitHub." }
+    },
+    {
+      "id": "gh_framework_hopper", "source": "github", "tone": "negative", "rule": "framework_hopper", "params": { "atLeast": 4 },
+      "label": { "fr": "Migre de framework chaque année", "en": "Switches framework every year" },
+      "ruleText": { "fr": "{n} frameworks front différents dans ses repos (seuil {t}).", "en": "{n} different front-end frameworks across repos (threshold {t})." }
+    },
+    {
+      "id": "gh_stars_mom", "source": "github", "tone": "negative", "rule": "few_stars", "params": { "maxStars": 2, "minRepos": 5 },
+      "label": { "fr": "Stars : sa mère et lui", "en": "Stars: mom and me" },
+      "ruleText": { "fr": "{n} star(s) au total sur {m} repos.", "en": "{n} star(s) in total across {m} repos." }
+    },
+    {
+      "id": "gh_polyglot", "source": "github", "tone": "negative", "rule": "polyglot", "params": { "atLeast": 6 },
+      "label": { "fr": "Polyglotte (ou indécis)", "en": "Polyglot (or undecided)" },
+      "ruleText": { "fr": "{n} langages avec 10 Ko de code ou plus (seuil {t}).", "en": "{n} languages with 10 KB of code or more (threshold {t})." }
+    },
+    {
+      "id": "gh_node_modules", "source": "github", "tone": "negative", "rule": "node_modules", "params": {},
+      "label": { "fr": "node_modules commité", "en": "Committed node_modules" },
+      "ruleText": { "fr": "Dossier node_modules trouvé dans {n} repo(s) actif(s).", "en": "node_modules folder found in {n} active repo(s)." }
+    },
+    {
+      "id": "gh_ship_or_nothing", "source": "github", "tone": "positive", "rule": "stat_at_least", "params": { "SHIP": 85 },
+      "label": { "fr": "Ship ou rien", "en": "Ship or nothing" },
+      "ruleText": { "fr": "SHIP à {n} (seuil {t}).", "en": "SHIP at {n} (threshold {t})." }
+    },
+    {
+      "id": "gh_accepted_elsewhere", "source": "github", "tone": "positive", "rule": "external_prs", "params": { "atLeast": 10 },
+      "label": { "fr": "Accepté chez les autres", "en": "Merged elsewhere" },
+      "ruleText": { "fr": "{n} PR fusionnées dans les repos des autres (seuil {t}).", "en": "{n} PRs merged into other people's repos (threshold {t})." }
+    },
+    {
+      "id": "gh_documents", "source": "github", "tone": "positive", "rule": "stat_at_least", "params": { "DOC": 80 },
+      "label": { "fr": "Documente (si, si)", "en": "Writes docs (yes, really)" },
+      "ruleText": { "fr": "DOC à {n} (seuil {t}).", "en": "DOC at {n} (threshold {t})." }
+    },
+    {
+      "id": "gh_read_by_others", "source": "github", "tone": "positive", "rule": "stars_total", "params": { "atLeast": 100 },
+      "label": { "fr": "Lu par d'autres", "en": "Read by others" },
+      "ruleText": { "fr": "{n} stars cumulées (seuil {t}).", "en": "{n} total stars (threshold {t})." }
+    },
+    {
+      "id": "gh_maintainer", "source": "github", "tone": "positive", "rule": "maintainer", "params": { "atLeast": 10 },
+      "label": { "fr": "Mainteneur", "en": "Maintainer" },
+      "ruleText": { "fr": "{m} : {n} contributeurs externes (seuil {t}).", "en": "{m}: {n} outside contributors (threshold {t})." }
+    },
+
+    {
+      "id": "cv_senior_from_cv", "source": "cv", "tone": "gap", "rule": "senior_from_cv", "params": { "minGapYears": 3 },
+      "label": { "fr": "Senior depuis le CV", "en": "Senior since the CV" },
+      "ruleText": { "fr": "{n} ans déclarés, {m} sur GitHub (écart de {t} ans ou plus).", "en": "{n} years claimed, {m} on GitHub (gap of {t}+ years)." }
+    },
+    {
+      "id": "cv_longer_than_readmes", "source": "cv", "tone": "gap", "rule": "cv_longer_than_readmes", "params": {},
+      "label": { "fr": "CV plus long que ses README", "en": "CV longer than their READMEs" },
+      "ruleText": { "fr": "{n} mots de CV contre {m} mots de README sur les repos actifs.", "en": "{n} words of CV against {m} words of README across active repos." }
+    },
+    {
+      "id": "cv_buzzwords", "source": "cv", "tone": "negative", "rule": "buzz_density", "params": { "per100AtLeast": 3 },
+      "label": { "fr": "Agile, synergie, disruptif", "en": "Agile, synergy, disruptive" },
+      "ruleText": { "fr": "{n} mots creux pour 100 mots (seuil {t}).", "en": "{n} buzzwords per 100 words (threshold {t})." }
+    },
+    {
+      "id": "cv_passion", "source": "cv", "tone": "negative", "rule": "passion", "params": { "atLeast": 2 },
+      "label": { "fr": "Passionné (mentionné {n} fois)", "en": "Passionate (mentioned {n} times)" },
+      "ruleText": { "fr": "« passion… » apparaît {n} fois (seuil {t}).", "en": "\"passion…\" appears {n} times (threshold {t})." }
+    },
+    {
+      "id": "cv_expert_frameworks", "source": "cv", "tone": "negative", "rule": "many_technos_listed", "params": { "atLeast": 12 },
+      "label": { "fr": "Expert en {n} frameworks (d'après le CV)", "en": "Expert in {n} frameworks (per the CV)" },
+      "ruleText": { "fr": "{n} technos listées (seuil {t}).", "en": "{n} technologies listed (threshold {t})." }
+    },
+    {
+      "id": "cv_ai_title", "source": "cv", "tone": "negative", "rule": "ai_in_title", "params": {},
+      "label": { "fr": "A ajouté IA à son titre en {year}", "en": "Added AI to their title in {year}" },
+      "labelAlt": { "fr": "A ajouté IA à son titre", "en": "Added AI to their title" },
+      "ruleText": { "fr": "IA dans le titre, aucun projet ni repo IA décrit.", "en": "AI in the title, no AI project or repo described." }
+    },
+    {
+      "id": "cv_says_what", "source": "cv", "tone": "positive", "rule": "described_technos", "params": { "atLeast": 5 },
+      "label": { "fr": "Dit ce qu'il fait", "en": "Says what they do" },
+      "ruleText": { "fr": "{n} technos rattachées à une responsabilité concrète (seuil {t}).", "en": "{n} technologies tied to a concrete responsibility (threshold {t})." }
+    },
+
+    {
+      "id": "ai_short_vars", "source": "ai", "tone": "negative", "rule": "ai", "params": {},
+      "label": { "fr": "Variables nommées a, b, tmp", "en": "Variables named a, b, tmp" },
+      "ruleText": { "fr": "Choisi par l'IA après lecture du code.", "en": "Picked by the AI after reading the code." }
+    },
+    {
+      "id": "ai_400_lines", "source": "ai", "tone": "negative", "rule": "ai", "params": {},
+      "label": { "fr": "Fonction de 400 lignes repérée", "en": "400-line function spotted" },
+      "ruleText": { "fr": "Choisi par l'IA après lecture du code.", "en": "Picked by the AI after reading the code." }
+    },
+    {
+      "id": "ai_franglais", "source": "ai", "tone": "negative", "rule": "ai", "params": {},
+      "label": { "fr": "Commentaires en franglais", "en": "Comments in Franglais" },
+      "ruleText": { "fr": "Choisi par l'IA après lecture du code.", "en": "Picked by the AI after reading the code." }
+    },
+    {
+      "id": "ai_console_log", "source": "ai", "tone": "negative", "rule": "ai", "params": {},
+      "label": { "fr": "console.log en prod", "en": "console.log in prod" },
+      "ruleText": { "fr": "Choisi par l'IA après lecture du code.", "en": "Picked by the AI after reading the code." }
+    },
+    {
+      "id": "ai_copy_paste", "source": "ai", "tone": "negative", "rule": "ai", "params": {},
+      "label": { "fr": "Copié-collé en série", "en": "Serial copy-paster" },
+      "ruleText": { "fr": "Choisi par l'IA après lecture du code.", "en": "Picked by the AI after reading the code." }
+    },
+    {
+      "id": "ai_handles_errors", "source": "ai", "tone": "positive", "rule": "ai", "params": {},
+      "label": { "fr": "Gère ses erreurs (rare)", "en": "Handles errors (rare)" },
+      "ruleText": { "fr": "Choisi par l'IA après lecture du code.", "en": "Picked by the AI after reading the code." }
+    },
+    {
+      "id": "ai_typed", "source": "ai", "tone": "positive", "rule": "ai", "params": {},
+      "label": { "fr": "Typé jusqu'au bout", "en": "Typed all the way down" },
+      "ruleText": { "fr": "Choisi par l'IA après lecture du code.", "en": "Picked by the AI after reading the code." }
+    },
+    {
+      "id": "ai_clean_arch", "source": "ai", "tone": "positive", "rule": "ai", "params": {},
+      "label": { "fr": "Architecture propre, vraiment", "en": "Clean architecture, for real" },
+      "ruleText": { "fr": "Choisi par l'IA après lecture du code.", "en": "Picked by the AI after reading the code." }
+    },
+
+    {
+      "id": "fallback_clean_record", "source": "fallback", "tone": "positive", "rule": "fallback", "params": {},
+      "label": { "fr": "Casier vierge", "en": "Clean record" },
+      "ruleText": { "fr": "Aucune règle ne s'est déclenchée. Suspect.", "en": "No rule fired. Suspicious." }
+    }
+  ],
+  "comparison": {
+    "cvAhead": { "fr": "Ton CV te vend {n} points de plus que ton code", "en": "Your CV sells you {n} points above your code" },
+    "codeAhead": { "fr": "Ton code vaut {n} points de plus que ton CV, change de CV", "en": "Your code is worth {n} points more than your CV. Rewrite the CV." },
+    "even": { "fr": "CV et code à égalité. Rare, donc suspect.", "en": "CV and code are dead even. Rare, so suspicious." }
+  }
+}

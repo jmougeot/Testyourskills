@@ -1,0 +1,224 @@
+/* Effets de la carte dans le navigateur : inclinaison 3D, reflet holographique
+   (technique des cartes Pokémon en CSS), glare, grain métallique, balayage de
+   lumière. Calques posés au-dessus du SVG, masqués à la silhouette de la carte.
+   Absents de l'image partagée (SPEC §16). Variables pilotées par CardView :
+   --rx --ry (deg), --mx --my (%), --bgx --bgy (%), --active (0..1). Intensités
+   par tier : --tys-holo --tys-glare --tys-grain, teintes --tys-h1..5. */
+
+.tys-card {
+  --rx: 0;
+  --ry: 0;
+  --mx: 50%;
+  --my: 30%;
+  --bgx: 50%;
+  --bgy: 50%;
+  --active: 0;
+  --dist: 0;
+  position: relative;
+  width: min(360px, 100%);
+  aspect-ratio: 360 / 520;
+  perspective: 900px;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: pan-y;
+  user-select: none;
+  isolation: isolate;
+}
+
+.tys-card__rotator {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  transform: rotateX(calc(var(--rx) * 1deg)) rotateY(calc(var(--ry) * 1deg)) scale(calc(1 + var(--active) * 0.025));
+  will-change: transform;
+}
+
+.tys-card__svg {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* Ombre et lueur portées, décalées à l'opposé de l'inclinaison.
+   Le masque est sur le pseudo-élément et le flou sur le parent : sinon le
+   masque rognerait le flou et dessinerait un liseré net. */
+.tys-card__shadow,
+.tys-card__aura {
+  position: absolute;
+  pointer-events: none;
+}
+.tys-card__shadow::before,
+.tys-card__aura::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  -webkit-mask-image: var(--tys-mask);
+  mask-image: var(--tys-mask);
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+.tys-card__shadow {
+  inset: 6% 7% -1%;
+  filter: blur(20px);
+  opacity: calc(0.6 + var(--active) * 0.2);
+  transform: translate3d(calc(var(--ry) * -1.4px), calc(18px + var(--rx) * 1.4px), -60px);
+  z-index: -1;
+}
+.tys-card__shadow::before {
+  background: rgba(0, 0, 0, 0.8);
+}
+.tys-card__aura {
+  inset: 4%;
+  filter: blur(42px);
+  opacity: calc(0.45 + var(--active) * 0.55);
+  z-index: -2;
+}
+.tys-card__aura::before {
+  background: var(--tys-glow);
+}
+
+/* Calques d'effets communs */
+.tys-card__fx {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  -webkit-mask-image: var(--tys-mask);
+  mask-image: var(--tys-mask);
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+
+/* Reflet holographique : bandes arc-en-ciel répétées + stries de feuille,
+   déplacées avec le pointeur, en color-dodge. */
+.tys-card__holo {
+  --space: 5%;
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      var(--tys-h1) calc(var(--space) * 1),
+      var(--tys-h2) calc(var(--space) * 2),
+      var(--tys-h3) calc(var(--space) * 3),
+      var(--tys-h4) calc(var(--space) * 4),
+      var(--tys-h5) calc(var(--space) * 5),
+      var(--tys-h1) calc(var(--space) * 6)
+    ),
+    repeating-linear-gradient(
+      133deg,
+      #0e152e 0%,
+      hsl(180, 10%, 60%) 3.8%,
+      hsl(180, 29%, 66%) 4.5%,
+      hsl(180, 10%, 60%) 5.2%,
+      #0e152e 10%,
+      #0e152e 12%
+    ),
+    radial-gradient(farthest-corner circle at var(--mx) var(--my), rgba(0, 0, 0, 0.1) 12%, rgba(0, 0, 0, 0.15) 20%, rgba(0, 0, 0, 0.25) 120%);
+  background-blend-mode: exclusion, hue, hard-light;
+  background-size: 200% 700%, 300% 100%, 200% 100%;
+  background-position: 0% var(--bgy), var(--bgx) var(--bgy), var(--bgx) var(--bgy);
+  /* métaux clairs : soft-light garde l'encre lisible et teinte le métal */
+  filter: brightness(1) contrast(1.5) saturate(1.3);
+  mix-blend-mode: soft-light;
+  opacity: calc(var(--tys-holo) * (0.3 + var(--active) * 0.7));
+}
+.tys-card[data-style="icon"] .tys-card__holo {
+  --space: 4%;
+  mix-blend-mode: overlay;
+  filter: brightness(1) contrast(1.3) saturate(1.6);
+}
+/* corps sombres (Wonderkid, TOTW) : la recette d'origine en color-dodge */
+.tys-card[data-dark="true"] .tys-card__holo {
+  mix-blend-mode: color-dodge;
+  filter: brightness(0.55) contrast(1.8) saturate(0.9);
+}
+
+/* Glare spéculaire qui suit le pointeur */
+.tys-card__glare {
+  background-image: radial-gradient(
+    farthest-corner circle at var(--mx) var(--my),
+    rgba(255, 255, 255, 0.85) 8%,
+    rgba(255, 255, 255, 0.55) 22%,
+    rgba(0, 0, 0, 0.5) 92%
+  );
+  mix-blend-mode: soft-light;
+  opacity: calc(var(--tys-glare) * var(--active));
+}
+/* point spéculaire net, discret */
+.tys-card__glare::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at var(--mx) var(--my), rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0) 28%);
+  mix-blend-mode: overlay;
+  opacity: 0.6;
+}
+.tys-card[data-dark="true"] .tys-card__glare {
+  mix-blend-mode: overlay;
+}
+
+/* Grain de feuille métallique (bruit SVG), qui glisse légèrement */
+.tys-card__grain {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 1.4 -0.2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 160px 160px;
+  background-position: calc(var(--bgx) * 0.4) calc(var(--bgy) * 0.4);
+  mix-blend-mode: overlay;
+  opacity: calc(var(--tys-grain) * (0.6 + var(--active) * 0.4));
+}
+
+/* Balayage de lumière à la révélation */
+.tys-card__sweep {
+  background-image: linear-gradient(
+    105deg,
+    transparent 38%,
+    rgba(255, 255, 255, 0) 42%,
+    rgba(255, 255, 255, 0.75) 50%,
+    rgba(255, 255, 255, 0) 58%,
+    transparent 62%
+  );
+  background-size: 300% 100%;
+  background-repeat: no-repeat;
+  background-position: 110% 0;
+  mix-blend-mode: screen;
+  opacity: 0;
+}
+.tys-card.is-revealing .tys-card__sweep {
+  animation: tys-sweep 1.25s cubic-bezier(0.3, 0.6, 0.2, 1) 0.1s both;
+}
+.tys-card.is-revealing .tys-card__rotator {
+  animation: tys-pop 0.9s cubic-bezier(0.2, 0.9, 0.25, 1.15) both;
+}
+
+@keyframes tys-sweep {
+  0% { background-position: 110% 0; opacity: 1; }
+  85% { opacity: 1; }
+  100% { background-position: -10% 0; opacity: 0; }
+}
+@keyframes tys-pop {
+  0% { transform: scale(0.96); filter: brightness(1.35); }
+  100% { transform: scale(1); filter: brightness(1); }
+}
+
+/* Mouvement réduit : rendu statique, ni inclinaison ni balayage */
+.tys-card[data-static="true"] .tys-card__rotator {
+  transform: none;
+  animation: none;
+}
+.tys-card[data-static="true"] .tys-card__sweep {
+  display: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tys-card .tys-card__rotator {
+    transform: none !important;
+    animation: none !important;
+  }
+  .tys-card .tys-card__sweep {
+    display: none;
+  }
+}
+
+.tys-card[data-interactive="true"]:not([data-static="true"]) {
+  cursor: grab;
+}

@@ -1,0 +1,72 @@
+{
+  "schema": 1,
+  "login": "qwerty",
+  "collectedAt": "2026-10-14T14:41:14.556Z",
+  "profile": {
+    "login": "qwerty",
+    "name": null,
+    "avatarUrl": "https://avatars.githubusercontent.com/u/25723745?v=4",
+    "bio": null,
+    "company": null,
+    "followers": 23,
+    "createdAt": "2017-02-12T14:57:58Z",
+    "publicRepos": 0
+  },
+  "repoCount": 0,
+  "reposTruncated": false,
+  "repos": [],
+  "activeRepos": [],
+  "calendar": {
+    "available": true,
+    "weeksActive": 0,
+    "weeks": 52,
+    "totalContributions": 0
+  },
+  "activityByYear": [
+    {
+      "yearsAgo": 0,
+      "contributions": 0
+    },
+    {
+      "yearsAgo": 1,
+      "contributions": 0
+    },
+    {
+      "yearsAgo": 2,
+      "contributions": 0
+    },
+    {
+      "yearsAgo": 3,
+      "contributions": 0
+    },
+    {
+      "yearsAgo": 4,
+      "contributions": 0
+    },
+    {
+      "yearsAgo": 5,
+      "contributions": 0
+    },
+    {
+      "yearsAgo": 6,
+      "contributions": 0
+    },
+    {
+      "yearsAgo": 7,
+      "contributions": 0
+    },
+    {
+      "yearsAgo": 8,
+      "contributions": 1
+    },
+    {
+      "yearsAgo": 9,
+      "contributions": 1
+    }
+  ],
+  "commits": [],
+  "utcOffsetMinutes": null,
+  "externalMergedPRs": 0,
+  "firstRealCommit": null,
+  "trees": []
+}

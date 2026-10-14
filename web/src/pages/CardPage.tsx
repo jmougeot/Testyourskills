@@ -1,0 +1,296 @@
+// Route /c/:id : attente, révélation puis résultat pour une carte fraîche ;
+// affichage direct (sans pack) pour un lien partagé.
+import { useEffect, useRef, useState } from "react";
+import type { CSSProperties } from "react";
+import type { CardData, Fact, JobState, ProgressEvent } from "../../../shared/types";
+import { styleOf } from "../../../shared/types";
+import { AddSource, AzeritCta, Contest, DeleteCard, EmailForm, LinkedInPhoto, Roast, ShareBar, Why, useToast } from "../components/After";
+import type { Shareable } from "../components/After";
+import { ComparisonStage } from "../components/Comparison";
+import { IconArrow } from "../components/Icons";
+import { RevealCard, ScreenFlash, useReveal } from "../components/Reveal";
+import { Waiting } from "../components/Waiting";
+import { pick, useT } from "../i18n";
+import { api, ApiError, tokens } from "../lib/api";
+import { navigate, onLinkClick } from "../lib/router";
+import { freshSince, prefillFromLast } from "../lib/session";
+import { accentOf, useReducedMotion } from "../lib/util";
+
+const POLL_MS = 600;
+const CLIENT_TIMEOUT = 45_000;
+
+type View =
+  | { s: "loading" }
+  | { s: "pending"; progress: ProgressEvent[] }
+  | { s: "done"; item: Shareable }
+  | { s: "error"; message: Fact | string; notFound?: boolean }
+  | { s: "deleted" };
+
+function useJob(id: string, nonce: number) {
+  const [view, setView] = useState<View>({ s: "loading" });
+  const [sawPending, setSawPending] = useState(false);
+  const { t } = useT();
+
+  useEffect(() => {
+    let alive = true;
+    let timer = 0;
+    const started = freshSince(id) ?? Date.now();
+    const poll = async () => {
+      try {
+        const job: JobState = await api.getJob(id);
+        if (!alive) return;
+        if (job.state === "pending") {
+          setSawPending(true);
+          setView({ s: "pending", progress: job.progress ?? [] });
+          if (Date.now() - started > CLIENT_TIMEOUT) {
+            setView({ s: "error", message: t.errors.timeout });
+            return;
+          }
+          timer = window.setTimeout(poll, POLL_MS);
+        } else if (job.state === "done") {
+          setView({ s: "done", item: job.kind === "card" ? { kind: "card", card: job.card } : { kind: "comparison", comparison: job.comparison } });
+        } else {
+          setView({ s: "error", message: job.message });
+        }
+      } catch (e) {
+        if (!alive) return;
+        if (e instanceof ApiError && e.status === 404) setView({ s: "error", message: t.errors.notFound, notFound: true });
+        else if (e instanceof ApiError && e.fact) setView({ s: "error", message: e.fact });
+        else timer = window.setTimeout(poll, POLL_MS * 3); // réseau capricieux : on retente
+      }
+    };
+    void poll();
+    return () => {
+      alive = false;
+      window.clearTimeout(timer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, nonce]);
+
+  return { view, setView, sawPending };
+}
+
+export function CardPage({ id }: { id: string }) {
+  const { t, lang } = useT();
+  const [nonce, setNonce] = useState(0);
+  const [notice, setNotice] = useState<{ text: string; n: number } | null>(null);
+  const { view, setView, sawPending } = useJob(id, nonce);
+  const fresh = freshSince(id) !== null;
+  const owner = fresh || tokens.get(id) !== null;
+  const reduced = useReducedMotion();
+  const [startedAt] = useState(() => freshSince(id) ?? Date.now());
+
+  // Retour de LinkedIn : ?photo=linkedin|error. On prévient, on recharge, on nettoie l'URL.
+  useEffect(() => {
+    const read = () => {
+      const params = new URLSearchParams(window.location.search);
+      const photo = params.get("photo");
+      if (!photo) return;
+      params.delete("photo");
+      const qs = params.toString();
+      window.history.replaceState(window.history.state, "", window.location.pathname + (qs ? `?${qs}` : ""));
+      setNotice({ text: photo === "linkedin" ? t.result.linkedin.updated : t.result.linkedin.error, n: Date.now() });
+      if (photo === "linkedin") setNonce((n) => n + 1);
+    };
+    read();
+    window.addEventListener("popstate", read);
+    return () => window.removeEventListener("popstate", read);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Titre de l'onglet.
+  useEffect(() => {
+    if (view.s !== "done") {
+      document.title = t.meta.title;
+      return;
+    }
+    const c = view.item.kind === "card" ? view.item.card : view.item.comparison.github;
+    document.title = t.meta.titleCard(c.name, c.overall);
+  }, [view, t]);
+
+  if (view.s === "loading") {
+    return (
+      <main className="page page-card" id="main">
+        <div className="stage-slot loading-slot" aria-busy="true">
+          <span className="sr-only">{t.common.loading}</span>
+        </div>
+      </main>
+    );
+  }
+
+  if (view.s === "pending") {
+    return (
+      <main className="page page-card" id="main">
+        <Waiting progress={view.progress} startedAt={startedAt} />
+      </main>
+    );
+  }
+
+  if (view.s === "deleted") {
+    return (
+      <main className="page page-card" id="main">
+        <div className="panel-center">
+          <p className="deleted-msg" role="status">
+            {t.result.del.done}
+          </p>
+          <a className="btn-primary" href="/" onClick={(e) => onLinkClick(e, "/")}>
+            {t.result.again}
+          </a>
+        </div>
+      </main>
+    );
+  }
+
+  if (view.s === "error") {
+    const msg = typeof view.message === "string" ? view.message : pick(view.message, lang);
+    return (
+      <main className="page page-card" id="main">
+        <div className="panel-center error-panel" role="alert">
+          <span className="error-code" aria-hidden>
+            {view.notFound ? "404" : "VAR"}
+          </span>
+          <h1>{t.errors.title}</h1>
+          <p>{msg}</p>
+          <button
+            type="button"
+            className="btn-primary"
+            onClick={() => {
+              prefillFromLast(view.notFound ? null : view.message);
+              navigate("/");
+            }}
+          >
+            {view.notFound ? t.result.makeYours : t.errors.retry}
+            <IconArrow />
+          </button>
+        </div>
+      </main>
+    );
+  }
+
+  return (
+    <Result
+      key={id}
+      item={view.item}
+      animate={(fresh || sawPending) && !reduced}
+      owner={owner}
+      fresh={fresh}
+      notice={notice}
+      onDeleted={() => setView({ s: "deleted" })}
+    />
+  );
+}
+
+interface ResultProps {
+  item: Shareable;
+  animate: boolean;
+  owner: boolean;
+  fresh: boolean;
+  notice: { text: string; n: number } | null;
+  onDeleted: () => void;
+}
+
+function Result({ item, animate, owner, fresh, notice, onDeleted }: ResultProps) {
+  const { t, lang } = useT();
+  const { phase, open, skip, animating, settled } = useReveal(animate);
+  const toast = useToast();
+  const tracked = useRef(false);
+  const id = item.kind === "card" ? item.card.id : item.comparison.id;
+  const main: CardData = item.kind === "card" ? item.card : item.comparison.github;
+  const accent = item.kind === "card" ? accentOf(main) : { a: "#52d0bd", b: "#6cb6ff", ink: "#52d0bd" };
+
+  useEffect(() => {
+    if (fresh && !tracked.current) {
+      tracked.current = true;
+      api.track("card_generated", id, { kind: item.kind, source: main.source });
+    }
+  }, [fresh, id, item.kind, main.source]);
+
+  useEffect(() => {
+    if (notice) toast.show(notice.text);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [notice]);
+
+  // Échap saute l'animation.
+  useEffect(() => {
+    if (!animating) return;
+    const on = (e: KeyboardEvent) => {
+      if (e.key === "Escape") skip();
+    };
+    window.addEventListener("keydown", on);
+    return () => window.removeEventListener("keydown", on);
+  }, [animating, skip]);
+
+  const onStageClick = () => {
+    if (phase === "ready") open();
+    else if (animating) skip();
+  };
+
+  const style = { "--ca": accent.a, "--cb": accent.b, "--ink": accent.ink } as CSSProperties;
+  const visitor = !owner;
+
+  return (
+    <main className={`page page-card page-result${animating ? " is-animating" : ""}`} id="main" style={style}>
+      {visitor && (
+        <div className="visitor-banner">
+          <p>{t.result.sharedBanner(main.name)}</p>
+          <a className="btn-primary btn-small" href="/" onClick={(e) => onLinkClick(e, "/")}>
+            {t.result.makeYours}
+            <IconArrow />
+          </a>
+        </div>
+      )}
+
+      <section className={`result-stage${phase === "stamp" ? " jolt" : ""}`} onClick={animating ? onStageClick : undefined}>
+        <div className="stage-glow" aria-hidden />
+        {item.kind === "card" ? (
+          <div className="single-stage">
+            <RevealCard card={item.card} lang={lang} phase={phase} idPrefix="result" onPackClick={open} />
+          </div>
+        ) : (
+          <ComparisonStage cmp={item.comparison} phase={phase} onOpen={open} />
+        )}
+        {animating && phase !== "ready" && (
+          <button
+            type="button"
+            className="skip-btn"
+            onClick={(e) => {
+              e.stopPropagation();
+              skip();
+            }}
+          >
+            {t.reveal.skip}
+          </button>
+        )}
+        <p className="sr-only" aria-live="polite">
+          {settled ? t.reveal.revealed(t.tiers[styleOf(main)], main.overall) : ""}
+        </p>
+      </section>
+      {phase === "burst" && <ScreenFlash color={accent.a} />}
+
+      <div className={`after${settled ? " is-in" : ""}`} aria-hidden={!settled} inert={!settled ? true : undefined}>
+        <ShareBar item={item} toast={toast.show} />
+        <LinkedInPhoto cardId={id} hasAvatar={item.kind === "card" ? !!item.card.avatarUrl : !!item.comparison.cv.avatarUrl} />
+        <Why item={item} />
+        {owner && <Contest card={main} />}
+        {owner && item.kind === "card" && <AddSource card={item.card} />}
+        {owner && <Roast />}
+        {owner && <EmailForm cardId={id} />}
+        <AzeritCta cardId={id} />
+        <div className="after-foot">
+          {visitor ? (
+            <a className="btn-primary" href="/" onClick={(e) => onLinkClick(e, "/")}>
+              {t.result.makeYours}
+              <IconArrow />
+            </a>
+          ) : (
+            <a className="link-arrow" href="/" onClick={(e) => onLinkClick(e, "/")}>
+              {t.result.again} <IconArrow />
+            </a>
+          )}
+          <DeleteCard cardId={id} onDeleted={onDeleted} />
+        </div>
+      </div>
+      {toast.node}
+    </main>
+  );
+}
