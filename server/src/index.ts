@@ -62,6 +62,7 @@ const { app, pipeline } = createApp({
   ogDir,
   leadsEndpoint: process.env.LEADS_ENDPOINT || undefined,
   ipSalt: process.env.IP_SALT || undefined,
+  showcaseLogin: process.env.SHOWCASE_LOGIN ?? "jmougeot",
   staticRoot: prod ? webRoot : undefined,
   indexHtml,
   linkedin,

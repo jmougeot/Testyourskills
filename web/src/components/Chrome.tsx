@@ -1,5 +1,4 @@
 // Barre du haut, pied de page, sélecteur de langue, fond d'ambiance.
-import { useEffect, useRef } from "react";
 import type { Lang } from "../../../shared/types";
 import { useT } from "../i18n";
 import { api, isMock } from "../lib/api";
@@ -35,7 +34,6 @@ export function TopBar() {
   return (
     <header className="topbar">
       <a href="/" className="topbar-brand" onClick={(e) => onLinkClick(e, "/")} aria-label="Testyourskills">
-        <AzeritMark size={18} className="topbar-gem" />
         <Wordmark />
       </a>
       <div className="topbar-right">
@@ -82,43 +80,8 @@ export function Footer() {
   );
 }
 
-/** Grille de points d'azerit.tech : les points près du curseur passent au teal. */
-function DotGrid() {
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el || !window.matchMedia("(hover: hover)").matches) return;
-    let raf = 0;
-    const move = (e: PointerEvent) => {
-      if (raf) return;
-      raf = requestAnimationFrame(() => {
-        raf = 0;
-        el.style.setProperty("--mx", `${e.clientX}px`);
-        el.style.setProperty("--my", `${e.clientY}px`);
-        el.style.setProperty("--glow", "1");
-      });
-    };
-    const leave = () => el.style.setProperty("--glow", "0");
-    window.addEventListener("pointermove", move, { passive: true });
-    document.documentElement.addEventListener("pointerleave", leave);
-    return () => {
-      window.removeEventListener("pointermove", move);
-      document.documentElement.removeEventListener("pointerleave", leave);
-      if (raf) cancelAnimationFrame(raf);
-    };
-  }, []);
-  return <div ref={ref} className="dotgrid" />;
-}
-
-/** Fond. Clair : la grille de points d'Azerit. Sombre : halos teal et bleu qui dérivent, grain, lignes de terrain. */
-export function Ambient({ light = false }: { light?: boolean }) {
-  if (light) {
-    return (
-      <div className="ambient ambient-light" aria-hidden>
-        <DotGrid />
-      </div>
-    );
-  }
+/** Fond : halos teal et bleu qui dérivent, grain, lignes de terrain très discrètes. */
+export function Ambient() {
   return (
     <div className="ambient" aria-hidden>
       <div className="halo halo-teal" />

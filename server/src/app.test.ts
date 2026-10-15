@@ -315,6 +315,29 @@ describe("cache 24 h et déduplication", () => {
   });
 });
 
+describe("carte vitrine de l'accueil (§6.1)", () => {
+  it("lance la carte du pseudo vitrine au premier appel, puis la renvoie sans jeton", async () => {
+    const ctx = setup({}, { showcaseLogin: "jmougeot" });
+    const first = await ctx.app.request("/api/showcase");
+    expect(await first.json()).toEqual({ card: null });
+    await ctx.pipeline.drain();
+    const res = await ctx.app.request("/api/showcase");
+    const json = (await res.json()) as { card: CardData | null };
+    expect(json.card?.login).toBe("jmougeot");
+    expect(json.card?.deleteToken).toBeUndefined();
+    expect(ctx.calls.collect).toBe(1);
+    await ctx.app.request("/api/showcase");
+    expect(ctx.calls.collect).toBe(1);
+  });
+
+  it("ne fait rien sans pseudo vitrine", async () => {
+    const ctx = setup();
+    const res = await ctx.app.request("/api/showcase");
+    expect(await res.json()).toEqual({ card: null });
+    expect(ctx.calls.collect).toBe(0);
+  });
+});
+
 describe("limite de 20 cartes par IP et par jour", () => {
   it("répond 429 avec un message fr/en au-delà", async () => {
     const ctx = setup({}, { cardsPerDay: 2 });

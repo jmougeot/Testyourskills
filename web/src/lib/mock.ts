@@ -182,6 +182,10 @@ function kindFromId(id: string): Kind | null {
 }
 
 export const mockApi = {
+  /** En démo, l'accueil garde la maquette de la carte vitrine. */
+  async getShowcase(): Promise<CardData | null> {
+    return null;
+  },
   async createCard(input: CreateInput): Promise<CreateResult> {
     await sleep(350);
     const login = input.login?.trim();

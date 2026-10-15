@@ -58,6 +58,10 @@ function card(p: Partial<CardData> & { v: Record<StatCode, number>; insufficient
 }
 
 export const FIXTURES = {
+  /** La carte de Jacques (fondateur d'Azerit), exemple de l'accueil (§6.1). Nom, pseudo,
+   *  avatar, langage et club sont réels ; les notes sont une maquette, remplacée par la
+   *  vraie carte dès que le serveur l'a calculée (GET /api/showcase). */
+  jmougeot: card({ id: "jmougeot", name: "Jacques Mougeot", login: "jmougeot", avatarUrl: "https://avatars.githubusercontent.com/u/149587529?v=4", initials: "JM", position: "FS", mainLanguage: "python", club: "Azerit", v: { TEC: 80, SHIP: 88, ARCH: 72, DOC: 70, XP: 60, BUZZ: 24 }, statuses: [S.ship, S.typed, S.friday] }),
   bronze: card({ id: "bronze", name: "kevin-dev42", login: "kevin-dev42", initials: "KD", position: "FE", mainLanguage: "javascript", v: { TEC: 48, SHIP: 41, ARCH: 30, DOC: 44, XP: 52, BUZZ: 81 }, statuses: [S.lazy, S.noTests, S.tutorial], judgedInSeconds: 7 }),
   silver: card({ id: "silver", name: "Camille Roux", login: "camroux", initials: "CR", position: "BE", mainLanguage: "python", club: "Doctolib", v: { TEC: 68, SHIP: 72, ARCH: 61, DOC: 66, XP: 70, BUZZ: 34 }, statuses: [S.friday, S.stars] }),
   gold: card({ id: "gold", name: "Léa Martin-Dubois", login: "leamd", initials: "LM", position: "FS", mainLanguage: "typescript", club: "Alan", v: { TEC: 82, SHIP: 88, ARCH: 76, DOC: 71, XP: 74, BUZZ: 22 }, statuses: [S.typed, S.lazy, S.ship] }),

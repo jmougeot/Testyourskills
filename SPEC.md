@@ -12,6 +12,7 @@ Un outil de communication pour azerit.tech : tu donnes ton pseudo GitHub ou ton 
 - **Faire circuler le nom** : chaque carte partagée sur LinkedIn ou X porte le domaine. La carte est le support, la landing est l'atterrissage.
 - **Montrer ce que l'IA sait faire** sur un cas concret, avec une pointe d'ironie sur le fait qu'une IA vient de juger quelqu'un en dix secondes sur deux pages de PDF, comme un recruteur pressé.
 - **Récupérer des leads** : parmi ceux qui jouent, certains recrutent. Un email optionnel après la carte, et un CTA vers azerit.tech.
+- **Le coup marketing** (décision du 15 octobre 2026) : chaque semaine, les cinq meilleures cartes décrochent un entretien avec une entreprise qui recrute via Azerit. C'est la promesse en haut de l'accueil, et la raison de jouer avec son vrai GitHub plutôt que de regarder.
 
 Audience de l'outil : les devs, en français et en anglais. Audience de la landing : ceux qui recrutent. Les deux ne se mélangent pas (voir §10).
 
@@ -250,7 +251,9 @@ L'IA peut poser un seul statut par carte, choisi ici d'après ce qu'elle a lu da
 
 ### 6.1 Entrée
 
-Une page, un champ, deux onglets : « Ton GitHub » (pseudo ou URL) et « Ton CV » (dépôt de PDF, 5 Mo et 10 pages maximum). Un lien discret « les deux » pour la comparaison. Rien d'autre au-dessus de la ligne de flottaison, à part une carte d'exemple qui bouge pour montrer ce qu'on va recevoir.
+Une page, un champ, deux onglets : « Ton GitHub » (pseudo ou URL) et « Ton CV » (dépôt de PDF, 5 Mo et 10 pages maximum). Un lien discret « les deux » pour la comparaison. Au-dessus du champ, la promesse en gros : « Ta carte de dev. Les 5 meilleurs ont un entretien. », et une ligne qui la précise. En face, **une seule carte d'exemple : la vraie carte de Jacques** (`jmougeot`, fondateur d'Azerit), rendue par `GET /api/showcase` et recalculée au plus une fois par semaine ; tant que le serveur ne l'a pas calculée, une maquette aux faits publics réels (nom, avatar, langage, club) tient la place. Un lien sous la carte mène à sa carte complète.
+
+**Rien d'autre sur la page.** Les sections sous la ligne de flottaison (comment ça marche, les six stats, l'éventail des tiers, le rappel d'appel à l'action) et le carrousel de cartes fictives ont été retirés le 15 octobre 2026 : trop d'informations, les gens veulent aller à l'essentiel. Le thème reste de nuit, celui de la carte et de l'ascenseur ; l'essai d'accueil en thème clair avec une scène de pack opening (branche `design/accueil-azerit`) est abandonné.
 
 Trois raccourcis qui évitent le champ ou le clic :
 
@@ -379,7 +382,7 @@ Quand les deux sources sont là : les deux cartes côte à côte sur desktop, em
 
 ### 8.1 Système
 
-- **Deux thèmes, décision du 15 octobre 2026.** L'accueil et les pages de texte reprennent l'identité d'azerit.tech, en thème clair : fond blanc, grille de points, gris GitHub (`#d0d7de`, texte `#1f2328`, atténué `#59636e`), teal `#0f766e`, chartreuse de la gemme, titres en JetBrains Mono. En plus décontracté que la landing : autocollants penchés à bord noir et ombre dure, surligneur sous la deuxième ligne du titre, bandeau de commits qui défile en bas. L'outil vise les techs mais parle au grand public, et doit rester dans l'esprit d'un pack opening : à droite du titre, une **scène de nuit** (cadre sombre, ombre dure teal, rayons, étincelles) où la carte d'exemple sort d'un Dev Pack, flotte, replonge et ressort dans un autre tier. Un premier accueil tout sombre et néon n'avait aucune identité : rien ne le reliait à Azerit. Un deuxième, tout clair avec des calendriers de contributions, faisait outil GitHub et perdait le pack opening.
+- **Un seul thème, de nuit (décision du 15 octobre 2026, en fin de journée).** Un accueil en thème clair repris d'azerit.tech (fond blanc, grille de points, autocollants penchés, scène de pack opening dans un cadre de nuit, bandeau de commits) a été fusionné puis retiré le même jour : ça ne faisait pas gamer, la scène d'exemple se lisait moins bien que la carte seule, et la page portait trop d'informations. L'accueil garde le fond de nuit de la carte et de l'ascenseur, et ne montre que la promesse, le champ et la carte de Jacques. Reste ouvert : rattacher visuellement l'accueil à Azerit, reproche fait au premier accueil sombre, sans rien ajouter à la page.
 - **La carte, son attente et sa révélation restent de nuit** : fond `#0a0f16`, surfaces `#101722`, bordures `#223040`, texte `#e6ecf2`, texte atténué `#8494a5`, accent teal `#52d0bd`, bleu `#6cb6ff`. La scène 3D est un ascenseur de nuit, et la carte sombre ressort mieux sur l'accueil blanc. Les tiers ont leurs propres dégradés métallisés, définis une fois en variables CSS, indépendants du thème de la page.
 - **Typo** : une condensée pour les gros chiffres et le nom de la carte (Barlow Condensed en 700 et 800, via Google Fonts), Inter pour le texte, JetBrains Mono pour les codes de stats, le pied de carte et, comme sur la landing, les titres des pages claires.
 - **Dimensions** : 360 × 520 sur desktop, largeur de l'écran moins les marges sur mobile, jamais de défilement horizontal.

@@ -170,6 +170,18 @@ export class Store {
     return r ? toRow(r) : null;
   }
 
+  /** Dernière carte GitHub seule d'un pseudo, quel que soit son âge (carte vitrine de l'accueil). */
+  findLatestGithub(login: string): CardRow | null {
+    const r = this.db
+      .prepare(
+        `SELECT * FROM cards
+         WHERE parent_id IS NULL AND kind = 'card' AND source = 'github' AND login = ?
+         ORDER BY created_at DESC LIMIT 1`,
+      )
+      .get(login.toLowerCase()) as RawRow | undefined;
+    return r ? toRow(r) : null;
+  }
+
   /** Remplace le JSON d'une carte ou d'une comparaison (photo LinkedIn). */
   updateData(id: string, data: CardData | ComparisonData) {
     this.db.prepare(`UPDATE cards SET json = ? WHERE id = ?`).run(JSON.stringify(stripToken(data)), id);

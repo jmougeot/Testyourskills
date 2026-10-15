@@ -1,5 +1,5 @@
 // Client de l'API. En mode démo (?mock=1 ou VITE_MOCK=1), tout passe par mock.ts.
-import type { JobState, Lang } from "../../../shared/types";
+import type { CardData, JobState, Lang } from "../../../shared/types";
 import { mockApi } from "./mock";
 import { ApiError } from "./errors";
 
@@ -148,7 +148,16 @@ function track(event: AnalyticsEvent, cardId: string | null, meta: Record<string
   }
 }
 
-export const api = { createCard, getJob, sendEmail, deleteCard, track, getConfig, startLinkedInPhoto };
+/** La vraie carte d'exemple de l'accueil (§6.1) ; null tant que le serveur ne l'a pas calculée. */
+async function getShowcase(): Promise<CardData | null> {
+  if (isMock()) return mockApi.getShowcase();
+  const res = await fetch("/api/showcase", { headers: { Accept: "application/json" } });
+  if (!res.ok) return null;
+  const body = (await res.json()) as { card?: CardData | null };
+  return body.card ?? null;
+}
+
+export const api = { createCard, getJob, sendEmail, deleteCard, track, getConfig, startLinkedInPhoto, getShowcase };
 
 /** URLs des images rendues par le serveur (§7). */
 export const images = {

@@ -38,7 +38,12 @@ export interface AppOptions {
   linkedin?: LinkedinConfig;
   /** Photos LinkedIn sur disque. Défaut : à côté de ogDir, dans avatars/. */
   avatarDir?: string;
+  /** Pseudo GitHub de la carte d'exemple de l'accueil (§6.1). Absent : pas de vitrine. */
+  showcaseLogin?: string;
 }
+
+/** La carte vitrine est recalculée au plus une fois par semaine. */
+const SHOWCASE_MS = 7 * 24 * 3600 * 1000;
 
 export function defaultAvatarDir(ogDir: string): string {
   return join(dirname(ogDir), "avatars");
@@ -137,6 +142,19 @@ export function createApp(opts: AppOptions) {
 
   // Ce que le front doit afficher ou masquer.
   app.get("/api/config", (c) => c.json({ linkedin: !!opts.linkedin }));
+
+  // GET /api/showcase : la vraie carte du pseudo vitrine, pour l'accueil (§6.1).
+  // Hors quota. Null tant qu'aucune n'existe ; on en lance une si la dernière
+  // date de plus d'une semaine.
+  app.get("/api/showcase", (c) => {
+    c.header("Cache-Control", "public, max-age=300");
+    const login = opts.showcaseLogin;
+    if (!login) return c.json({ card: null });
+    const row = store.findLatestGithub(login);
+    const stale = !row || Date.now() - row.createdAt > SHOWCASE_MS;
+    if (stale && !pipeline.inflightFor(login)) pipeline.start({ lang: "fr", login });
+    return c.json({ card: row ? stripToken(row.data as CardData) : null });
+  });
 
   // POST /api/card : JSON { login, lang } ou multipart (cv, login?, lang?).
   app.post(
