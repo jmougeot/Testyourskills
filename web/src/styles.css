@@ -1955,29 +1955,202 @@ svg {
   font-family: var(--f-display);
   font-weight: 800;
   font-size: 44cqw;
-  line-height: 0.8;
+  line-height: 1;
   font-variant-numeric: tabular-nums;
   color: #fff;
   text-shadow:
     0 0 6cqw color-mix(in srgb, var(--ca) 80%, transparent),
     0 0.6cqw 0 color-mix(in srgb, var(--cb) 60%, #000);
+}
+
+/* l'ascenseur : compteur à roues et rail des paliers */
+.elev {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  width: 100%;
   opacity: 0;
   transition:
-    font-size 0.45s var(--ease-out),
-    margin 0.45s var(--ease-out),
-    opacity 0.3s;
+    opacity 0.3s,
+    transform 0.45s var(--ease-out),
+    margin 0.45s var(--ease-out);
 }
-.phase-count .count-overall,
-.phase-stats .count-overall,
-.phase-stamp .count-overall {
+.phase-count .elev,
+.phase-stats .elev,
+.phase-stamp .elev {
   opacity: 1;
 }
-/* quand les stats arrivent, la note se range en haut, plus petite */
-.phase-stats .count-overall,
-.phase-stamp .count-overall {
-  font-size: 22cqw;
-  margin-bottom: 7cqw;
+/* quand les stats arrivent, la note se range en haut, à moitié de taille
+   (une mise à l'échelle, pas une taille de police : les roues restent calées) */
+.phase-stats .elev,
+.phase-stamp .elev {
+  transform: scale(0.5);
+  margin: -11cqw 0 -4cqw;
 }
+.odo {
+  display: inline-flex;
+}
+.odo-wheel {
+  display: block;
+  height: 1.2em;
+  padding: 0.1em 0;
+  margin: -0.1em 0;
+  overflow: hidden;
+  /* les voisins ne se voient qu'en plein roulement, à peine */
+  -webkit-mask: linear-gradient(transparent, #000 18%, #000 82%, transparent);
+  mask: linear-gradient(transparent, #000 18%, #000 82%, transparent);
+  transition: opacity 0.2s;
+}
+.odo-one .odo-wheel:first-child {
+  opacity: 0;
+}
+.odo-strip {
+  display: flex;
+  flex-direction: column;
+  transform: translateY(calc(var(--d, 0) * -1em));
+  transition: transform 110ms cubic-bezier(0.3, 0.7, 0.3, 1);
+}
+.odo-strip i {
+  display: block;
+  height: 1em;
+  font-style: normal;
+}
+
+.elev-rail {
+  position: absolute;
+  left: 7cqw;
+  top: 50%;
+  width: 14cqw;
+  height: 66cqw;
+  transform: translateY(-50%);
+  transition: opacity 0.35s;
+}
+.phase-stats .elev-rail,
+.phase-stamp .elev-rail {
+  opacity: 0;
+}
+.elev-track {
+  position: absolute;
+  left: 2cqw;
+  bottom: 0;
+  width: 0.7cqw;
+  height: 100%;
+  border-radius: 1cqw;
+  background: rgba(255, 255, 255, 0.14);
+}
+.elev-track::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: calc(var(--p, 0) * 100%);
+  border-radius: inherit;
+  background: linear-gradient(to top, color-mix(in srgb, var(--ca) 45%, transparent), var(--ink));
+  box-shadow: 0 0 2cqw color-mix(in srgb, var(--ca) 70%, transparent);
+  transition: height 110ms linear;
+}
+.elev-cab {
+  position: absolute;
+  left: 0.35cqw;
+  bottom: calc(var(--p, 0) * 100% - 1cqw);
+  width: 4cqw;
+  height: 2cqw;
+  border-radius: 0.6cqw;
+  background: #fff;
+  box-shadow:
+    0 0 3cqw var(--ink),
+    0 0 8cqw color-mix(in srgb, var(--ca) 70%, transparent);
+  transition: bottom 110ms linear;
+}
+.elev-floor {
+  position: absolute;
+  left: 0;
+  bottom: calc(var(--at) * 100%);
+  display: flex;
+  align-items: center;
+  gap: 1.6cqw;
+  height: 0;
+  color: rgba(230, 236, 242, 0.32);
+  font-family: var(--f-mono);
+  font-weight: 700;
+  white-space: nowrap;
+  transition: color 0.25s;
+}
+.elev-floor i {
+  display: block;
+  width: 4.7cqw;
+  height: 0.7cqw;
+  background: currentColor;
+  border-radius: 1cqw;
+}
+.elev-floor b {
+  font-size: 3.4cqw;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  min-width: 2ch;
+}
+.elev-floor em {
+  font-style: normal;
+  font-size: 2.6cqw;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+.elev-floor.floor-bronze {
+  bottom: 0;
+}
+.elev-floor.floor-bronze b {
+  display: none;
+}
+.elev-floor.lit {
+  color: var(--ink);
+  text-shadow: 0 0 2.5cqw color-mix(in srgb, var(--ca) 70%, transparent);
+}
+.elev-floor.lit i {
+  box-shadow: 0 0 2cqw var(--ca);
+  animation: floor-lit 0.45s var(--ease-out);
+}
+@keyframes floor-lit {
+  0% {
+    transform: scaleX(2.2);
+    filter: brightness(2);
+  }
+  100% {
+    transform: none;
+    filter: none;
+  }
+}
+
+/* arrivée à l'étage : à-coup sur le chiffre, le halo pulse, la cabine clignote */
+.card-slot.arrived .count-overall {
+  animation: arrive-number 0.55s cubic-bezier(0.2, 0.9, 0.3, 1.3);
+}
+.card-slot.arrived .slot-halo {
+  animation: ding-halo 0.7s var(--ease-out);
+}
+.elev.is-arrived .elev-cab {
+  animation: cab-blink 0.5s step-end 2;
+}
+@keyframes arrive-number {
+  0% {
+    transform: translateY(0) scale(1);
+  }
+  30% {
+    transform: translateY(-1.5cqw) scale(1.12);
+  }
+  60% {
+    transform: translateY(0.6cqw) scale(0.98);
+  }
+  100% {
+    transform: none;
+  }
+}
+@keyframes cab-blink {
+  50% {
+    opacity: 0.25;
+  }
+}
+
 .count-stats {
   list-style: none;
   display: grid;

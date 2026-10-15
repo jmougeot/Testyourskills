@@ -267,7 +267,7 @@ Entre cinq et quinze secondes. Afficher des messages qui défilent, en lien avec
 
 Ouverture de pack, sautable d'un clic, environ cinq secondes en tout, **une information à la fois** : le pack flotte sur fond sombre, clic, tremblement, flash, la carte se retourne (dos puis face floutée). Ensuite, dans l'ordre :
 
-1. **La note globale seule** monte de zéro à sa valeur en une seconde, en freinant sur la fin. Le halo prend la couleur du tier atteint et « sonne » à chaque palier franchi (60, 75, 90) : on regarde le chiffre grimper comme un ascenseur, sans savoir à quel étage il s'arrête.
+1. **La note globale seule** monte de zéro à sa valeur en 1,4 s : les chiffres roulent comme un compteur mécanique, à vitesse constante puis en freinant sur les derniers points. À gauche, un rail vertical porte les paliers de tier (60 Argent, 75 Or, 90 Icon) et une cabine qui monte ; chaque palier s'allume au passage, le halo prend la couleur du tier atteint et « sonne ». À l'arrivée, un à-coup et la vraie couleur de la carte (pour les cartes spéciales). On regarde le chiffre grimper comme un ascenseur, sans savoir à quel étage il s'arrête.
 2. **Les six stats** tombent une par une, chacune comptant de zéro, pendant que la note se range en haut.
 3. **Le tier** se tamponne en dernier, le flou se lève, la carte apparaît.
 4. Seulement alors, le contenu sous la carte (partage, « Pourquoi cette note ? ») apparaît.

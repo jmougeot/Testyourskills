@@ -16,14 +16,15 @@ import { CardBack, Pack } from "./Pack";
 export type Phase = "ready" | "shake" | "burst" | "flip" | "count" | "stats" | "stamp" | "done";
 
 const AUTO_OPEN = 1100;
-/** Montée de la note globale (ms). */
-export const OVERALL_CLIMB = 950;
+/** Montée de la note globale (ms), puis temps d'arrêt à l'arrivée. */
+export const OVERALL_CLIMB = 1400;
+const ARRIVAL_PAUSE = 350;
 /** Écart entre deux stats, et durée de montée de chacune (ms). */
 export const STAT_STAGGER = 180;
 export const STAT_COUNT = 320;
 // Instants (ms après l'ouverture) de chaque phase. Le retournement dure 550 ms,
 // la montée de la note 950 ms, les six stats 6 × 180 + 320 ms, le tampon 1.2 s.
-const T = { shake: 0, burst: 480, flip: 700, count: 1250, stats: 2350, stamp: 3850, done: 5050 };
+const T = { shake: 0, burst: 480, flip: 700, count: 1250, stats: 1250 + OVERALL_CLIMB + ARRIVAL_PAUSE, stamp: 4400, done: 5600 };
 
 /** Machine à états de la révélation, partagée par une carte seule ou une comparaison. */
 export function useReveal(animate: boolean) {
@@ -82,16 +83,11 @@ interface CountUpProps {
   duration?: number;
   /** Lance la montée ; une fois lancée, elle va au bout même si la phase change. */
   run: boolean;
-  /** Freine fort sur la fin, pour laisser le suspense au dernier palier. */
-  power?: number;
-  onTick?: (v: number) => void;
 }
 
-function CountUp({ to, delay, duration = STAT_COUNT, run, power = 3, onTick }: CountUpProps) {
+function CountUp({ to, delay, duration = STAT_COUNT, run }: CountUpProps) {
   const [v, setV] = useState(0);
   const started = useRef(false);
-  const tick = useRef(onTick);
-  tick.current = onTick;
   useEffect(() => {
     if (!run || started.current) return;
     started.current = true;
@@ -99,16 +95,103 @@ function CountUp({ to, delay, duration = STAT_COUNT, run, power = 3, onTick }: C
     const start = performance.now() + delay;
     const step = (now: number) => {
       const p = Math.min(1, Math.max(0, (now - start) / duration));
-      const eased = 1 - Math.pow(1 - p, power);
-      const val = Math.round(to * eased);
-      setV(val);
-      tick.current?.(val);
+      setV(Math.round(to * (1 - Math.pow(1 - p, 3))));
       if (p < 1) raf = requestAnimationFrame(step);
     };
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
-  }, [to, delay, duration, run, power]);
+  }, [to, delay, duration, run]);
   return <>{v}</>;
+}
+
+/** Paliers de l'ascenseur : la note à partir de laquelle on change de tier. */
+const FLOORS: { at: number; tier: "bronze" | "silver" | "gold" | "icon" }[] = [
+  { at: 0, tier: "bronze" },
+  { at: 60, tier: "silver" },
+  { at: 75, tier: "gold" },
+  { at: 90, tier: "icon" },
+];
+const MAX = 99;
+
+/** Une roue de compteur : une bande de chiffres qui défile verticalement, toujours vers le haut. */
+function Wheel({ index, digits }: { index: number; digits: string }) {
+  return (
+    <span className="odo-wheel" style={{ ["--d" as string]: index } as CSSProperties}>
+      <span className="odo-strip">
+        {Array.from(digits, (d, i) => (
+          <i key={i}>{d}</i>
+        ))}
+      </span>
+    </span>
+  );
+}
+const TENS = "0123456789";
+const UNITS = TENS.repeat(10);
+
+interface ElevatorProps {
+  to: number;
+  delay: number;
+  run: boolean;
+  onTick?: (v: number) => void;
+  onArrive?: () => void;
+}
+
+/**
+ * L'ascenseur : la note monte de 0 à sa valeur. Les chiffres roulent comme un
+ * compteur, un rail à gauche montre les paliers de tier et la cabine qui monte ;
+ * chaque palier s'allume au passage. Démarre vite, freine fort sur la fin.
+ */
+function Elevator({ to, delay, run, onTick, onArrive }: ElevatorProps) {
+  const { t } = useT();
+  const [v, setV] = useState(0);
+  const [arrived, setArrived] = useState(false);
+  const started = useRef(false);
+  const cbs = useRef({ onTick, onArrive });
+  cbs.current = { onTick, onArrive };
+
+  useEffect(() => {
+    if (!run || started.current) return;
+    started.current = true;
+    let raf = 0;
+    const start = performance.now() + delay;
+    const step = (now: number) => {
+      const p = Math.min(1, Math.max(0, (now - start) / OVERALL_CLIMB));
+      // Comme un ascenseur : vitesse constante jusqu'à 80 % de la valeur (55 % du
+      // temps), puis freinage sur les derniers points, là où se joue le palier.
+      const eased = p < 0.55 ? (p / 0.55) * 0.8 : 0.8 + 0.2 * (1 - Math.pow(1 - (p - 0.55) / 0.45, 3));
+      const val = Math.round(to * eased);
+      setV(val);
+      cbs.current.onTick?.(val);
+      if (p < 1) raf = requestAnimationFrame(step);
+      else {
+        setArrived(true);
+        cbs.current.onArrive?.();
+      }
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [to, delay, run]);
+
+  const tens = Math.floor(v / 10);
+  return (
+    <div className={`elev${arrived ? " is-arrived" : ""}${run ? " is-running" : ""}`} style={{ ["--p" as string]: v / MAX } as CSSProperties}>
+      <div className="elev-rail" aria-hidden>
+        <span className="elev-track" />
+        <span className="elev-cab" />
+        {FLOORS.map((f) => (
+          <span key={f.tier} className={`elev-floor floor-${f.tier}${v >= f.at ? " lit" : ""}`} style={{ ["--at" as string]: f.at / MAX } as CSSProperties}>
+            <i />
+            <b>{f.at === 0 ? "0" : f.at}</b>
+            <em>{t.tiers[f.tier]}</em>
+          </span>
+        ))}
+      </div>
+      <span className={`count-overall odo${tens === 0 ? " odo-one" : ""}`}>
+        <Wheel index={tens} digits={TENS} />
+        <Wheel index={v} digits={UNITS} />
+      </span>
+    </div>
+  );
 }
 
 /** Éclats de la déchirure, positions fixées pour un rendu stable. */
@@ -198,6 +281,16 @@ export function RevealCard({ card, lang, phase, idPrefix, offset = 0, withPack =
     void el.offsetWidth; // relance l'animation
     el.classList.add("ding");
   };
+  // À l'arrivée : la vraie couleur de la carte (compte pour les cartes spéciales) et un à-coup.
+  const onArrive = () => {
+    const el = slot.current;
+    if (!el) return;
+    el.style.setProperty("--ca", accent.a);
+    el.style.setProperty("--cb", accent.b);
+    el.style.setProperty("--ink", accent.ink);
+    el.classList.remove("ding");
+    el.classList.add("arrived");
+  };
 
   return (
     <div ref={slot} className={`card-slot phase-${phase}${showFront ? " show-front" : ""}`} style={vars} data-style={style}>
@@ -212,9 +305,7 @@ export function RevealCard({ card, lang, phase, idPrefix, offset = 0, withPack =
           </div>
           {showPlate && (
             <div className="count-plate" aria-hidden>
-              <span className="count-overall">
-                <CountUp to={card.overall} delay={offset} duration={OVERALL_CLIMB} run={climbing} power={4} onTick={onClimb} />
-              </span>
+              <Elevator to={card.overall} delay={offset} run={climbing} onTick={onClimb} onArrive={onArrive} />
               <ol className="count-stats">
                 {statsInOrder.map((s, i) => (
                   <li key={s.code} className={s.code === "BUZZ" ? "is-buzz" : ""} style={{ ["--i" as string]: i } as CSSProperties}>
