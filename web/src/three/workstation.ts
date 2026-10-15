@@ -1,9 +1,10 @@
-// Le poste du dev qui sort par les portes : plateau tournant à LED, bureau,
-// chaise gaming, trois écrans (le code dans son langage, un terminal où les
+// Le poste du dev : bureau en noyer, tapis et fauteuil de travail,
+// trois écrans (le code dans son langage, un terminal où les
 // tests passent, le graphe de contributions), clavier rétroéclairé. Repère
 // local : le dev est assis à l'origine et regarde vers +z ; les écrans lui font
 // face. Les écrans se redessinent au fil de la frappe.
 import * as THREE from "three";
+import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 
 export interface Workstation {
   group: THREE.Group;
@@ -110,12 +111,34 @@ export function createWorkstation(o: { accent: string; lang?: string; login: str
     return x;
   };
   const accent = new THREE.Color(o.accent);
-  const dark = new THREE.MeshPhysicalMaterial({ color: 0x0b0e13, roughness: 0.35, metalness: 0.5, clearcoat: 0.8, clearcoatRoughness: 0.2, envMapIntensity: 0.6 });
-  const metal = new THREE.MeshStandardMaterial({ color: 0x8a96a6, roughness: 0.3, metalness: 1, envMapIntensity: 0.9 });
-  const fabric = new THREE.MeshStandardMaterial({ color: 0x14181f, roughness: 0.85, metalness: 0 });
-  const glow = new THREE.MeshBasicMaterial({ color: accent.clone().multiplyScalar(3), toneMapped: false });
+  const dark = new THREE.MeshStandardMaterial({ color: 0x242a30, roughness: 0.48, metalness: 0.35, envMapIntensity: 0.6 });
+  const metal = new THREE.MeshStandardMaterial({ color: 0x677079, roughness: 0.36, metalness: 0.85, envMapIntensity: 0.9 });
+  const fabric = new THREE.MeshStandardMaterial({ color: 0x303a3b, roughness: 0.96 });
+  const glow = new THREE.MeshBasicMaterial({ color: accent, toneMapped: false });
+  // Veinage discret, déterministe ; aucun asset supplémentaire à charger.
+  const woodCanvas = document.createElement("canvas");
+  woodCanvas.width = 512;
+  woodCanvas.height = 256;
+  const woodContext = woodCanvas.getContext("2d")!;
+  woodContext.fillStyle = "#765039";
+  woodContext.fillRect(0, 0, 512, 256);
+  for (let i = 0; i < 180; i++) {
+    woodContext.strokeStyle = i % 3 ? "rgba(37,19,12,0.12)" : "rgba(222,177,120,0.16)";
+    woodContext.lineWidth = 0.5 + (i % 4) * 0.3;
+    woodContext.beginPath();
+    for (let x = 0; x <= 512; x += 8) {
+      const y = i * 1.45 + Math.sin(x * 0.015 + i * 0.31) * 1.8;
+      if (x === 0) woodContext.moveTo(x, y);
+      else woodContext.lineTo(x, y);
+    }
+    woodContext.stroke();
+  }
+  const woodMap = keep(new THREE.CanvasTexture(woodCanvas));
+  woodMap.colorSpace = THREE.SRGBColorSpace;
+  woodMap.anisotropy = 4;
+  const wood = new THREE.MeshStandardMaterial({ map: woodMap, roughness: 0.62, envMapIntensity: 0.5 });
   const box = (w: number, h: number, d: number, mat: THREE.Material, x: number, y: number, z: number) => {
-    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+    const m = new THREE.Mesh(new RoundedBoxGeometry(w, h, d, 2, Math.min(w, h, d, 0.06) * 0.25), mat);
     m.position.set(x, y, z);
     m.castShadow = true;
     m.receiveShadow = true;
@@ -123,38 +146,58 @@ export function createWorkstation(o: { accent: string; lang?: string; login: str
     return m;
   };
 
-  // plateau tournant : disque sombre, anneau de LED
-  const plate = new THREE.Mesh(new THREE.CylinderGeometry(1.45, 1.5, 0.12, 64), dark);
-  plate.position.y = 0.06;
-  plate.position.z = 0.3;
-  plate.receiveShadow = true;
-  group.add(plate);
-  const ring = new THREE.Mesh(new THREE.TorusGeometry(1.48, 0.012, 8, 96), glow);
-  ring.rotation.x = Math.PI / 2;
-  ring.position.set(0, 0.1, 0.3);
-  group.add(ring);
-  const Y0 = 0.12;
+  // Le tapis ancre le poste au sol et adoucit ses reflets.
+  const rug = new THREE.MeshStandardMaterial({ color: 0x293333, roughness: 1 });
+  box(3.5, 0.018, 2.65, rug, 0, 0.012, 0.24);
+  const Y0 = 0.02;
 
   // le bureau
-  box(1.7, 0.04, 0.78, dark, 0, Y0 + 0.74, 0.72);
-  box(0.05, 0.74, 0.7, metal, -0.8, Y0 + 0.37, 0.74);
-  box(0.05, 0.74, 0.7, metal, 0.8, Y0 + 0.37, 0.74);
-  box(1.56, 0.012, 0.012, glow, 0, Y0 + 0.715, 0.335); // LED sous le bord
+  box(2.45, 0.065, 0.9, wood, 0, Y0 + 0.74, 0.75);
+  for (const x of [-1.04, 1.04]) {
+    box(0.055, 0.7, 0.055, dark, x, Y0 + 0.35, 0.46);
+    box(0.055, 0.7, 0.055, dark, x, Y0 + 0.35, 1.04);
+    box(0.065, 0.045, 0.68, dark, x, Y0 + 0.045, 0.75);
+  }
+  box(2.08, 0.065, 0.045, dark, 0, Y0 + 0.65, 1.04);
+  box(0.88, 0.006, 0.35, fabric, 0.08, Y0 + 0.777, 0.53);
   // clavier rétroéclairé, souris, tasse
-  box(0.44, 0.022, 0.15, dark, 0.02, Y0 + 0.772, 0.5);
-  const keysMat = new THREE.MeshBasicMaterial({ color: accent.clone().multiplyScalar(1.6), toneMapped: false, transparent: true, opacity: 0.85 });
-  box(0.42, 0.004, 0.13, keysMat, 0.02, Y0 + 0.785, 0.5);
-  box(0.06, 0.025, 0.1, dark, 0.34, Y0 + 0.772, 0.5);
+  box(0.44, 0.018, 0.15, dark, 0.02, Y0 + 0.791, 0.5);
+  const keysMat = new THREE.MeshStandardMaterial({ color: 0xc5c9c4, emissive: accent, emissiveIntensity: 0.15, roughness: 0.6 });
+  const keycaps = new THREE.InstancedMesh(new THREE.BoxGeometry(0.025, 0.006, 0.024), keysMat, 52);
+  const keyPose = new THREE.Object3D();
+  for (let i = 0; i < 52; i++) {
+    keyPose.position.set(-0.17 + (i % 13) * 0.031, Y0 + 0.803, 0.45 + Math.floor(i / 13) * 0.032);
+    keyPose.updateMatrix();
+    keycaps.setMatrixAt(i, keyPose.matrix);
+  }
+  group.add(keycaps);
+  box(0.06, 0.025, 0.1, dark, 0.34, Y0 + 0.797, 0.5);
   const mug = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.036, 0.1, 20), new THREE.MeshStandardMaterial({ color: 0xe9edf2, roughness: 0.4 }));
-  mug.position.set(-0.55, Y0 + 0.81, 0.55);
+  mug.position.set(-0.76, Y0 + 0.823, 0.5);
   group.add(mug);
+  const coffee = new THREE.Mesh(new THREE.CircleGeometry(0.032, 20), new THREE.MeshStandardMaterial({ color: 0x21130d, roughness: 0.25 }));
+  coffee.rotation.x = -Math.PI / 2;
+  coffee.position.set(-0.76, Y0 + 0.874, 0.5);
+  const handle = new THREE.Mesh(new THREE.TorusGeometry(0.032, 0.009, 8, 16), mug.material);
+  handle.position.set(-0.81, Y0 + 0.83, 0.5);
+  group.add(coffee, handle);
+  // Petite lampe orientée vers le plateau : contraste chaud / écrans froids.
+  box(0.17, 0.018, 0.17, dark, 1.03, Y0 + 0.79, 0.88);
+  box(0.018, 0.52, 0.018, metal, 1.03, Y0 + 1.05, 0.88);
+  box(0.32, 0.03, 0.09, dark, 0.9, Y0 + 1.31, 0.88);
+  const lampGlow = new THREE.MeshBasicMaterial({ color: new THREE.Color(0xffd4a0).multiplyScalar(1.8), toneMapped: false });
+  box(0.28, 0.004, 0.065, lampGlow, 0.9, Y0 + 1.292, 0.88);
+  const lampLight = new THREE.PointLight(0xffd1a0, 0, 2.2, 2);
+  lampLight.position.set(0.87, Y0 + 1.24, 0.78);
+  group.add(lampLight);
 
   // trois écrans face au dev
   const screens: { canvas: HTMLCanvasElement; tex: THREE.CanvasTexture; kind: "code" | "term" | "graph" }[] = [];
-  const screenGeo = new THREE.PlaneGeometry(0.6, 0.34);
   const addMonitor = (x: number, z: number, yaw: number, kind: "code" | "term" | "graph") => {
     const m = new THREE.Group();
-    const bezel = new THREE.Mesh(new THREE.BoxGeometry(0.63, 0.37, 0.025), dark);
+    const width = kind === "code" ? 0.79 : 0.57;
+    const height = kind === "code" ? 0.445 : 0.34;
+    const bezel = new THREE.Mesh(new RoundedBoxGeometry(width + 0.025, height + 0.025, 0.025, 2, 0.008), dark);
     bezel.castShadow = true;
     const canvas = document.createElement("canvas");
     canvas.width = 640;
@@ -162,7 +205,7 @@ export function createWorkstation(o: { accent: string; lang?: string; login: str
     const tex = keep(new THREE.CanvasTexture(canvas));
     tex.colorSpace = THREE.SRGBColorSpace;
     tex.anisotropy = 4;
-    const screen = new THREE.Mesh(screenGeo, new THREE.MeshBasicMaterial({ map: tex, toneMapped: false, color: new THREE.Color(1.6, 1.6, 1.6) }));
+    const screen = new THREE.Mesh(new THREE.PlaneGeometry(width, height), new THREE.MeshBasicMaterial({ map: tex, toneMapped: false, color: new THREE.Color(1.1, 1.1, 1.1) }));
     screen.position.z = -0.014;
     screen.rotation.y = Math.PI; // la dalle regarde le dev (-z local)
     const stand = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.24, 0.03), metal);
@@ -176,14 +219,14 @@ export function createWorkstation(o: { accent: string; lang?: string; login: str
     screens.push({ canvas, tex, kind });
   };
   addMonitor(0, 1.0, 0, "code");
-  addMonitor(-0.64, 0.86, 0.5, "term");
-  addMonitor(0.64, 0.86, -0.5, "graph");
+  addMonitor(-0.71, 0.88, -0.28, "term");
+  addMonitor(0.71, 0.88, 0.28, "graph");
 
-  // la chaise gaming, qui pivote avec le dev
+  // Fauteuil de travail : dossier arrondi, coutures discrètes et roulettes.
   const swivel = new THREE.Group();
   group.add(swivel);
   const chair = (w: number, h: number, d: number, mat: THREE.Material, x: number, y: number, z: number, rx = 0) => {
-    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+    const m = new THREE.Mesh(new RoundedBoxGeometry(w, h, d, 3, Math.min(w, h, d) * 0.35), mat);
     m.position.set(x, y, z);
     m.rotation.x = rx;
     m.castShadow = true;
@@ -191,9 +234,11 @@ export function createWorkstation(o: { accent: string; lang?: string; login: str
     return m;
   };
   chair(0.52, 0.08, 0.5, fabric, 0, Y0 + 0.47, -0.02);
-  chair(0.5, 0.8, 0.08, fabric, 0, Y0 + 0.92, -0.3, -0.12);
-  chair(0.06, 0.62, 0.012, glow, -0.17, Y0 + 0.95, -0.25, -0.12);
-  chair(0.06, 0.62, 0.012, glow, 0.17, Y0 + 0.95, -0.25, -0.12);
+  chair(0.48, 0.62, 0.09, fabric, 0, Y0 + 0.85, -0.3, -0.12);
+  chair(0.36, 0.12, 0.08, fabric, 0, Y0 + 1.22, -0.34, -0.12);
+  chair(0.012, 0.44, 0.014, metal, -0.2, Y0 + 0.85, -0.352, -0.12);
+  chair(0.012, 0.44, 0.014, metal, 0.2, Y0 + 0.85, -0.352, -0.12);
+  chair(0.12, 0.014, 0.012, glow, 0, Y0 + 1.01, -0.367, -0.12);
   chair(0.06, 0.03, 0.3, dark, -0.3, Y0 + 0.66, 0.02);
   chair(0.06, 0.03, 0.3, dark, 0.3, Y0 + 0.66, 0.02);
   const column = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.03, 0.36, 12), metal);
@@ -205,6 +250,10 @@ export function createWorkstation(o: { accent: string; lang?: string; login: str
     leg.position.set(Math.sin(a) * 0.15, Y0 + 0.07, -0.02 + Math.cos(a) * 0.15);
     leg.rotation.y = a;
     swivel.add(leg);
+    const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.045, 12), dark);
+    wheel.rotation.z = Math.PI / 2;
+    wheel.position.set(Math.sin(a) * 0.29, Y0 + 0.035, -0.02 + Math.cos(a) * 0.29);
+    swivel.add(wheel);
   }
 
   // la lumière des écrans sur le dev
@@ -295,9 +344,10 @@ export function createWorkstation(o: { accent: string; lang?: string; login: str
     swivel,
     screenLight,
     update(t, on) {
-      keysMat.opacity = 0.35 + 0.5 * on;
-      glow.color.copy(accent).multiplyScalar(0.4 + 2.6 * on);
-      screenLight.intensity = 5 * on;
+      keysMat.emissiveIntensity = 0.08 + 0.16 * on;
+      glow.color.copy(accent).multiplyScalar(0.25 + 0.65 * on);
+      screenLight.intensity = 2 * on;
+      lampLight.intensity = 1.3 * on;
       // ~20 images/s suffisent pour un écran
       const frame = Math.floor(t * 20);
       if (frame === lastDraw) return;

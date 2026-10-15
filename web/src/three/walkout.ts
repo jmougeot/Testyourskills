@@ -117,7 +117,7 @@ const DESK_Z = -7.8;
 /** Le pack et la caméra dans la cabine ; pose finale de la caméra (regard droit vers -z) et emplacement de la carte. */
 const PACK_POS = V(0, 1.5, 0.95);
 const CAB_CAM = V(0, 1.5, 3.1);
-const F_POS = V(0, 1.5, -1.6);
+const F_POS = V(0, 1.5, -3.2);
 const CARD_POS = V(0, 1.45, -6.3);
 const CARD_W3 = 1.2;
 const CARD_H3 = (CARD_W3 * 520) / 360;
@@ -318,7 +318,7 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
     const r = createFloorReflection(10, -WIN_Z - 0.4, floor.normalMap, new THREE.Vector2(3, 4), new THREE.Vector2(1024, 1024));
     r.mesh.rotation.x = -Math.PI / 2;
     r.mesh.position.set(0, 0.004, WIN_Z / 2 - 0.2);
-    r.strength.value = 0.3;
+    r.strength.value = 0.12;
     scene.add(r.mesh);
     disposables.push({ dispose: () => r.mesh.dispose() });
   }
@@ -350,36 +350,38 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
   city.mesh.position.set(0, 0, DESK_Z);
   scene.add(city.mesh);
 
-  // les néons : huit rangées, qui s'allument de l'ascenseur vers les baies
+  // Luminaires suspendus : lumière chaude, boîtiers sombres et câbles fins.
   const ROWS = 8;
   const rowMats: THREE.MeshBasicMaterial[] = [];
   for (let r = 0; r < ROWS; r++) {
     const mat = new THREE.MeshBasicMaterial({ color: hdr("#eef3ff", 0.05), toneMapped: false });
     rowMats.push(mat);
     const z = -1.2 - r * 1.6;
-    for (const x of [-6.6, -3.3, 3.3, 6.6]) {
-      const bar = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.03, 0.09), mat);
-      bar.position.set(x, CEIL - 0.03, z);
+    for (const x of [-5.2, 5.2]) {
+      box(2.6, 0.055, 0.16, darkPanel, x, CEIL - 0.31, z, office);
+      for (const dx of [-0.95, 0.95]) box(0.008, 0.28, 0.008, mullion, x + dx, CEIL - 0.14, z, office);
+      const bar = new THREE.Mesh(new THREE.BoxGeometry(2.45, 0.009, 0.12), mat);
+      bar.position.set(x, CEIL - 0.343, z);
       office.add(bar);
     }
   }
   const officeLights = [-2.5, -6.5, -10.5].map((z) => {
-    const l = new THREE.PointLight(0xdbe6ff, 0, 14, 1.6);
+    const l = new THREE.PointLight(0xffdfb8, 0, 14, 1.6);
     l.position.set(0, CEIL - 0.25, z);
     office.add(l);
     return l;
   });
-  const hemi = new THREE.HemisphereLight(0x7f95c0, 0x0a0d10, 0.18);
+  const hemi = new THREE.HemisphereLight(0xa1b8ce, 0x403026, 0.18);
   scene.add(hemi);
 
   // l'allée de LED au sol, de l'ascenseur jusqu'au poste du dev
-  const PATH_N = 18;
-  const pathGeo = new THREE.BoxGeometry(0.05, 0.012, 0.22);
+  const PATH_N = 12;
+  const pathGeo = new THREE.BoxGeometry(0.025, 0.006, 0.12);
   const path = new THREE.InstancedMesh(pathGeo, new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false }), PATH_N * 2);
   const dummy = new THREE.Object3D();
   for (let i = 0; i < PATH_N; i++)
     for (const sx of [-1, 1]) {
-      dummy.position.set(sx * 0.95, 0.008, -0.5 - (i / (PATH_N - 1)) * (-DESK_Z - 2.3));
+      dummy.position.set(sx * 1.38, 0.008, -0.5 - (i / (PATH_N - 1)) * (-DESK_Z - 2.3));
       dummy.updateMatrix();
       path.setMatrixAt(i * 2 + (sx > 0 ? 1 : 0), dummy.matrix);
       path.setColorAt(i * 2 + (sx > 0 ? 1 : 0), new THREE.Color(0, 0, 0));
@@ -389,15 +391,15 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
   // les autres postes : îlots de bureaux face à face, écrans en veille
   const deskSpots: { x: number; z: number; face: 1 | -1; row: number }[] = [];
   for (const [zc, row] of [
-    [-3.6, 1],
-    [-10.4, 5],
+    [-4.4, 1],
+    [-11.2, 5],
   ] as const)
-    for (const x of [-9.4, -7.8, -6.2, -4.6, -3.0, 3.0, 4.6, 6.2, 7.8, 9.4]) {
+    for (const x of [-7.2, -5.3, -3.4, 3.4, 5.3, 7.2]) {
       deskSpots.push({ x, z: zc + 0.42, face: 1, row });
       deskSpots.push({ x, z: zc - 0.42, face: -1, row: row + 1 });
     }
   const nDesks = deskSpots.length;
-  const deskTopMat = new THREE.MeshStandardMaterial({ color: 0x9aa1aa, roughness: 0.55, metalness: 0.1 });
+  const deskTopMat = new THREE.MeshStandardMaterial({ color: 0x665245, roughness: 0.8 });
   const tops = new THREE.InstancedMesh(new THREE.BoxGeometry(1.5, 0.035, 0.8), deskTopMat, nDesks);
   const legs = new THREE.InstancedMesh(new THREE.BoxGeometry(1.4, 0.72, 0.04), darkPanel, nDesks);
   const bezels = new THREE.InstancedMesh(new THREE.BoxGeometry(0.62, 0.37, 0.03), darkPanel, nDesks);
@@ -433,6 +435,45 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
     office.add(m);
   }
   office.add(otherScreens);
+
+  // Une alcôve en bois et deux plantes encadrent le poste devant les baies.
+  const oak = new THREE.MeshStandardMaterial({ color: 0x79563c, roughness: 0.85 });
+  const planter = new THREE.MeshStandardMaterial({ color: 0x343e3d, roughness: 0.9 });
+  const foliage = new THREE.MeshStandardMaterial({ color: 0x345b45, roughness: 0.85, side: THREE.DoubleSide });
+  for (const sx of [-1, 1]) {
+    for (let i = 0; i < 12; i++) {
+      box(0.045, CEIL, 0.1, oak, sx * (2.75 + i * 0.1), CEIL / 2, WIN_Z + 0.18, office);
+    }
+    const plant = new THREE.Group();
+    const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.18, 0.48, 24), planter);
+    pot.position.y = 0.24;
+    pot.castShadow = true;
+    plant.add(pot);
+    const soil = new THREE.Mesh(new THREE.CircleGeometry(0.22, 24), darkPanel);
+    soil.rotation.x = -Math.PI / 2;
+    soil.position.y = 0.481;
+    plant.add(soil);
+    for (let i = 0; i < 9; i++) {
+      const angle = i * 2.4;
+      const height = 0.65 + rnd(i, 81) * 0.65;
+      const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.012, height, 5), foliage);
+      stem.position.set(Math.sin(angle) * 0.07, 0.43 + height / 2, Math.cos(angle) * 0.07);
+      plant.add(stem);
+      const leaf = new THREE.Mesh(new THREE.SphereGeometry(1, 12, 8), foliage);
+      leaf.scale.set(0.12, 0.035, 0.38);
+      leaf.position.set(Math.sin(angle) * 0.25, 0.43 + height, Math.cos(angle) * 0.25);
+      leaf.rotation.set(0.35, angle, -0.2);
+      leaf.castShadow = !low;
+      plant.add(leaf);
+    }
+    plant.position.set(sx * 2.15, 0, DESK_Z - 1.05);
+    office.add(plant);
+  }
+
+  const pendantMat = new THREE.MeshBasicMaterial({ color: hdr(0xffdfb8, 0.1), toneMapped: false });
+  box(2.8, 0.06, 0.19, darkPanel, 0, 2.75, DESK_Z - 0.5, office);
+  box(2.68, 0.008, 0.13, pendantMat, 0, 2.716, DESK_Z - 0.5, office);
+  for (const x of [-1.05, 1.05]) box(0.008, CEIL - 2.78, 0.008, mullion, x, (CEIL + 2.78) / 2, DESK_Z - 0.5, office);
 
   /* ---------- lumières de la carte ---------- */
   const key = new THREE.SpotLight(0xffffff, 0, 12, 0.5, 0.6, 1.4);
@@ -594,17 +635,21 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
   const player = createPlayer(assets.player, hdr("#cfe2ff", 1.2));
   desk.group.rotation.y = Math.PI;
   desk.group.position.set(0, 0, DESK_Z);
-  player.root.position.set(0, 0.13, 0);
+  player.root.position.set(0, 0.03, 0);
   desk.swivel.add(player.root);
   scene.add(desk.group);
   disposables.push(desk);
-  const heroSpot = new THREE.SpotLight(new THREE.Color(accent.a).lerp(new THREE.Color(0xffffff), 0.6), 0, 9, 0.5, 0.7, 1.4);
-  heroSpot.position.set(0, CEIL - 0.1, DESK_Z + 1.6);
+  const heroSpot = new THREE.SpotLight(0xffe0b9, 0, 10, 0.72, 0.85, 1.4);
+  heroSpot.position.set(-1.8, CEIL - 0.1, DESK_Z + 1.8);
   heroSpot.target.position.set(0, 0.6, DESK_Z);
   heroSpot.castShadow = !low;
   heroSpot.shadow.mapSize.set(1024, 1024);
   heroSpot.shadow.bias = -0.0004;
   scene.add(heroSpot, heroSpot.target);
+  const windowLight = new THREE.SpotLight(0xa2c5ed, 0, 9, 0.85, 0.9, 1.5);
+  windowLight.position.set(2.5, 2.8, DESK_Z - 2.4);
+  windowLight.target.position.set(0, 0.9, DESK_Z);
+  scene.add(windowLight, windowLight.target);
 
   /* ---------- la carte ---------- */
   const maskTex = keep(T.makeCardMaskTexture());
@@ -665,6 +710,7 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
   composer.addPass(new RenderPass(scene, camera));
   const dof = low ? null : new DepthOfFieldEffect(camera, { focusDistance: 5, focusRange: 1.4, bokehScale: 0 });
   const focus = PACK_POS.clone();
+  const deskFocus = V(0, 1.1, DESK_Z);
   if (dof) {
     dof.target = focus;
     composer.addPass(new EffectPass(camera, dof));
@@ -784,8 +830,8 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
     K(plan.league[0], V(0, 1.48, 2.95), V(0, 1.6, 0), 60),
     K(plan.club[1], V(0, 1.48, 2.7), V(0, 1.56, 0), 58),
     K(plan.doors + 0.35, V(0, 1.5, 2.5), V(0, 1.4, -6), 56),
-    K(plan.doors + 2.0, V(0, 1.53, -0.3), V(0, 1.2, DESK_Z), 44),
-    K(T_TURN - 0.4, V(0, 1.51, -1.3), V(0, 1.25, DESK_Z), 41),
+    K(plan.doors + 2.0, V(0, 1.53, -1.5), V(0, 1.2, DESK_Z), 44),
+    K(T_TURN - 0.4, V(0, 1.51, -2.9), V(0, 1.25, DESK_Z), 41),
     K(T_SETTLE, F_POS.clone(), V(F_POS.x, F_POS.y, F_POS.z - 10), 40),
   ];
   /** Tangente monotone : nulle quand la courbe change de sens, pour ne jamais dépasser une image-clé. */
@@ -836,9 +882,9 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
       // mise au point : le pack, l'écran ou l'objet chromé, le dev, la carte
       if (t < T_BURST + 0.3) focus.copy(PACK_POS);
       else if (t < plan.doors) focus.copy(TELL_POS);
-      else if (t < T_CARD) focus.set(0, 1.1, DESK_Z);
+      else if (t < T_CARD) focus.lerpVectors(TELL_POS, deskFocus, inOut(seg(t, plan.doors, 1.2)));
       else focus.copy(slam.visible ? slam.position : card.position);
-      bokeh = t < T_BURST + 0.3 ? 3.0 : t < plan.doors ? 0.5 : t < T_CARD ? 1.0 : 2.0;
+      bokeh = t < T_BURST + 0.3 ? 3.0 : t < plan.doors ? 0.5 : t < T_CARD ? 0.35 : 2.0;
     } else {
       // pose finale exacte : la carte HTML vient s'y superposer au pixel près
       camPos.copy(F_POS);
@@ -905,28 +951,30 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
     rowMats.forEach((m, r) => {
       const at = plan.lights + r * 0.16;
       const on = t >= at ? 1 : 0;
-      const pop = t >= at ? 1 + 1.5 * (1 - seg(t, at, 0.3)) : 0;
-      m.color.copy(hdr("#eef3ff", (0.05 + 2.4 * on * pop) * dim));
+      const pop = seg(t, at, 0.65);
+      m.color.copy(hdr("#ffe1bc", (0.03 + 1.35 * pop) * dim));
       lit += on / ROWS;
     });
-    officeLights.forEach((l, i) => (l.intensity = 7 * seg(t, plan.lights + i * 0.4, 0.4) * dim));
-    hemi.intensity = (0.12 + 0.25 * lit) * dim;
-    city.uBright.value = 0.95 * dim;
+    officeLights.forEach((l, i) => (l.intensity = 9 * seg(t, plan.lights + i * 0.4, 0.65) * dim));
+    hemi.intensity = (0.12 + 0.6 * lit) * dim;
+    city.uBright.value = 0.7 * dim;
+    pendantMat.color.copy(hdr(0xffdfb8, (0.05 + 1.5 * seg(t, plan.doors + 0.6, 0.8)) * dim));
     let k = 0;
     deskSpots.forEach((d) => {
       if (d.face !== 1) return;
       const on = 0.25 + 0.75 * seg(t, plan.lights + d.row * 0.16, 0.3);
-      otherScreens.setColorAt(k++, tmpColor.setScalar(on * 0.9 * dim));
+      otherScreens.setColorAt(k++, tmpColor.setScalar(on * 0.35 * dim));
     });
     otherScreens.instanceColor!.needsUpdate = true;
     for (let i = 0; i < PATH_N; i++) {
       const on = seg(t, plan.doors + 0.3 + i * 0.05, 0.25) * dim;
-      const c = on > 0 ? tmpColor.set(accent.a).multiplyScalar(2.2 * on) : black;
+      const c = on > 0 ? tmpColor.set(accent.a).multiplyScalar(0.8 * on) : black;
       path.setColorAt(i * 2, c);
       path.setColorAt(i * 2 + 1, c);
     }
     path.instanceColor!.needsUpdate = true;
-    heroSpot.intensity = 22 * seg(t, plan.doors + 0.5, 0.6) * dim;
+    heroSpot.intensity = 28 * seg(t, plan.doors + 0.5, 0.8) * dim;
+    windowLight.intensity = 12 * seg(t, plan.doors + 0.6, 0.8) * dim;
 
     /* le pack */
     if (t < T_BURST + 0.45) {
@@ -1001,16 +1049,18 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
     }
 
     /* le dev */
-    desk.group.visible = t >= plan.arrive - 0.5 && t < T_CARD + 0.15;
-    if (desk.group.visible) {
+    // Le poste reste présent derrière les portes dès la première image.
+    // Masquer son groupe retire aussi ses lumières : sa réapparition forçait
+    // une recompilation des shaders de toute la scène juste avant l'ouverture.
+    {
       const turn = inOut(seg(t, T_TURN, 0.75));
       desk.swivel.rotation.y = turn * Math.PI;
       const typing = 1 - seg(t, T_TURN - 0.15, 0.3);
       player.pose(t, typing, turn);
-      desk.update(t - plan.doors, seg(t, plan.doors - 0.2, 0.6) * dim);
+      desk.update(Math.max(0, t - plan.doors), seg(t, plan.doors - 0.2, 0.6) * dim);
       // de dos devant ses écrans, le dev est une silhouette ; le liseré monte quand il se tourne
-      player.rim.value.copy(hdr("#d8e8ff", 0.7 + 1.4 * turn + 5 * seg(t, T_CARD - 0.3, 0.3)));
-      player.body.value = 0.12 + 0.25 * turn;
+      player.rim.value.copy(hdr("#b5cfdf", 0.06 + 0.1 * turn + 0.5 * seg(t, T_CARD - 0.3, 0.3)));
+      player.body.value = 0.025 + 0.035 * turn;
     }
 
     /* la carte */
@@ -1061,7 +1111,8 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
     } else card.visible = false;
 
     camera_(t, wall);
-    bloom.intensity = 0.6 + (t >= T_BURST ? 0.8 * (1 - seg(t, T_BURST, 0.5)) : 0);
+    bloom.intensity = lerp(0.6, 0.35, seg(t, plan.doors, 1)) + (t >= T_BURST ? 0.8 * (1 - seg(t, T_BURST, 0.5)) : 0);
+    noise.blendMode.opacity.value = lerp(0.14, 0.055, seg(t, plan.doors, 1));
     void dt;
 
     if (t >= T_HANDOFF && !handoffSent) {
@@ -1110,6 +1161,11 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
     update(now, dt);
     composer.render(dt);
   };
+  // Préparer aussi les matières hors du champ de la cabine, avant que la
+  // caméra ne découvre les bureaux (notamment leurs géométries instanciées).
+  void renderer.compileAsync(scene, camera).catch((error: unknown) => {
+    console.warn("[walkout] précompilation indisponible, compilation au rendu", error);
+  });
   raf = requestAnimationFrame(loop);
 
   return {

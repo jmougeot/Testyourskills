@@ -293,12 +293,12 @@ Walkout calqué sur FC 27, **en vraie 3D** (Three.js, WebGL), transposé dans un
    - le **langage principal** (le drapeau ; « Polyglotte » et des chevrons de code sans langage reconnu) ;
    - le **championnat** (Ligue GitHub, Ligue CV, ou GitHub × CV) ;
    - une attente « · · · », puis le **club** (écusson et employeur, « Agent libre » sinon).
-4. **L'arrivée** : l'afficheur montre la note et le statut final. Les portes s'ouvrent. Derrière, l'open space de nuit : îlots de bureaux, écrans en veille, la ville derrière les baies (Shanghai de nuit). Les néons s'allument rangée par rangée, comme les projecteurs du stade dans le jeu, et une allée de LED à la couleur du tier s'allume au sol jusqu'au poste du dev.
-5. **Le dev** est assis de dos à son poste, au bout de l'allée, sur un plateau à LED. Son poste : bureau, chaise gaming, trois écrans (son programme de recrutement qui s'écrit dans son langage principal, un terminal où les tests passent, son graphe de contributions), clavier rétroéclairé. Il tape (personnage posé assis et animé par code), puis sa chaise fait un demi-tour et il se tourne vers la caméra. Clic ou Espace : feux d'artifice sur la ville (L1/R1 dans le jeu), avec quelques tirs automatiques.
+4. **L'arrivée** : l'afficheur montre la note et le statut final. Les portes s'ouvrent. Derrière, un open space de nuit aux matières chaleureuses : îlots espacés en bois sombre, écrans en veille, la ville derrière les baies (Shanghai de nuit). Des suspensions à lumière chaude s'allument progressivement, rangée par rangée. De petits repères à la couleur du tier balisent l'allée. Les reflets au sol restent discrets ; des lattes de bois et deux plantes encadrent le poste principal.
+5. **Le dev** est assis de dos à son poste, au bout de l'allée, sur un tapis rectangulaire. Son poste : bureau en noyer aux bords adoucis, fauteuil de travail arrondi, lampe de bureau, tasse, trois écrans (son programme de recrutement qui s'écrit dans son langage principal, un terminal où les tests passent, son graphe de contributions), clavier à touches individuelles. Une lumière chaude sur le mobilier contraste avec la lumière bleutée des écrans ; le personnage reste une silhouette sombre, sans contour surexposé. Il tape (personnage posé assis et animé par code), puis sa chaise fait un demi-tour et il se tourne vers la caméra. Clic ou Espace : feux d'artifice sur la ville (L1/R1 dans le jeu), avec quelques tirs automatiques. Le mobilier reste en place derrière la carte jusqu'à la fin du fondu.
 6. **La carte se forme** devant lui dans un flash : carte 3D épaisse (silhouette extrudée, tranche métal à la couleur du tier, vernis, irisation) qui tourne sur elle-même. La note en 3D claque puis se pose à sa place, avec un balayage de lumière et des éclats.
 7. **La passation** : la carte 3D glisse jusqu'à l'emplacement HTML, la scène s'éteint, la carte HTML apparaît exactement par-dessus, le canvas s'efface, le partage apparaît.
 
-**Tous les tiers ont la séquence complète**, environ dix-huit secondes (FC 27 en met vingt-cinq). Seules changent la note (l'étage d'arrivée et les statuts traversés) et la couleur du tier : filets de la cabine, liseré au pied des murs, allée lumineuse, plateau du dev, tranche de la carte. Contrairement au jeu, il n'y a pas de version courte pour Bronze, Argent ou Or.
+**Tous les tiers ont la séquence complète**, environ dix-huit secondes (FC 27 en met vingt-cinq). Seules changent la note (l'étage d'arrivée et les statuts traversés) et la couleur du tier : filets de la cabine, liseré au pied des murs, repères de l'allée, détails du poste, tranche de la carte. Contrairement au jeu, il n'y a pas de version courte pour Bronze, Argent ou Or.
 
 **Les statuts de la montée** (fournis par Jacques le 15 octobre 2026, affichés en français ou en anglais selon la langue) :
 
@@ -319,7 +319,7 @@ Walkout calqué sur FC 27, **en vraie 3D** (Three.js, WebGL), transposé dans un
 
 **Caméra : un seul plan-séquence, sans aucune coupe.**
 - Elle est dans la cabine, face aux portes, et s'en approche à peine pendant la montée.
-- Quand les portes s'ouvrent, elle sort dans l'axe de l'allée et vient se poser face à la carte, le dev en plan d'ensemble derrière.
+- Quand les portes s'ouvrent, elle sort dans l'axe de l'allée et s'approche à environ 4,6 m du poste, puis vient se poser face à la carte. Le bureau et le personnage restent entièrement cadrés ; le flou est léger pendant cette approche pour lire les matières et les écrans.
 - Tout reste dans l'axe (x = 0) : elle ne fait qu'avancer, sans balayer de gauche à droite et sans revenir en arrière.
 - La trajectoire est faite d'images-clés interpolées par des splines d'Hermite en temps, avec des tangentes monotones (Fritsch-Carlson). Position, visée et focale restent continues, leur vitesse aussi, sans jamais dépasser une image-clé.
 - Les focales sont larges (40 à 52°), sans gros plan serré.
@@ -332,6 +332,8 @@ Ce qui a été essayé, puis refusé par Jacques le 15 octobre 2026 :
 - le stade lui-même, trop « foot » : il fallait un décor centré sur le dev et l'entreprise, qui parle à tout le monde.
 
 Sans WebGL, avec `prefers-reduced-motion`, ou si les assets ne sont pas là en douze secondes : affichage direct.
+
+Le poste et ses lumières restent présents derrière les portes fermées dès le début ; seule leur intensité varie. Les shaders du décor sont préparés au démarrage pour éviter une recompilation à l'ouverture. La mise au point passe progressivement des portes au bureau.
 
 **Assets** (`web/public/3d`, environ 1 Mo, préchargés pendant l'attente du §6.2) :
 - la ville de nuit : Poly Haven `shanghai_bund`, CC0, recadrée sur la ligne d'horizon et posée sur un cylindre derrière les baies ;
