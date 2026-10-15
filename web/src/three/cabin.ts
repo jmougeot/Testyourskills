@@ -98,7 +98,7 @@ function bakeLight(pl: BakePlane): THREE.DataTexture {
   const data = new Uint16Array(W * H * 4);
   const p = new THREE.Vector3();
   const w = new THREE.Vector3();
-  const warm = [1, 0.9, 0.78];
+  const warm = [1, 0.93, 0.85];
   for (let j = 0; j < H; j++)
     for (let i = 0; i < W; i++) {
       p.copy(pl.origin)
@@ -214,7 +214,7 @@ export function createCabin(o: CabinOptions): Cabin {
     map: veneer(o.wood.map),
     normalMap: veneer(o.wood.normalMap),
     roughnessMap: veneer(o.wood.roughnessMap),
-    color: 0x8c7867,
+    color: 0x857d76,
     roughness: 0.55,
     normalScale: new THREE.Vector2(0.25, 0.25),
     envMapIntensity: 0.6,
@@ -228,11 +228,18 @@ export function createCabin(o: CabinOptions): Cabin {
   const glassBlack = new THREE.MeshPhysicalMaterial({ color: 0x040506, metalness: 0, roughness: 0.06, clearcoat: 1, envMapIntensity: 1 });
   const cabinMats = [brushedSteel, steel, walnut, stoneMat, ceilMat, glassBlack];
 
-  /** Un panneau plat, ses UV en mètres (1 m de placage par tuile). */
+  /** Un panneau plat, ses UV en mètres (1 m de placage par tuile). Chaque
+   * panneau prend un autre morceau de la feuille de placage, un sur deux en
+   * miroir, comme les feuilles « à livre ouvert » des vraies cabines. */
+  let sheet = 0;
   const panel = (w: number, h: number, mat: THREE.Material, x: number, y: number, z: number, ry: number, parent: THREE.Object3D) => {
     const geo = new THREE.PlaneGeometry(w, h);
     const uv = geo.attributes.uv as THREE.BufferAttribute;
-    for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * w, uv.getY(i) * h);
+    const n = sheet++;
+    const mirror = n % 2 === 1;
+    const du = rnd(n, 41) * 3;
+    const dv = rnd(n, 42) * 3;
+    for (let i = 0; i < uv.count; i++) uv.setXY(i, (mirror ? 1 - uv.getX(i) : uv.getX(i)) * w + du, uv.getY(i) * h + dv);
     const m = new THREE.Mesh(geo, mat);
     m.position.set(x, y, z);
     m.rotation.y = ry;
