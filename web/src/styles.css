@@ -988,132 +988,148 @@ svg {
   color: var(--teal-2);
 }
 
-/* --- carte d'exemple : inclinée sur la grille, avec des bouts de calendrier de contributions --- */
+/* --- la scène : un pack opening dans un cadre de nuit, posé sur la page blanche --- */
 
 .hero-card {
   display: flex;
   justify-content: center;
 }
-
-.example {
+.stage-wrap {
+  width: min(400px, 100%);
+}
+.stage {
+  --ca: var(--teal-bright);
+  --cb: var(--blue);
   position: relative;
-  width: min(380px, 100%);
-  perspective: 1400px;
-  padding-top: 26px;
+  container-type: inline-size;
+  aspect-ratio: 400 / 600;
+  overflow: hidden;
+  border-radius: 24px;
+  background: #0a0f16;
+  border: 1px solid #223040;
+  box-shadow: 8px 8px 0 var(--teal);
+  transform: rotate(-1.5deg);
 }
-
-/* un bout de calendrier de contributions GitHub */
-.contrib {
-  --cell: 14px;
-  display: grid;
-  gap: 4px;
-}
-.contrib i {
-  width: var(--cell);
-  height: var(--cell);
-  border-radius: 3px;
-  background: rgba(15, 118, 110, 0.09);
-}
-.contrib i.on {
-  transform-origin: center;
-  animation:
-    commit-in 0.6s ease-out backwards,
-    commit-twinkle 6s ease-in-out infinite;
-  animation-delay: var(--d, 0s), var(--d, 0s);
-}
-@keyframes commit-in {
-  from {
-    opacity: 0;
-    transform: scale(0.3);
-  }
-}
-@keyframes commit-twinkle {
-  50% {
-    opacity: 0.45;
-  }
-}
-.example-patch {
+.stage-rays {
   position: absolute;
-  z-index: 0;
-  opacity: 0.8;
+  left: 50%;
+  top: 64%;
+  width: 240cqw;
+  height: 240cqw;
+  margin: -120cqw 0 0 -120cqw;
+  background: repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--ca) 9%, transparent) 0 5deg, transparent 5deg 16deg);
+  -webkit-mask: radial-gradient(closest-side, #000, transparent 70%);
+  mask: radial-gradient(closest-side, #000, transparent 70%);
+  animation: spin 48s linear infinite;
+  transition: background 1.2s;
 }
-.example-patch.tl {
-  left: -56px;
-  top: 0;
-  transform: rotate(-8deg);
-}
-.example-patch.br {
-  right: -66px;
-  bottom: 54px;
-  transform: rotate(6deg);
-}
-
-.example-halo {
+.stage-glow {
   position: absolute;
-  inset: 8% -8% 14%;
+  left: 50%;
+  top: 62%;
+  width: 130cqw;
+  height: 100cqw;
+  transform: translate(-50%, -50%);
   border-radius: 50%;
-  background: radial-gradient(closest-side, color-mix(in srgb, var(--ca) 28%, transparent), transparent 72%);
-  filter: blur(36px);
-  opacity: 0.75;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--ca) 42%, transparent), color-mix(in srgb, var(--cb) 14%, transparent) 55%, transparent);
+  filter: blur(10cqw);
   transition: background 1.2s;
   animation: breathe 6s ease-in-out infinite;
 }
 @keyframes breathe {
   50% {
-    opacity: 0.5;
-    transform: scale(0.94);
+    opacity: 0.6;
+    transform: translate(-50%, -50%) scale(0.94);
   }
 }
-.example-floor {
+.stage-floor {
   position: absolute;
-  left: 18%;
-  right: 18%;
-  bottom: 44px;
-  height: 24px;
-  border-radius: 50%;
-  background: radial-gradient(closest-side, rgba(31, 35, 40, 0.4), transparent);
-  filter: blur(6px);
-  animation: floor 7s ease-in-out infinite;
+  z-index: 3;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 22cqw;
+  background: linear-gradient(180deg, transparent, rgba(4, 7, 11, 0.75));
+  pointer-events: none;
 }
-@keyframes floor {
-  50% {
-    transform: scaleX(0.82);
-    opacity: 0.7;
-  }
+
+/* étincelles à quatre branches, chacune à sa place et à son rythme */
+.sparkles i {
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  width: 4cqw;
+  height: 4cqw;
+  background: #fff;
+  clip-path: polygon(50% 0, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0 50%, 40% 40%);
+  opacity: 0;
+  animation: twinkle 3.4s ease-in-out infinite;
+  animation-delay: var(--d, 0s);
+  filter: drop-shadow(0 0 1.5cqw var(--ca));
 }
-.example-float {
-  position: relative;
-  z-index: 1;
-  animation: float 7s ease-in-out infinite;
-  transform-style: preserve-3d;
+.sparkles i:nth-child(3n) {
+  width: 2.6cqw;
+  height: 2.6cqw;
 }
-@keyframes float {
+.sparkles i:nth-child(4n + 1) {
+  background: var(--ca);
+}
+@keyframes twinkle {
   0%,
   100% {
-    transform: translateY(0) rotateY(-8deg) rotateZ(-2.5deg);
+    opacity: 0;
+    transform: scale(0.3) rotate(0deg);
   }
   50% {
-    transform: translateY(-14px) rotateY(8deg) rotateZ(-0.5deg);
+    opacity: 0.95;
+    transform: scale(1) rotate(45deg);
   }
 }
-.example-turn {
-  transition: transform 0.32s cubic-bezier(0.5, 0, 0.75, 0);
-  animation: turn-in 0.45s var(--ease-out);
+
+/* la carte sort du pack et flotte ; au changement de tier, elle replonge et ressort */
+.stage-card {
+  position: absolute;
+  z-index: 1;
+  left: 50%;
+  top: 5cqw;
+  width: 66cqw;
+  margin-left: -33cqw;
+  transform-style: preserve-3d;
+  animation: float-card 6s ease-in-out infinite;
+  transition: transform 0.7s var(--ease-spring);
 }
-.example-turn.is-turning {
-  transform: rotateY(90deg) scale(0.96);
-}
-@keyframes turn-in {
-  from {
-    transform: rotateY(-90deg) scale(0.96);
+@keyframes float-card {
+  50% {
+    transform: translateY(-2.5cqw);
   }
+}
+.stage-card.is-dip {
+  animation: none;
+  transform: translateY(84cqw);
+  transition: transform 0.4s cubic-bezier(0.5, 0, 0.75, 0);
+}
+.stage-pack {
+  position: absolute;
+  z-index: 2;
+  left: 50%;
+  top: 88cqw;
+  width: 52cqw;
+  margin-left: -26cqw;
+  transform: rotate(-3deg);
+}
+.stage-pack .pack {
+  width: 100%;
+  margin: 0;
+}
+.stage-pack .pack-glow {
+  opacity: 0.35;
 }
 .example-sticker {
   position: absolute;
-  z-index: 2;
-  top: 10px;
-  right: -6px;
-  --tilt: 7deg;
+  z-index: 4;
+  top: 14px;
+  right: 14px;
+  --tilt: 6deg;
   background: #fff;
 }
 .example-caption {
@@ -1121,7 +1137,7 @@ svg {
   align-items: center;
   justify-content: center;
   gap: 12px;
-  margin-top: 18px;
+  margin-top: 22px;
   font-family: var(--f-mono);
   font-size: 11px;
   font-weight: 700;
@@ -1150,6 +1166,28 @@ svg {
   width: 16px;
   border-radius: 3px;
   background: var(--text);
+}
+
+/* un bout de calendrier de contributions (bandeau du bas) */
+.contrib {
+  --cell: 14px;
+  display: grid;
+  gap: 4px;
+}
+.contrib i {
+  width: var(--cell);
+  height: var(--cell);
+  border-radius: 3px;
+  background: rgba(15, 118, 110, 0.09);
+}
+.contrib i.on {
+  animation: commit-twinkle 6s ease-in-out infinite;
+  animation-delay: var(--d, 0s);
+}
+@keyframes commit-twinkle {
+  50% {
+    opacity: 0.45;
+  }
 }
 
 /* --- sous la ligne de flottaison : des bandes à filets, comme sur azerit.tech --- */
@@ -3256,8 +3294,8 @@ svg {
     width: 100%;
     text-align: left;
   }
-  .example {
-    width: min(320px, 78vw);
+  .stage-wrap {
+    width: min(340px, 100%);
   }
   .stickers {
     justify-content: center;
@@ -3329,18 +3367,9 @@ svg {
     font-size: clamp(30px, 8.6vw, 40px);
     margin-bottom: 22px;
   }
-  .example {
-    padding-top: 18px;
-  }
-  .example-patch.tl {
-    left: -14px;
-    --cell: 11px;
-  }
-  .example-patch.br {
-    display: none;
-  }
-  .example-sticker {
-    right: 0;
+  .stage {
+    border-radius: 18px;
+    box-shadow: 5px 5px 0 var(--teal);
   }
   .entry {
     padding: 8px;
@@ -3481,7 +3510,8 @@ svg {
     scroll-behavior: auto !important;
   }
   .halo,
-  .example-float,
+  .stage-card,
+  .sparkles i,
   .pack-waiting {
     animation: none !important;
   }
