@@ -1,4 +1,4 @@
-// Le pack (sachet métallisé) et le dos de carte, en CSS pur.
+// Le pack (sachet métallisé), en CSS pur.
 import type { CSSProperties } from "react";
 import { useT } from "../i18n";
 import { AzeritMark } from "./Brand";
@@ -38,18 +38,6 @@ export function Pack({ accent, className = "", style }: { accent?: { a: string; 
         </div>
         <div className="pack-crimp pack-crimp-bottom" />
       </div>
-    </div>
-  );
-}
-
-export function CardBack() {
-  return (
-    <div className="card-back" aria-hidden>
-      <div className="card-back-rings" />
-      <div className="card-back-mark">
-        <AzeritMark size={64} />
-      </div>
-      <span className="card-back-word">testyourskills</span>
     </div>
   );
 }

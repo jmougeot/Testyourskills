@@ -6,9 +6,8 @@ import type { ComparisonData, StatCode } from "../../../shared/types";
 import { STAT_CODES } from "../../../shared/types";
 import { pick, useT } from "../i18n";
 import { useMediaQuery } from "../lib/util";
-import { Burst, RevealCard, STAT_STAGGER } from "./Reveal";
+import { RevealCard } from "./Reveal";
 import type { Phase } from "./Reveal";
-import { Pack } from "./Pack";
 
 type Tone = "up" | "down" | "flat";
 
@@ -62,23 +61,14 @@ function Headline({ text, tone }: { text: string; tone: Tone }) {
   );
 }
 
-export function ComparisonStage({
-  cmp,
-  phase,
-  onOpen,
-}: {
-  cmp: ComparisonData;
-  phase: Phase;
-  onOpen: () => void;
-}) {
+export function ComparisonStage({ cmp, phase }: { cmp: ComparisonData; phase: Phase }) {
   const { t, lang } = useT();
   const desktop = useMediaQuery("(min-width: 980px)");
   const [active, setActive] = useState<0 | 1>(1);
   const track = useRef<HTMLDivElement>(null);
   const overall = cmp.github.overall - cmp.cv.overall;
   const headTone = toneOf("overall", overall);
-  const showPack = phase === "ready" || phase === "shake" || phase === "burst";
-  const settled = phase === "stamp" || phase === "done";
+  const settled = phase === "done";
 
   // Carrousel mobile : la position de défilement pilote le sélecteur.
   useEffect(() => {
@@ -103,8 +93,8 @@ export function ComparisonStage({
   };
 
   const cards = [
-    { card: cmp.cv, label: t.compare.cvLabel, short: t.compare.cvShort, prefix: "cmp-cv", offset: 0 },
-    { card: cmp.github, label: t.compare.ghLabel, short: t.compare.ghShort, prefix: "cmp-gh", offset: STAT_STAGGER * 2 },
+    { card: cmp.cv, label: t.compare.cvLabel, short: t.compare.cvShort, prefix: "cmp-cv", anchor: false },
+    { card: cmp.github, label: t.compare.ghLabel, short: t.compare.ghShort, prefix: "cmp-gh", anchor: true },
   ];
 
   return (
@@ -132,22 +122,11 @@ export function ComparisonStage({
                 <span className="cmp-src">{c.short}</span>
                 {c.label}
               </figcaption>
-              <RevealCard card={c.card} lang={lang} phase={phase} idPrefix={c.prefix} offset={c.offset} withPack={false} withStamp={false} />
+              <RevealCard card={c.card} lang={lang} phase={phase} idPrefix={c.prefix} primary={false} anchor={c.anchor} />
             </figure>
           ))}
         </div>
         {desktop && <Deltas cmp={cmp} className="deltas-col" />}
-        {showPack && (
-          <button type="button" className={`pack-btn cmp-pack pack-${phase}`} onClick={onOpen} disabled={phase !== "ready"} aria-label={t.reveal.tap}>
-            <Pack accent={{ a: "#52d0bd", b: "#6cb6ff" }} />
-            {phase === "ready" && <span className="pack-hint">{t.reveal.tap}</span>}
-          </button>
-        )}
-        {(phase === "burst" || phase === "flip") && (
-          <div className="cmp-burst">
-            <Burst />
-          </div>
-        )}
       </div>
 
       {!desktop && <Deltas cmp={cmp} className="deltas-row" />}

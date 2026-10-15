@@ -355,6 +355,11 @@ export function createApp(opts: AppOptions) {
       await next();
       if (c.res.status === 200) c.res.headers.set("Cache-Control", "public, max-age=31536000, immutable");
     });
+    // Assets de la scène 3D (non fingerprintés) : une semaine.
+    app.use("/3d/*", async (c, next) => {
+      await next();
+      if (c.res.status === 200) c.res.headers.set("Cache-Control", "public, max-age=604800");
+    });
     app.use("*", serveStatic({ root }));
     app.get("*", async (c) => {
       const p = c.req.path;

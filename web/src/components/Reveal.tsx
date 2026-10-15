@@ -1,129 +1,50 @@
-// Révélation (§6.3) : pack qui flotte, tremblement, flash couleur du tier,
-// la carte se retourne, les stats montent, le tier se tamponne en dernier.
-// Sautable d'un clic, moins de trois secondes, désactivée en mouvement réduit.
+// Révélation (§6.3) : la machine à états autour de la scène 3D (Walkout3D).
+// « ready » : le pack flotte, clic ou délai pour ouvrir. « playing » : la
+// séquence 3D joue. « handoff » : la carte HTML apparaît par-dessus la carte 3D
+// posée au même endroit, le canvas s'efface. « done » : la page vit.
+// Sautable d'un clic, désactivée en mouvement réduit.
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { CSSProperties, ReactNode } from "react";
+import type { CSSProperties } from "react";
 import type { CardData, Lang } from "../../../shared/types";
-import { STAT_CODES, styleOf } from "../../../shared/types";
+import { styleOf } from "../../../shared/types";
 import { CardView } from "../card/CardView";
 import { useT } from "../i18n";
 import { isMock } from "../lib/api";
 import { accentOf } from "../lib/util";
-import { CardBack, Pack } from "./Pack";
 
-export type Phase = "ready" | "shake" | "burst" | "flip" | "count" | "stamp" | "done";
+export type Phase = "ready" | "playing" | "handoff" | "done";
 
-const AUTO_OPEN = 1100;
-// Instants (ms après l'ouverture) de chaque phase.
-const T = { shake: 0, burst: 480, flip: 700, count: 1250, stamp: 2200, done: 3900 };
-export const STAT_STAGGER = 105;
+const AUTO_OPEN = 1600;
 
 /** Machine à états de la révélation, partagée par une carte seule ou une comparaison. */
 export function useReveal(animate: boolean) {
   const [phase, setPhase] = useState<Phase>(animate ? "ready" : "done");
-  const timers = useRef<number[]>([]);
   const opened = useRef(false);
-
-  const clear = () => {
-    timers.current.forEach((t) => window.clearTimeout(t));
-    timers.current = [];
-  };
 
   const open = useCallback(() => {
     if (opened.current) return;
     opened.current = true;
-    clear();
-    // Mode démo : ?freeze=count fige la séquence sur une phase, pour la mise au point.
-    const order: Phase[] = ["ready", "shake", "burst", "flip", "count", "stamp", "done"];
-    const freeze = isMock() ? (new URLSearchParams(window.location.search).get("freeze") as Phase | null) : null;
-    const stopAt = freeze && order.includes(freeze) ? order.indexOf(freeze) : order.length;
-    const at = (p: Phase, ms: number) => {
-      if (order.indexOf(p) <= stopAt) timers.current.push(window.setTimeout(() => setPhase(p), ms));
-    };
-    setPhase("shake");
-    at("burst", T.burst);
-    at("flip", T.flip);
-    at("count", T.count);
-    at("stamp", T.stamp);
-    at("done", T.done);
+    setPhase("playing");
   }, []);
-
+  const handoff = useCallback(() => setPhase((p) => (p === "playing" ? "handoff" : p)), []);
+  const finish = useCallback(() => setPhase("done"), []);
   const skip = useCallback(() => {
     opened.current = true;
-    clear();
     setPhase("done");
   }, []);
 
   useEffect(() => {
     if (!animate) return;
+    // Mode démo : ?freeze=ready garde le pack fermé, pour la mise au point.
     if (isMock() && new URLSearchParams(window.location.search).get("freeze") === "ready") return;
     const id = window.setTimeout(open, AUTO_OPEN);
-    timers.current.push(id);
-    return clear;
+    return () => window.clearTimeout(id);
   }, [animate, open]);
 
   const animating = phase !== "done";
-  /** Le contenu sous la carte apparaît dès que le tampon tombe. */
-  const settled = phase === "stamp" || phase === "done";
-  return { phase, open, skip, animating, settled };
-}
-
-function CountUp({ to, delay, duration = 380, run }: { to: number; delay: number; duration?: number; run: boolean }) {
-  const [v, setV] = useState(0);
-  useEffect(() => {
-    if (!run) return;
-    let raf = 0;
-    const start = performance.now() + delay;
-    const step = (now: number) => {
-      const p = Math.min(1, Math.max(0, (now - start) / duration));
-      const eased = 1 - Math.pow(1 - p, 3);
-      setV(Math.round(to * eased));
-      if (p < 1) raf = requestAnimationFrame(step);
-    };
-    raf = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(raf);
-  }, [to, delay, duration, run]);
-  return <>{v}</>;
-}
-
-/** Éclats de la déchirure, positions fixées pour un rendu stable. */
-const SHARDS = Array.from({ length: 30 }, (_, i) => {
-  const a = (i / 30) * 360 + ((i * 37) % 17) - 8;
-  const d = 140 + ((i * 53) % 120);
-  const s = 4 + ((i * 29) % 9);
-  return { a, d, s, dl: (i % 5) * 18, white: i % 3 === 0 };
-});
-
-export function Burst() {
-  return (
-    <div className="burst" aria-hidden>
-      <div className="burst-ring" />
-      <div className="burst-ring r2" />
-      <div className="burst-rays" />
-      {SHARDS.map((s, i) => (
-        <i
-          key={i}
-          className={s.white ? "w" : ""}
-          style={{ ["--a" as string]: `${s.a}deg`, ["--d" as string]: `${s.d}px`, ["--s" as string]: `${s.s}px`, ["--dl" as string]: `${s.dl}ms` } as CSSProperties}
-        />
-      ))}
-    </div>
-  );
-}
-
-/** Flash plein écran à la couleur du tier. */
-export function ScreenFlash({ color }: { color: string }) {
-  return <div className="screen-flash" style={{ ["--fc" as string]: color } as CSSProperties} aria-hidden />;
-}
-
-export function Stamp({ text, sub }: { text: string; sub?: string }) {
-  const long = text.length > 6;
-  return (
-    <div className={`stamp${long ? " stamp-long" : ""}`} aria-hidden>
-      <span className="stamp-text">{text}</span>
-      {sub && <span className="stamp-sub">{sub}</span>}
-    </div>
-  );
+  /** Le contenu sous la carte apparaît une fois la scène éteinte. */
+  const settled = phase === "done";
+  return { phase, open, skip, handoff, finish, animating, settled };
 }
 
 interface RevealCardProps {
@@ -131,75 +52,24 @@ interface RevealCardProps {
   lang: Lang;
   phase: Phase;
   idPrefix: string;
-  /** Décalage (ms) de la séquence pour une seconde carte. */
-  offset?: number;
-  /** Dessine son propre pack (carte seule) ; en comparaison, le parent le fait. */
-  withPack?: boolean;
-  /** Tamponne le tier sur la carte (carte seule). */
-  withStamp?: boolean;
-  onPackClick?: () => void;
-  children?: ReactNode;
+  /** Porte l'invite « touche pour ouvrir » (carte seule). */
+  primary?: boolean;
+  /** La carte 3D vient se poser sur cet emplacement. */
+  anchor?: boolean;
 }
 
-export function RevealCard({ card, lang, phase, idPrefix, offset = 0, withPack = true, withStamp = true, onPackClick }: RevealCardProps) {
+export function RevealCard({ card, lang, phase, idPrefix, primary = true, anchor = primary }: RevealCardProps) {
   const { t } = useT();
   const accent = accentOf(card);
   const style = styleOf(card);
-  const counting = phase === "count";
-  const showPack = withPack && (phase === "ready" || phase === "shake" || phase === "burst");
-  const showFront = phase !== "ready" && phase !== "shake" && phase !== "burst";
-  const vars = { "--ca": accent.a, "--cb": accent.b, "--ink": accent.ink, "--offset": `${offset}ms` } as CSSProperties;
-  const statsInOrder = STAT_CODES.map((c) => card.stats.find((s) => s.code === c)!).filter(Boolean);
-  const countTotal = STAT_STAGGER * 6 + 380;
+  const showCard = phase === "handoff" || phase === "done";
+  const vars = { "--ca": accent.a, "--cb": accent.b, "--ink": accent.ink } as CSSProperties;
 
   return (
-    <div className={`card-slot phase-${phase}${showFront ? " show-front" : ""}`} style={vars} data-style={style}>
+    <div className={`card-slot phase-${phase}${showCard ? " show-front" : ""}`} style={vars} data-style={style} data-scene-anchor={anchor ? "" : undefined}>
       <div className="slot-halo" aria-hidden />
-      <div className="flipper">
-        <div className="face face-back">
-          <CardBack />
-        </div>
-        <div className="face face-front">
-          <div className="front-inner">
-            <CardView card={card} lang={lang} interactive={phase === "stamp" || phase === "done"} reveal={phase === "stamp"} idPrefix={idPrefix} />
-          </div>
-          {(phase === "flip" || phase === "count" || phase === "stamp") && (
-            <div className="count-plate" aria-hidden>
-              <span className="count-overall">
-                <CountUp to={card.overall} delay={offset} duration={countTotal} run={counting} />
-              </span>
-              <span className="count-label">{t.tiers[style]}</span>
-              <ol className="count-stats">
-                {statsInOrder.map((s, i) => (
-                  <li key={s.code} className={s.code === "BUZZ" ? "is-buzz" : ""} style={{ ["--i" as string]: i } as CSSProperties}>
-                    <b>
-                      <CountUp to={s.value} delay={offset + i * STAT_STAGGER} run={counting} />
-                    </b>
-                    <span>{s.code}</span>
-                  </li>
-                ))}
-              </ol>
-            </div>
-          )}
-        </div>
-      </div>
-      {showPack && (
-        <button
-          type="button"
-          className={`pack-btn pack-${phase}`}
-          onClick={(e) => {
-            e.stopPropagation();
-            onPackClick?.();
-          }}
-          aria-label={t.reveal.tap}
-          disabled={phase !== "ready"}
-        >
-          <Pack accent={accent} />
-          {phase === "ready" && <span className="pack-hint">{t.reveal.tap}</span>}
-        </button>
-      )}
-      {withPack && (phase === "burst" || phase === "flip") && <Burst />}
-      {withStamp && phase === "stamp" && <Stamp text={t.tiers[style].toUpperCase()} sub={String(card.overall)} />}
+      <div className="card-rig">{showCard && <CardView card={card} lang={lang} interactive={phase === "done"} reveal={phase === "handoff"} idPrefix={idPrefix} />}</div>
+      {primary && phase === "ready" && <span className="pack-hint">{t.reveal.tap}</span>}
     </div>
   );
 }

@@ -273,7 +273,73 @@ Entre cinq et quinze secondes. Afficher des messages qui défilent, en lien avec
 
 ### 6.3 Révélation
 
-Ouverture de pack, sautable d'un clic, moins de trois secondes en tout : le pack flotte sur fond sombre, clic, tremblement, flash, la carte se retourne, les stats montent de zéro à leur valeur l'une après l'autre, le tier se tamponne en dernier. Respecter `prefers-reduced-motion` : dans ce cas, affichage direct.
+Walkout calqué sur FC 27, **en vraie 3D** (Three.js, WebGL), transposé dans un décor qui parle à tout le monde : **l'ascenseur qui monte jusqu'à l'étage du dev**. Les portes d'ascenseur remplacent celles du tunnel, et le compteur d'étages fait monter le suspense. Les portes s'ouvrent sur un open space de nuit, avec la ville derrière les baies. La séquence est sautable avec le bouton ou Échap ; un clic saute aussi, sauf pendant la fenêtre des feux d'artifice. La scène finit au pixel près sur la carte HTML. Dans l'ordre :
+
+1. **Le pack** flotte dans la cabine d'un ascenseur de nuit, devant les portes floues (profondeur de champ). Clic ou délai : il tremble, une couture de lumière s'ouvre, il éclate en étincelles, avec un flash bref. La cabine doit se reconnaître au premier coup d'œil :
+   - portes en inox brossé avec le joint au milieu, encadrement sombre et seuil ;
+   - afficheur d'étage au-dessus des portes ;
+   - panneau de boutons à droite ;
+   - mains courantes, plafonnier, filets de LED aux angles.
+
+   Un premier essai faisait de toute la paroi un écran LED : on ne comprenait pas qu'on était dans un ascenseur.
+2. **La montée : l'étage, c'est la note.** L'ascenseur monte jusqu'à la note du dev ; une carte à 95 arrive au 95e.
+   - Sur l'afficheur, la flèche ▲ et l'étage à gauche, à droite le **statut atteint**, qui change à chaque palier franchi (tableau ci-dessous), avec un bref parasite.
+   - Une flèche pour une carte seule, deux ▲▲ pour une comparaison GitHub × CV (le « double »).
+   - La cabine accélère doucement, file à vitesse constante, puis freine à l'approche (profil de vitesse en trapèze : 18 % d'accélération, 30 % de freinage). La lumière de la gaine glisse dans les fentes à la même vitesse : deux paliers éclairés aux bords doux par tuile, de plus en plus visibles avec la vitesse.
+   - Le bouton de l'étage d'arrivée est allumé à la couleur du tier.
+   - L'afficheur reste sous le seuil du bloom : lisible, pas éblouissant.
+3. **Les indices**, chacun en 3D chromé devant les portes, l'objet avec son nom en lettres 3D au-dessus :
+   - le **poste** ;
+   - le **langage principal** (le drapeau ; « Polyglotte » et des chevrons de code sans langage reconnu) ;
+   - le **championnat** (Ligue GitHub, Ligue CV, ou GitHub × CV) ;
+   - une attente « · · · », puis le **club** (écusson et employeur, « Agent libre » sinon).
+4. **L'arrivée** : l'afficheur montre la note et le statut final. Les portes s'ouvrent. Derrière, l'open space de nuit : îlots de bureaux, écrans en veille, la ville derrière les baies (Shanghai de nuit). Les néons s'allument rangée par rangée, comme les projecteurs du stade dans le jeu, et une allée de LED à la couleur du tier s'allume au sol jusqu'au poste du dev.
+5. **Le dev** est assis de dos à son poste, au bout de l'allée, sur un plateau à LED. Son poste : bureau, chaise gaming, trois écrans (son programme de recrutement qui s'écrit dans son langage principal, un terminal où les tests passent, son graphe de contributions), clavier rétroéclairé. Il tape (personnage posé assis et animé par code), puis sa chaise fait un demi-tour et il se tourne vers la caméra. Clic ou Espace : feux d'artifice sur la ville (L1/R1 dans le jeu), avec quelques tirs automatiques.
+6. **La carte se forme** devant lui dans un flash : carte 3D épaisse (silhouette extrudée, tranche métal à la couleur du tier, vernis, irisation) qui tourne sur elle-même. La note en 3D claque puis se pose à sa place, avec un balayage de lumière et des éclats.
+7. **La passation** : la carte 3D glisse jusqu'à l'emplacement HTML, la scène s'éteint, la carte HTML apparaît exactement par-dessus, le canvas s'efface, le partage apparaît.
+
+**Tous les tiers ont la séquence complète**, environ dix-huit secondes (FC 27 en met vingt-cinq). Seules changent la note (l'étage d'arrivée et les statuts traversés) et la couleur du tier : filets de la cabine, liseré au pied des murs, allée lumineuse, plateau du dev, tranche de la carte. Contrairement au jeu, il n'y a pas de version courte pour Bronze, Argent ou Or.
+
+**Les statuts de la montée** (fournis par Jacques le 15 octobre 2026, affichés en français ou en anglais selon la langue) :
+
+| Note | Statut (FR) | Statut (EN) |
+|---|---|---|
+| 1 à 14 | Touriste | Tourist |
+| 15 à 24 | Hello World | Hello World |
+| 25 à 34 | Newb | Newb |
+| 35 à 44 | Ctrl+C Ctrl+V | Ctrl+C Ctrl+V |
+| 45 à 59 | Padawan | Padawan |
+| 60 à 66 | Fait le taf | Gets it done |
+| 67 à 74 | Senior (sur LinkedIn) | Senior (on LinkedIn) |
+| 75 à 79 | Crack | Cracked |
+| 80 à 84 | Monstre | Monster |
+| 85 à 89 | Machine | Machine |
+| 90 à 94 | Boss final | Final boss |
+| 95 à 99 | Cheat code | Cheat code |
+
+**Caméra : un seul plan-séquence, sans aucune coupe.**
+- Elle est dans la cabine, face aux portes, et s'en approche à peine pendant la montée.
+- Quand les portes s'ouvrent, elle sort dans l'axe de l'allée et vient se poser face à la carte, le dev en plan d'ensemble derrière.
+- Tout reste dans l'axe (x = 0) : elle ne fait qu'avancer, sans balayer de gauche à droite et sans revenir en arrière.
+- La trajectoire est faite d'images-clés interpolées par des splines d'Hermite en temps, avec des tangentes monotones (Fritsch-Carlson). Position, visée et focale restent continues, leur vitesse aussi, sans jamais dépasser une image-clé.
+- Les focales sont larges (40 à 52°), sans gros plan serré.
+- Une seule petite secousse marque l'éclatement du pack, puis plus aucun mouvement parasite.
+- La pose finale est exacte, pour la passation au pixel près.
+
+Ce qui a été essayé, puis refusé par Jacques le 15 octobre 2026 :
+- un découpage en douze plans montés cut : trop zoomé, trop de changements, pas fluide ;
+- des allers-retours latéraux en fin de séquence ;
+- le stade lui-même, trop « foot » : il fallait un décor centré sur le dev et l'entreprise, qui parle à tout le monde.
+
+Sans WebGL, avec `prefers-reduced-motion`, ou si les assets ne sont pas là en douze secondes : affichage direct.
+
+**Assets** (`web/public/3d`, environ 1 Mo, préchargés pendant l'attente du §6.2) :
+- la ville de nuit : Poly Haven `shanghai_bund`, CC0, recadrée sur la ligne d'horizon et posée sur un cylindre derrière les baies ;
+- le grain du béton : Poly Haven `garage_floor`, CC0 ;
+- le personnage : Xbot des exemples three.js, sans ses animations, compressé meshopt ;
+- la police : Barlow Condensed 800 convertie en typeface (SIL OFL), pour les textes 3D.
+
+Tout le reste (cabine, open space, bureaux) est construit en code. Mise au point en démo : `window.__tys3d.hold(s)` fige la séquence à l'instant `s`, `seek(s)` y saute. Pendant un `hold`, la scène ne dessine pas d'image entre deux appels : un changement d'écran y reste figé en plein parasite.
 
 ### 6.4 Après la carte
 
@@ -314,7 +380,7 @@ Quand les deux sources sont là : les deux cartes côte à côte sur desktop, em
 - **Inclinaison 3D** au survol, douze degrés maximum, qui suit le pointeur. Sur mobile, suit le gyroscope si disponible.
 - **Reflet holographique** qui se déplace avec le pointeur, intensité selon le tier, technique des cartes Pokémon en CSS. Un grain de feuille métallique par bruit SVG.
 - **Balayage de lumière** à la révélation.
-- Tout en CSS et transformations, pas de WebGL, pour que ça tourne sur n'importe quel téléphone.
+- La carte et ses effets (inclinaison, holo, balayage) restent en CSS. La révélation (§6.3) est la seule scène WebGL, en Three.js avec le post-traitement `postprocessing` (bloom, rayons de lumière, profondeur de champ, vignette, grain, tonemapping ACES, MSAA). Pixel ratio plafonné à 1,5. Sur mobile (pointeur grossier ou petit écran) : ni réflexion du plateau, ni profondeur de champ, ni ombres, ni MSAA ; sans WebGL, affichage direct.
 - `prefers-reduced-motion` désactive l'inclinaison et le balayage, garde le rendu statique.
 
 ### 8.3 Barre de qualité
@@ -433,3 +499,5 @@ La calibration du §4.6 sur les dumps de sourcing reste à faire : leur lecture 
 - **Égalité dans la comparaison** : « CV et code à égalité. Rare, donc suspect. »
 - **Langage principal** (barème 0.1.1) : chaque repo vote pour son langage principal avec un poids de 1 + ln(1 + activité), les octets départagent les égalités, les langages de balisage ne comptent qu'à défaut. Un seul repo énorme ne peut plus l'emporter : le repo Lean de gaearon donnait « lean », il donne maintenant « javascript ».
 - **Coût GitHub** : environ 45 requêtes par carte, soit environ 200 cartes par heure avec un seul token. Le cache de 24 h est donc indispensable.
+- **Révélation en 3D** (14 octobre 2026) : les deux versions CSS (tremblement-flash-retournement, puis stade en CSS) ont été refusées parce qu'elles ne ressemblaient pas au pack opening de FUT. La révélation est désormais une scène Three.js (`web/src/three/walkout.ts`), seule exception à la règle « pas de WebGL » du §8.2, avec affichage direct sans WebGL. Elle dure huit à neuf secondes au lieu de trois, reste sautable, et se termine par une passation au pixel près à la carte HTML. Le compte des stats a disparu avec elle : comme dans le jeu, seule la note claque.
+- **Walkout FC 27** (15 octobre 2026) : la première scène 3D (tunnel procédural, silhouette plate, carte sans épaisseur) a été jugée « pas terrible » : elle avait l'air plate. Elle est remplacée par la séquence du walkout de FC 27 transposée en dev (§6.3), et la règle « aucun asset » tombe : photo de stade, personnage 3D et police 3D, 1,5 Mo préchargés pendant l'attente. Correspondances : nation → langage, championnat → source (GitHub, CV ou les deux), club → employeur, double walkout → comparaison. Le joueur qui sort est remplacé, à la demande de Jacques, par un dev assis à son poste qui code et se retourne. Durée allongée à environ dix-neuf secondes pour un walkout (vingt-cinq dans le jeu), toujours sautable. Bronze et Argent s'ouvraient d'abord directement et l'Or avait une version courte (« board »), comme dans le jeu ; à la demande de Jacques, tous les tiers ont maintenant la séquence complète, pour que chacun vive le moment qu'on partage. Le même jour, le stade a été remplacé, à la demande de Jacques, par un ascenseur qui monte jusqu'à l'étage du dev et s'ouvre sur un open space de nuit : un décor centré sur le dev et l'entreprise, qui parle à tout le monde, pas seulement aux joueurs de FIFA. Correspondances ajoutées : la note donne l'étage d'arrivée, chaque palier de note affiche un statut pendant la montée (« Touriste » à « Cheat code »), et le double walkout devient deux flèches ▲▲.

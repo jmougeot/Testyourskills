@@ -1,6 +1,6 @@
 // Route /c/:id : attente, révélation puis résultat pour une carte fraîche ;
 // affichage direct (sans pack) pour un lien partagé.
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import type { CardData, Fact, JobState, ProgressEvent } from "../../../shared/types";
 import { styleOf } from "../../../shared/types";
@@ -9,13 +9,18 @@ import type { Shareable } from "../components/After";
 import { ComparisonStage } from "../components/Comparison";
 import { EntryForm } from "../components/EntryForm";
 import { IconArrow } from "../components/Icons";
-import { RevealCard, ScreenFlash, useReveal } from "../components/Reveal";
+import { RevealCard, useReveal } from "../components/Reveal";
+import type { WalkoutControl } from "../components/Walkout3D";
 import { Waiting } from "../components/Waiting";
 import { pick, useT } from "../i18n";
 import { api, ApiError, tokens } from "../lib/api";
 import { navigate, onLinkClick } from "../lib/router";
 import { freshSince, prefillFromLast } from "../lib/session";
 import { accentOf, useReducedMotion } from "../lib/util";
+
+/** La révélation 3D et Three.js, hors du bundle de l'accueil. */
+const loadWalkout = () => import("../components/Walkout3D");
+const Walkout3D = lazy(() => loadWalkout().then((m) => ({ default: m.Walkout3D })));
 
 const POLL_MS = 600;
 const CLIENT_TIMEOUT = 45_000;
@@ -109,6 +114,14 @@ export function CardPage({ id }: { id: string }) {
     document.title = t.meta.titleCard(c.name, c.overall);
   }, [view, t]);
 
+  // La scène 3D (Three.js et ses assets) se charge pendant l'attente du scoring.
+  useEffect(() => {
+    if (view.s === "pending")
+      loadWalkout()
+        .then((m) => m.preloadWalkoutAssets())
+        .catch(() => undefined);
+  }, [view.s]);
+
   if (view.s === "loading") {
     return (
       <main className="page page-card" id="main">
@@ -192,12 +205,14 @@ interface ResultProps {
 
 function Result({ item, animate, owner, fresh, notice, onDeleted }: ResultProps) {
   const { t, lang } = useT();
-  const { phase, open, skip, animating, settled } = useReveal(animate);
-  const toast = useToast();
-  const tracked = useRef(false);
   const id = item.kind === "card" ? item.card.id : item.comparison.id;
   const main: CardData = item.kind === "card" ? item.card : item.comparison.github;
   const accent = item.kind === "card" ? accentOf(main) : { a: "#52d0bd", b: "#6cb6ff", ink: "#52d0bd" };
+  const { phase, open, skip, handoff, finish, animating, settled } = useReveal(animate);
+  const toast = useToast();
+  const tracked = useRef(false);
+  const stageRef = useRef<HTMLElement>(null);
+  const walkoutCtl = useRef<WalkoutControl | null>(null);
 
   useEffect(() => {
     if (fresh && !tracked.current) {
@@ -223,7 +238,7 @@ function Result({ item, animate, owner, fresh, notice, onDeleted }: ResultProps)
 
   const onStageClick = () => {
     if (phase === "ready") open();
-    else if (animating) skip();
+    else if (animating && !walkoutCtl.current?.interact()) skip();
   };
 
   const style = { "--ca": accent.a, "--cb": accent.b, "--ink": accent.ink } as CSSProperties;
@@ -240,14 +255,19 @@ function Result({ item, animate, owner, fresh, notice, onDeleted }: ResultProps)
         </div>
       )}
 
-      <section className={`result-stage${phase === "stamp" ? " jolt" : ""}`} onClick={animating ? onStageClick : undefined}>
+      {animating && (
+        <Suspense fallback={null}>
+          <Walkout3D card={main} lang={lang} double={item.kind === "comparison"} phase={phase} anchorRef={stageRef} controlRef={walkoutCtl} onHandoff={handoff} onDone={finish} />
+        </Suspense>
+      )}
+      <section ref={stageRef} className="result-stage" onClick={animating ? onStageClick : undefined}>
         <div className="stage-glow" aria-hidden />
         {item.kind === "card" ? (
           <div className="single-stage">
-            <RevealCard card={item.card} lang={lang} phase={phase} idPrefix="result" onPackClick={open} />
+            <RevealCard card={item.card} lang={lang} phase={phase} idPrefix="result" />
           </div>
         ) : (
-          <ComparisonStage cmp={item.comparison} phase={phase} onOpen={open} />
+          <ComparisonStage cmp={item.comparison} phase={phase} />
         )}
         {animating && phase !== "ready" && (
           <button
@@ -265,7 +285,6 @@ function Result({ item, animate, owner, fresh, notice, onDeleted }: ResultProps)
           {settled ? t.reveal.revealed(t.tiers[styleOf(main)], main.overall) : ""}
         </p>
       </section>
-      {phase === "burst" && <ScreenFlash color={accent.a} />}
 
       <div className={`after${settled ? " is-in" : ""}`} aria-hidden={!settled} inert={!settled ? true : undefined}>
         <ShareBar item={item} toast={toast.show} />

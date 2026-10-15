@@ -62,6 +62,8 @@ La base et les PNG sont dans le volume `testyourskills-data` (`/data`). Les cart
 ## Architecture
 
 - `web/` : front Vite + React 19 (entrée, attente, révélation, carte, partage).
+- `web/src/three/` : la révélation en 3D (Three.js + `postprocessing`), walkout façon FC 27 dans un ascenseur qui monte jusqu'à l'étage du dev : `walkout.ts` (séquence, cabine, open space, caméra, lumières), `ledWall.ts` (écran LED des portes), `workstation.ts` (le poste du dev), `player.ts` (le dev assis), `cardMesh.ts` (carte épaisse), `stage.ts` (ville de nuit, reflets), `assets.ts` (préchargement).
+- `web/public/3d/` : assets de la scène, environ 1 Mo. Panorama de nuit `shanghai_bund` (recadré) et grain `garage_floor` de Poly Haven (CC0), personnage Xbot des exemples three.js (sans animations, meshopt), Barlow Condensed 800 en typeface (SIL OFL).
 - `shared/` : types (`CardData`, `JobState`…), constats de l'IA, composant carte SVG, fixtures.
 - `data/` : barème, catalogue de statuts, mots creux.
 - `server/src/index.ts` : lit l'environnement, ouvre la base, lance Hono, purge horaire, statique en prod.
