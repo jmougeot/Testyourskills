@@ -265,7 +265,14 @@ Entre cinq et quinze secondes. Afficher des messages qui défilent, en lien avec
 
 ### 6.3 Révélation
 
-Ouverture de pack, sautable d'un clic, moins de trois secondes en tout : le pack flotte sur fond sombre, clic, tremblement, flash, la carte se retourne, les stats montent de zéro à leur valeur l'une après l'autre, le tier se tamponne en dernier. Respecter `prefers-reduced-motion` : dans ce cas, affichage direct.
+Ouverture de pack, sautable d'un clic, environ cinq secondes en tout, **une information à la fois** : le pack flotte sur fond sombre, clic, tremblement, flash, la carte se retourne (dos puis face floutée). Ensuite, dans l'ordre :
+
+1. **La note globale seule** monte de zéro à sa valeur en une seconde, en freinant sur la fin. Le halo prend la couleur du tier atteint et « sonne » à chaque palier franchi (60, 75, 90) : on regarde le chiffre grimper comme un ascenseur, sans savoir à quel étage il s'arrête.
+2. **Les six stats** tombent une par une, chacune comptant de zéro, pendant que la note se range en haut.
+3. **Le tier** se tamponne en dernier, le flou se lève, la carte apparaît.
+4. Seulement alors, le contenu sous la carte (partage, « Pourquoi cette note ? ») apparaît.
+
+Décision du 15 octobre 2026 : on a allongé la séquence (elle tenait en trois secondes) parce que tout arrivait d'un coup et que la montée n'était pas lisible. Respecter `prefers-reduced-motion` : dans ce cas, affichage direct.
 
 ### 6.4 Après la carte
 

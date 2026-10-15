@@ -978,6 +978,7 @@ svg {
   background: radial-gradient(closest-side, color-mix(in srgb, var(--ca) 42%, transparent), color-mix(in srgb, var(--cb) 14%, transparent) 55%, transparent);
   filter: blur(30px);
   opacity: 0.8;
+  pointer-events: none;
   transition: background 1.2s;
   animation: breathe 6s ease-in-out infinite;
 }
@@ -1726,7 +1727,7 @@ svg {
   transition: opacity 1.2s;
 }
 .page-result:not(.is-animating) .stage-glow,
-.result-stage:has(.phase-flip, .phase-count, .phase-stamp) .stage-glow {
+.result-stage:has(.phase-flip, .phase-count, .phase-stats, .phase-stamp) .stage-glow {
   opacity: 1;
 }
 
@@ -1759,11 +1760,11 @@ svg {
   inset: 0;
   transform-style: preserve-3d;
 }
+/* pas de backface-visibility : Chrome l'applique mal sous un parent animé en
+   preserve-3d et masquait le dos ; les faces basculent par visibilité (ci-dessous) */
 .face {
   position: absolute;
   inset: 0;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
 }
 .face-back {
   transform: rotateY(180deg);
@@ -1789,16 +1790,45 @@ svg {
     transform: rotateY(0) scale(1);
   }
 }
+/* les faces basculent à l'instant où le retournement passe 90° (≈ 6 % de flip-in) */
+.card-slot.phase-flip .face-front {
+  animation: face-front-in 550ms step-end both;
+  animation-delay: var(--offset, 0ms);
+}
+.card-slot.phase-flip .face-back {
+  animation: face-back-out 550ms step-end both;
+  animation-delay: var(--offset, 0ms);
+}
+@keyframes face-front-in {
+  0%,
+  5% {
+    visibility: hidden;
+  }
+  6%,
+  100% {
+    visibility: visible;
+  }
+}
+@keyframes face-back-out {
+  0%,
+  5% {
+    visibility: visible;
+  }
+  6%,
+  100% {
+    visibility: hidden;
+  }
+}
 /* une fois posée, la carte vit à plat : l'inclinaison du composant prend le relais */
 .card-slot.phase-done .flipper {
   transform-style: flat;
 }
 .card-slot.phase-done .face {
   position: relative;
-  backface-visibility: visible;
 }
 .card-slot.phase-done .face-back,
 .card-slot.phase-count .face-back,
+.card-slot.phase-stats .face-back,
 .card-slot.phase-stamp .face-back {
   display: none;
 }
@@ -1810,8 +1840,38 @@ svg {
   transition: filter 0.5s var(--ease-out);
 }
 .phase-flip .front-inner,
-.phase-count .front-inner {
+.phase-count .front-inner,
+.phase-stats .front-inner {
   filter: blur(9px) brightness(0.55) saturate(1.3);
+}
+
+/* l'ascenseur sonne à chaque palier de tier franchi par la note */
+.card-slot.ding .slot-halo {
+  animation: ding-halo 0.5s var(--ease-out);
+}
+.card-slot.ding .count-overall {
+  animation: ding-number 0.42s cubic-bezier(0.2, 0.9, 0.3, 1.3);
+}
+@keyframes ding-halo {
+  0% {
+    opacity: 1;
+    transform: scale(1.12);
+  }
+  100% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+}
+@keyframes ding-number {
+  0% {
+    transform: scale(1);
+  }
+  35% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 /* dos de carte */
@@ -1867,7 +1927,7 @@ svg {
   color: rgba(255, 255, 255, 0.55);
 }
 
-/* compteurs posés sur la carte floutée */
+/* compteurs posés sur la carte floutée : la note seule d'abord, puis les stats une par une */
 .count-plate {
   position: absolute;
   inset: 0;
@@ -1875,7 +1935,7 @@ svg {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 1.5cqw;
+  gap: 0;
   -webkit-mask: var(--card-mask) center / 100% 100% no-repeat;
   mask: var(--card-mask) center / 100% 100% no-repeat;
   background: radial-gradient(80% 60% at 50% 45%, rgba(6, 10, 16, 0.2), rgba(6, 10, 16, 0.55));
@@ -1894,23 +1954,29 @@ svg {
 .count-overall {
   font-family: var(--f-display);
   font-weight: 800;
-  font-size: 38cqw;
+  font-size: 44cqw;
   line-height: 0.8;
   font-variant-numeric: tabular-nums;
   color: #fff;
   text-shadow:
     0 0 6cqw color-mix(in srgb, var(--ca) 80%, transparent),
     0 0.6cqw 0 color-mix(in srgb, var(--cb) 60%, #000);
+  opacity: 0;
+  transition:
+    font-size 0.45s var(--ease-out),
+    margin 0.45s var(--ease-out),
+    opacity 0.3s;
 }
-.count-label {
-  font-family: var(--f-mono);
-  font-size: 4cqw;
-  font-weight: 700;
-  letter-spacing: 0.34em;
-  text-transform: uppercase;
-  color: var(--ink);
-  margin-bottom: 4cqw;
-  padding-left: 0.34em;
+.phase-count .count-overall,
+.phase-stats .count-overall,
+.phase-stamp .count-overall {
+  opacity: 1;
+}
+/* quand les stats arrivent, la note se range en haut, plus petite */
+.phase-stats .count-overall,
+.phase-stamp .count-overall {
+  font-size: 22cqw;
+  margin-bottom: 7cqw;
 }
 .count-stats {
   list-style: none;
@@ -1919,24 +1985,32 @@ svg {
   grid-template-rows: repeat(3, auto);
   grid-auto-flow: column;
   gap: 1.6cqw 12cqw;
+  height: 0;
+  overflow: hidden;
+  transition: height 0.45s var(--ease-out);
+}
+.phase-stats .count-stats,
+.phase-stamp .count-stats {
+  height: 36cqw;
+  overflow: visible;
 }
 .count-stats li {
   display: flex;
   align-items: baseline;
   gap: 2.4cqw;
   opacity: 0;
-  animation: stat-in 0.32s var(--ease-out) forwards;
-  animation-delay: calc(var(--offset, 0ms) + var(--i) * 105ms);
+  animation: stat-in 0.34s cubic-bezier(0.2, 0.9, 0.3, 1.25) forwards;
+  animation-delay: calc(var(--offset, 0ms) + var(--i) * var(--stagger, 180ms));
   animation-play-state: paused;
 }
-.phase-count .count-stats li,
+.phase-stats .count-stats li,
 .phase-stamp .count-stats li {
   animation-play-state: running;
 }
 @keyframes stat-in {
   from {
     opacity: 0;
-    transform: translateY(2cqw) scale(0.9);
+    transform: translateY(3cqw) scale(0.8);
   }
   to {
     opacity: 1;
