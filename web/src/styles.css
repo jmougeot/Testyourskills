@@ -573,34 +573,72 @@ svg {
 }
 
 /* ============ accueil ============ */
+/* L'accueil est en thème clair, celui d'azerit.tech (jetons dans le bloc « thème clair » en fin de
+   fichier) : fond blanc, grille de points, mono pour les titres, teal de la gemme. Plus décontracté
+   que la landing : autocollants penchés, surligneur, carte inclinée, carrés de contributions. */
 
 .hero {
   display: grid;
-  grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
   align-items: center;
-  gap: 40px;
-  max-width: 1240px;
+  gap: 48px;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 24px 24px 64px;
-  min-height: calc(100svh - 76px);
+  padding: 40px 24px 72px;
+  min-height: calc(100svh - 70px);
+}
+/* un voile blanc derrière le texte : la grille de points ne se bat pas avec les lettres */
+.hero-copy {
+  position: relative;
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 0 40px 28px rgba(255, 255, 255, 0.86);
+  border-radius: 8px;
 }
 
-.kicker {
+/* --- autocollants : l'accroche en pastilles penchées --- */
+.stickers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 10px;
+  margin-bottom: 26px;
+}
+.sticker {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   font-family: var(--f-mono);
-  font-size: 12px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--dim);
-  margin-bottom: 22px;
+  font-size: 12.5px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  padding: 8px 12px;
+  border-radius: 999px;
+  color: var(--text);
+  background: #fff;
+  border: 1px solid var(--text);
+  box-shadow: 2px 2px 0 var(--text);
+  transform: rotate(var(--tilt, 0deg));
 }
-.kicker-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
+.stickers .sticker:nth-child(1) {
+  --tilt: -2deg;
+}
+.stickers .sticker:nth-child(2) {
+  --tilt: 1.5deg;
+  color: #fff;
   background: var(--teal);
+}
+.stickers .sticker:nth-child(3) {
+  --tilt: -1deg;
+  background: #eef2c4;
+}
+.stickers .sticker:nth-child(4) {
+  --tilt: 2deg;
+}
+.sticker-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--teal-bright);
   box-shadow: 0 0 0 0 rgba(82, 208, 189, 0.6);
   animation: ping 2.4s ease-out infinite;
 }
@@ -610,40 +648,31 @@ svg {
   }
   70%,
   100% {
-    box-shadow: 0 0 0 9px rgba(82, 208, 189, 0);
+    box-shadow: 0 0 0 8px rgba(82, 208, 189, 0);
   }
 }
 
+/* --- titre : mono comme azerit.tech, deuxième ligne surlignée au marqueur --- */
 .hero-title {
-  font-family: var(--f-display);
-  font-weight: 800;
-  text-transform: uppercase;
-  font-size: clamp(42px, 6vw, 90px);
-  line-height: 0.9;
-  letter-spacing: -0.005em;
-  margin-bottom: 34px;
+  font-family: var(--f-mono);
+  font-weight: 700;
+  font-size: clamp(34px, 4.1vw, 52px);
+  line-height: 1.14;
+  letter-spacing: -0.035em;
+  margin-bottom: 30px;
   text-wrap: balance;
 }
 .hero-a {
   display: block;
   color: var(--text);
-  position: relative;
 }
 .hero-b {
-  display: block;
-  margin-top: 0.06em;
-  background: linear-gradient(92deg, #8ff0e1 0%, var(--teal) 35%, var(--blue) 80%, #a9d3ff 100%);
-  background-size: 200% 100%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  animation: shimmer-text 9s ease-in-out infinite alternate;
-  filter: drop-shadow(0 0 28px rgba(82, 208, 189, 0.22));
-}
-@keyframes shimmer-text {
-  to {
-    background-position: 100% 0;
-  }
+  color: var(--teal);
+  background-image: linear-gradient(transparent 58%, #e4ea93 58%, #e4ea93 94%, transparent 94%);
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  padding: 0 0.08em;
+  margin: 0 -0.08em;
 }
 
 /* --- le champ --- */
@@ -959,97 +988,166 @@ svg {
   color: var(--teal-2);
 }
 
-/* --- carte d'exemple --- */
+/* --- la scène : un pack opening dans un cadre de nuit, posé sur la page blanche --- */
 
 .hero-card {
   display: flex;
   justify-content: center;
 }
-
-.example {
-  position: relative;
-  width: min(380px, 100%);
-  perspective: 1400px;
+.stage-wrap {
+  width: min(400px, 100%);
 }
-.example-halo {
+.stage {
+  --ca: var(--teal-bright);
+  --cb: var(--blue);
+  position: relative;
+  container-type: inline-size;
+  aspect-ratio: 400 / 600;
+  overflow: hidden;
+  border-radius: 24px;
+  background: #0a0f16;
+  border: 1px solid #223040;
+  box-shadow: 8px 8px 0 var(--teal);
+  transform: rotate(-1.5deg);
+}
+.stage-rays {
   position: absolute;
-  inset: -18% -22%;
+  left: 50%;
+  top: 64%;
+  width: 240cqw;
+  height: 240cqw;
+  margin: -120cqw 0 0 -120cqw;
+  background: repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--ca) 9%, transparent) 0 5deg, transparent 5deg 16deg);
+  -webkit-mask: radial-gradient(closest-side, #000, transparent 70%);
+  mask: radial-gradient(closest-side, #000, transparent 70%);
+  animation: spin 48s linear infinite;
+  transition: background 1.2s;
+}
+.stage-glow {
+  position: absolute;
+  left: 50%;
+  top: 62%;
+  width: 130cqw;
+  height: 100cqw;
+  transform: translate(-50%, -50%);
   border-radius: 50%;
   background: radial-gradient(closest-side, color-mix(in srgb, var(--ca) 42%, transparent), color-mix(in srgb, var(--cb) 14%, transparent) 55%, transparent);
-  filter: blur(30px);
-  opacity: 0.8;
+  filter: blur(10cqw);
   transition: background 1.2s;
   animation: breathe 6s ease-in-out infinite;
 }
 @keyframes breathe {
   50% {
-    opacity: 0.55;
-    transform: scale(0.94);
+    opacity: 0.6;
+    transform: translate(-50%, -50%) scale(0.94);
   }
 }
-.example-floor {
+.stage-floor {
   position: absolute;
-  left: 18%;
-  right: 18%;
-  bottom: 22px;
-  height: 26px;
-  border-radius: 50%;
-  background: radial-gradient(closest-side, rgba(0, 0, 0, 0.75), transparent);
-  filter: blur(6px);
-  animation: floor 7s ease-in-out infinite;
+  z-index: 3;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 22cqw;
+  background: linear-gradient(180deg, transparent, rgba(4, 7, 11, 0.75));
+  pointer-events: none;
 }
-@keyframes floor {
-  50% {
-    transform: scaleX(0.82);
-    opacity: 0.7;
-  }
+
+/* étincelles à quatre branches, chacune à sa place et à son rythme */
+.sparkles i {
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  width: 4cqw;
+  height: 4cqw;
+  background: #fff;
+  clip-path: polygon(50% 0, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0 50%, 40% 40%);
+  opacity: 0;
+  animation: twinkle 3.4s ease-in-out infinite;
+  animation-delay: var(--d, 0s);
+  filter: drop-shadow(0 0 1.5cqw var(--ca));
 }
-.example-float {
-  position: relative;
-  animation: float 7s ease-in-out infinite;
-  transform-style: preserve-3d;
+.sparkles i:nth-child(3n) {
+  width: 2.6cqw;
+  height: 2.6cqw;
 }
-@keyframes float {
+.sparkles i:nth-child(4n + 1) {
+  background: var(--ca);
+}
+@keyframes twinkle {
   0%,
   100% {
-    transform: translateY(0) rotateY(-9deg) rotateZ(-1.2deg);
+    opacity: 0;
+    transform: scale(0.3) rotate(0deg);
   }
   50% {
-    transform: translateY(-16px) rotateY(9deg) rotateZ(1.2deg);
+    opacity: 0.95;
+    transform: scale(1) rotate(45deg);
   }
 }
-.example-turn {
-  transition: transform 0.32s cubic-bezier(0.5, 0, 0.75, 0);
-  animation: turn-in 0.45s var(--ease-out);
+
+/* la carte sort du pack et flotte ; au changement de tier, elle replonge et ressort */
+.stage-card {
+  position: absolute;
+  z-index: 1;
+  left: 50%;
+  top: 5cqw;
+  width: 66cqw;
+  margin-left: -33cqw;
+  transform-style: preserve-3d;
+  animation: float-card 6s ease-in-out infinite;
+  transition: transform 0.7s var(--ease-spring);
 }
-.example-turn.is-turning {
-  transform: rotateY(90deg) scale(0.96);
-}
-@keyframes turn-in {
-  from {
-    transform: rotateY(-90deg) scale(0.96);
+@keyframes float-card {
+  50% {
+    transform: translateY(-2.5cqw);
   }
+}
+.stage-card.is-dip {
+  animation: none;
+  transform: translateY(84cqw);
+  transition: transform 0.4s cubic-bezier(0.5, 0, 0.75, 0);
+}
+.stage-pack {
+  position: absolute;
+  z-index: 2;
+  left: 50%;
+  top: 88cqw;
+  width: 52cqw;
+  margin-left: -26cqw;
+  transform: rotate(-3deg);
+}
+.stage-pack .pack {
+  width: 100%;
+  margin: 0;
+}
+.stage-pack .pack-glow {
+  opacity: 0.35;
+}
+.example-sticker {
+  position: absolute;
+  z-index: 4;
+  top: 14px;
+  right: 14px;
+  --tilt: 6deg;
+  background: #fff;
 }
 .example-caption {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 12px;
-  margin-top: 26px;
+  margin-top: 22px;
   font-family: var(--f-mono);
   font-size: 11px;
+  font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--dim);
 }
 .example-tier {
-  color: var(--ca);
+  color: var(--text);
   min-width: 8ch;
-  transition: color 0.6s;
-}
-.example-tag {
-  min-width: 8ch;
-  text-align: right;
 }
 .example-dots {
   display: inline-flex;
@@ -1059,7 +1157,7 @@ svg {
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: #2e4156;
+  background: var(--border);
   transition:
     background 0.4s,
     width 0.4s var(--ease-out);
@@ -1067,80 +1165,161 @@ svg {
 .example-dots i.on {
   width: 16px;
   border-radius: 3px;
-  background: var(--ca);
+  background: var(--text);
 }
 
-/* --- sous la ligne de flottaison --- */
+/* un bout de calendrier de contributions (bandeau du bas) */
+.contrib {
+  --cell: 14px;
+  display: grid;
+  gap: 4px;
+}
+.contrib i {
+  width: var(--cell);
+  height: var(--cell);
+  border-radius: 3px;
+  background: rgba(15, 118, 110, 0.09);
+}
+.contrib i.on {
+  animation: commit-twinkle 6s ease-in-out infinite;
+  animation-delay: var(--d, 0s);
+}
+@keyframes commit-twinkle {
+  50% {
+    opacity: 0.45;
+  }
+}
 
-.how,
-.stats-explain,
-.tiers,
-.bottom-cta {
+/* --- sous la ligne de flottaison : des bandes à filets, comme sur azerit.tech --- */
+/* Chaque bande trace un filet pleine largeur en haut ; sur grand écran, le conteneur ajoute deux
+   rails verticaux et un petit carré teal à chaque croisement. Les bandes se suivent sans marge pour
+   que les rails se lisent d'un trait. */
+
+.band {
+  position: relative;
+  border-top: 1px solid var(--border);
+}
+.band-inner {
+  position: relative;
   max-width: 1140px;
   margin: 0 auto;
-  padding: 72px 24px;
+  padding: 64px 24px;
+}
+@media (min-width: 801px) {
+  .band-inner {
+    width: min(100% - 48px, 1140px);
+    padding: 64px 40px;
+    border-left: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    background:
+      linear-gradient(var(--panel-angle, 160deg), var(--panel-tint, transparent), transparent 72%),
+      var(--bg);
+  }
+  .band-inner::before,
+  .band-inner::after {
+    content: "";
+    position: absolute;
+    top: -4px;
+    width: 7px;
+    height: 7px;
+    background: var(--teal);
+  }
+  .band-inner::before {
+    left: -4px;
+  }
+  .band-inner::after {
+    right: -4px;
+  }
+}
+/* une teinte verte à peine là par bande, les quatre verts de la palette en rotation */
+.how {
+  --panel-tint: rgba(15, 118, 110, 0.07);
+}
+.stats-explain {
+  --panel-tint: rgba(122, 138, 31, 0.08);
+  --panel-angle: 200deg;
+}
+.tiers {
+  --panel-tint: rgba(82, 208, 189, 0.12);
+}
+.bottom-cta {
+  --panel-tint: rgba(48, 161, 78, 0.07);
+  --panel-angle: 200deg;
 }
 
 .section-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
   font-family: var(--f-mono);
   font-size: 12px;
-  letter-spacing: 0.14em;
+  font-weight: 700;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--teal);
   margin-bottom: 12px;
 }
+.section-kicker::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  background: var(--teal);
+}
 .section-title {
-  font-family: var(--f-display);
-  font-weight: 800;
-  text-transform: uppercase;
-  font-size: clamp(32px, 4.4vw, 54px);
-  line-height: 0.95;
-  max-width: 24ch;
+  font-family: var(--f-mono);
+  font-weight: 700;
+  font-size: clamp(24px, 2.8vw, 34px);
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+  max-width: 30ch;
   text-wrap: balance;
 }
 .section-sub {
-  margin-top: 14px;
+  margin-top: 12px;
   color: var(--dim);
   max-width: 56ch;
+  font-size: 15.5px;
 }
 
+/* comment ça marche : trois cartes plates reliées par un pointillé */
 .how-steps {
   list-style: none;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
+  gap: 28px;
   margin-top: 36px;
-  counter-reset: s;
 }
 .how-step {
   position: relative;
-  padding: 26px 22px 24px;
-  border-radius: var(--radius);
-  background: linear-gradient(180deg, rgba(20, 30, 44, 0.75), rgba(14, 21, 31, 0.6));
+  padding: 22px 22px 20px;
+  border-radius: 12px;
+  background: #fff;
   border: 1px solid var(--border);
-  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(31, 35, 40, 0.05);
 }
-.how-step::after {
+.how-step + .how-step::before {
   content: "";
   position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(82, 208, 189, 0.6), transparent);
+  top: 34px;
+  left: -29px;
+  width: 28px;
+  height: 2px;
+  background: repeating-linear-gradient(90deg, var(--teal) 0 4px, transparent 4px 9px);
 }
 .how-num {
-  font-family: var(--f-display);
-  font-weight: 800;
-  font-size: 56px;
-  line-height: 1;
-  color: transparent;
-  -webkit-text-stroke: 1px #3a5068;
-  display: block;
-  margin-bottom: 10px;
+  display: inline-flex;
+  font-family: var(--f-mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--teal);
+  background: rgba(15, 118, 110, 0.08);
+  border: 1px solid rgba(15, 118, 110, 0.28);
+  padding: 3px 8px;
+  border-radius: 6px;
+  margin-bottom: 12px;
 }
 .how-step h3 {
-  font-size: 17px;
+  font-size: 16.5px;
   font-weight: 700;
   margin-bottom: 6px;
 }
@@ -1149,53 +1328,52 @@ svg {
   font-size: 14.5px;
 }
 
+/* les six stats : des tuiles plates qui se soulèvent avec une ombre dure */
 .stat-tiles {
   list-style: none;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 12px;
-  margin-top: 32px;
+  margin-top: 28px;
 }
 .stat-tile {
   position: relative;
-  padding: 20px 20px 18px;
-  border-radius: 14px;
-  background: rgba(16, 23, 34, 0.72);
+  padding: 18px 18px 16px;
+  border-radius: 12px;
+  background: #fff;
   border: 1px solid var(--border);
   transition:
-    transform 0.3s var(--ease-out),
-    border-color 0.3s;
+    transform 0.25s var(--ease-out),
+    box-shadow 0.25s,
+    border-color 0.25s;
 }
 .stat-tile:hover {
-  transform: translateY(-3px);
-  border-color: var(--border-2);
+  transform: translate(-2px, -2px);
+  border-color: var(--text);
+  box-shadow: 4px 4px 0 var(--text);
 }
 .stat-tile-code {
-  font-family: var(--f-display);
-  font-weight: 800;
-  font-size: 38px;
+  font-family: var(--f-mono);
+  font-weight: 700;
+  font-size: 28px;
   line-height: 1;
-  letter-spacing: 0.02em;
-  background: linear-gradient(180deg, #fff, #9fb2c4);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  letter-spacing: -0.02em;
+  color: var(--text);
 }
 .stat-tile-weight {
   position: absolute;
-  top: 20px;
-  right: 18px;
+  top: 16px;
+  right: 14px;
   font-family: var(--f-mono);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
-  color: var(--teal);
-  padding: 3px 8px;
-  border-radius: 6px;
-  background: rgba(82, 208, 189, 0.08);
-  border: 1px solid rgba(82, 208, 189, 0.22);
+  color: #fff;
+  background: var(--teal);
+  padding: 4px 9px;
+  border-radius: 999px;
 }
 .stat-tile h3 {
-  margin-top: 10px;
+  margin-top: 12px;
   font-size: 15px;
   font-weight: 700;
 }
@@ -1205,19 +1383,17 @@ svg {
 }
 .stat-tile.is-buzz {
   background:
-    repeating-linear-gradient(-45deg, rgba(255, 145, 87, 0.05) 0 10px, transparent 10px 20px),
-    rgba(16, 23, 34, 0.72);
-  border-color: rgba(255, 145, 87, 0.28);
+    repeating-linear-gradient(-45deg, rgba(188, 76, 0, 0.06) 0 10px, transparent 10px 20px),
+    #fff;
+  border-color: rgba(188, 76, 0, 0.35);
 }
 .stat-tile.is-buzz .stat-tile-code {
-  background: linear-gradient(180deg, #ffc29f, var(--down));
-  -webkit-background-clip: text;
-  background-clip: text;
+  color: var(--down);
 }
 .stat-tile.is-buzz .stat-tile-weight {
   color: var(--down);
-  background: rgba(255, 145, 87, 0.08);
-  border-color: rgba(255, 145, 87, 0.3);
+  background: #fff;
+  border: 1px solid rgba(188, 76, 0, 0.45);
   text-decoration: line-through;
 }
 
@@ -1239,42 +1415,95 @@ svg {
   transition:
     transform 0.45s var(--ease-out),
     filter 0.3s;
-  filter: drop-shadow(0 24px 30px rgba(0, 0, 0, 0.55));
+  filter: drop-shadow(0 18px 24px rgba(31, 35, 40, 0.28));
 }
 .fan-card:hover {
   transform: translateX(calc(var(--off) * 150px)) rotate(calc(var(--off) * 3deg)) translateY(-26px) scale(1.05);
   z-index: 20 !important;
-  filter: drop-shadow(0 30px 40px rgba(0, 0, 0, 0.6)) drop-shadow(0 0 30px color-mix(in srgb, var(--ca) 35%, transparent));
+  filter: drop-shadow(0 26px 34px rgba(31, 35, 40, 0.34));
 }
 .fan-label {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: -28px;
-  text-align: center;
+  bottom: -30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
   font-family: var(--f-mono);
   font-size: 11px;
-  letter-spacing: 0.14em;
+  font-weight: 700;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--ca);
+  color: var(--text);
   opacity: 0;
   transition: opacity 0.3s;
+}
+.fan-label::before {
+  content: "";
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  background: var(--ca);
+  border: 1px solid rgba(31, 35, 40, 0.35);
 }
 .fan-card:hover .fan-label {
   opacity: 1;
 }
 
-.bottom-cta {
+/* dernier appel, puis un bandeau de commits qui défile jusqu'au pied de page */
+.bottom-cta .band-inner {
   text-align: center;
-  padding-bottom: 96px;
+  padding-top: 72px;
+  padding-bottom: 72px;
 }
 .bottom-cta h2 {
-  font-family: var(--f-display);
-  font-weight: 800;
-  text-transform: uppercase;
-  font-size: clamp(34px, 5vw, 64px);
-  line-height: 0.95;
+  font-family: var(--f-mono);
+  font-weight: 700;
+  font-size: clamp(28px, 4vw, 44px);
+  line-height: 1.1;
+  letter-spacing: -0.03em;
   margin-bottom: 26px;
+}
+.commits {
+  position: relative;
+  overflow: hidden;
+  border-top: 1px solid var(--border);
+  padding: 16px 0;
+  background: var(--bg);
+}
+/* les deux carrés du bas des rails, là où ils croisent le filet du bandeau */
+@media (min-width: 801px) {
+  .commits::before,
+  .commits::after {
+    content: "";
+    position: absolute;
+    top: -4px;
+    width: 7px;
+    height: 7px;
+    background: var(--teal);
+    z-index: 1;
+  }
+  .commits::before {
+    left: calc(50% - min(50% - 24px, 570px) - 4px);
+  }
+  .commits::after {
+    right: calc(50% - min(50% - 24px, 570px) - 4px);
+  }
+}
+.commits-track {
+  display: flex;
+  width: max-content;
+  animation: commits-scroll 60s linear infinite;
+}
+.commits-track > .contrib {
+  margin-right: 4px;
+}
+@keyframes commits-scroll {
+  to {
+    transform: translateX(-50%);
+  }
 }
 
 /* ============ pack ============ */
@@ -3065,11 +3294,18 @@ svg {
     width: 100%;
     text-align: left;
   }
-  .example {
-    width: min(320px, 78vw);
+  .stage-wrap {
+    width: min(340px, 100%);
+  }
+  .stickers {
+    justify-content: center;
   }
   .how-steps {
     grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  .how-step + .how-step::before {
+    display: none;
   }
   .stat-tiles {
     grid-template-columns: repeat(2, 1fr);
@@ -3119,14 +3355,21 @@ svg {
   .hero {
     padding: 8px 16px 40px;
   }
-  .kicker {
-    font-size: 10.5px;
-    letter-spacing: 0.1em;
-    margin-bottom: 16px;
+  .stickers {
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+  .sticker {
+    font-size: 11.5px;
+    padding: 7px 10px;
   }
   .hero-title {
-    font-size: clamp(36px, 11.4vw, 60px);
+    font-size: clamp(30px, 8.6vw, 40px);
     margin-bottom: 22px;
+  }
+  .stage {
+    border-radius: 18px;
+    box-shadow: 5px 5px 0 var(--teal);
   }
   .entry {
     padding: 8px;
@@ -3169,11 +3412,12 @@ svg {
     justify-content: center;
     text-align: center;
   }
-  .how,
-  .stats-explain,
-  .tiers,
-  .bottom-cta {
-    padding: 52px 16px;
+  .band-inner {
+    padding: 48px 16px;
+  }
+  .bottom-cta .band-inner {
+    padding-top: 56px;
+    padding-bottom: 56px;
   }
   .console-lines {
     font-size: 12.5px;
@@ -3266,7 +3510,8 @@ svg {
     scroll-behavior: auto !important;
   }
   .halo,
-  .example-float,
+  .stage-card,
+  .sparkles i,
   .pack-waiting {
     animation: none !important;
   }
@@ -3300,4 +3545,290 @@ svg {
     opacity: 0;
     transform: translate(-50%, -6px);
   }
+}
+
+/* ============ thème clair : l'identité d'azerit.tech ============ */
+/* Actif sur l'accueil et les pages de texte (data-theme sur <html>, posé par App). La carte, son
+   attente et sa révélation restent de nuit : la scène 3D est un ascenseur de nuit. Les jetons
+   reprennent ceux de la landing Azerit : blanc, gris GitHub, teal #0f766e, chartreuse de la gemme. */
+
+:root[data-theme="light"] {
+  --bg: #ffffff;
+  --bg-2: #f6f8fa;
+  --surface: #ffffff;
+  --surface-2: #f6f8fa;
+  --well: #f6f8fa;
+  --border: #d0d7de;
+  --border-2: #b6c0ca;
+  --text: #1f2328;
+  --text-2: #3d444d;
+  --dim: #59636e;
+  --teal: #0f766e;
+  --teal-2: #115e59;
+  --teal-bright: #52d0bd;
+  --lime: #7a8a1f;
+  --blue: #0969da;
+  --up: #1a7f37;
+  --down: #bc4c00;
+  --danger: #cf222e;
+  --violet: #8250df;
+  --amber: #9a6700;
+  color-scheme: light;
+}
+[data-theme="light"] ::selection {
+  background: rgba(15, 118, 110, 0.14);
+  color: var(--teal);
+}
+[data-theme="light"] .skip-link {
+  color: #fff;
+}
+
+/* grille de points, les points près du curseur passent au teal */
+.ambient-light {
+  overflow: visible;
+}
+.dotgrid {
+  position: absolute;
+  inset: 0;
+  --mx: 50%;
+  --my: 50%;
+  --glow: 0;
+  background-image: radial-gradient(circle at center, rgba(89, 99, 110, 0.16) 1px, transparent 1.4px);
+  background-size: 24px 24px;
+}
+.dotgrid::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle at center, rgba(15, 118, 110, 0.38) 1.8px, transparent 2.3px);
+  background-size: 24px 24px;
+  -webkit-mask-image: radial-gradient(circle 140px at var(--mx) var(--my), #000 40%, transparent 75%);
+  mask-image: radial-gradient(circle 140px at var(--mx) var(--my), #000 40%, transparent 75%);
+  opacity: var(--glow);
+  transition: opacity 0.35s ease;
+}
+@media (hover: none) {
+  .dotgrid::after {
+    display: none;
+  }
+}
+
+/* barre du haut : collante, blanche, filet dessous, mot-symbole en mono */
+[data-theme="light"] .topbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  max-width: none;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border);
+}
+[data-theme="light"] .topbar > * {
+  display: flex;
+  align-items: center;
+}
+[data-theme="light"] .topbar-brand {
+  flex: 1;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 14px 24px;
+  gap: 9px;
+}
+[data-theme="light"] .topbar-right {
+  position: absolute;
+  right: 24px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+[data-theme="light"] .wordmark {
+  font-family: var(--f-mono);
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: -0.02em;
+  text-transform: none;
+}
+[data-theme="light"] .wordmark-your {
+  color: var(--dim);
+  font-style: normal;
+  margin: 0;
+}
+[data-theme="light"] .wordmark-skills {
+  background: none;
+  -webkit-background-clip: initial;
+  background-clip: initial;
+  color: var(--teal);
+}
+[data-theme="light"] .lang-toggle {
+  background: var(--bg-2);
+  border-color: var(--border);
+}
+[data-theme="light"] .lang-toggle button[aria-pressed="true"] {
+  color: #fff;
+}
+[data-theme="light"] .lang-toggle button:hover:not([aria-pressed="true"]) {
+  color: var(--text);
+}
+[data-theme="light"] .lang-toggle-thumb {
+  background: var(--text);
+  box-shadow: none;
+}
+[data-theme="light"] .demo-pill {
+  border-color: rgba(154, 103, 0, 0.4);
+  background: rgba(154, 103, 0, 0.07);
+}
+
+/* boutons : à plat, bord noir, ombre dure, comme les autocollants */
+[data-theme="light"] .btn-primary {
+  font-family: var(--f-mono);
+  font-size: 14.5px;
+  border-radius: 10px;
+  color: #fff;
+  background: var(--teal);
+  border: 1px solid var(--text);
+  box-shadow: 3px 3px 0 var(--text);
+  transition:
+    transform 0.15s var(--ease-out),
+    box-shadow 0.15s,
+    background 0.15s;
+}
+[data-theme="light"] .btn-primary::after {
+  display: none;
+}
+[data-theme="light"] .btn-primary:hover {
+  transform: translate(-1px, -1px);
+  background: #128379;
+  box-shadow: 4px 4px 0 var(--text);
+}
+[data-theme="light"] .btn-primary:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--text);
+}
+[data-theme="light"] .btn-primary:disabled {
+  filter: none;
+  background: var(--dim);
+  transform: none;
+  box-shadow: 3px 3px 0 var(--text);
+}
+[data-theme="light"] .btn-secondary {
+  background: #fff;
+  border-color: var(--text);
+  color: var(--text);
+}
+[data-theme="light"] .btn-secondary:hover {
+  border-color: var(--text);
+  background: var(--bg-2);
+}
+
+/* onglets */
+[data-theme="light"] .seg {
+  background: var(--bg-2);
+  border-color: var(--border);
+}
+[data-theme="light"] .seg-thumb {
+  background: #fff;
+  border-color: var(--border);
+  box-shadow: 0 1px 2px rgba(31, 35, 40, 0.08);
+}
+[data-theme="light"] .seg-thumb::after {
+  display: none;
+}
+
+/* le champ */
+[data-theme="light"] .entry {
+  background: #fff;
+  border-color: var(--border);
+  box-shadow:
+    0 1px 2px rgba(31, 35, 40, 0.06),
+    0 24px 48px -28px rgba(31, 35, 40, 0.35);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+[data-theme="light"] .entry::before {
+  background: conic-gradient(from var(--ang), transparent 0 55%, var(--teal) 72%, var(--lime) 82%, transparent 92%);
+}
+[data-theme="light"] .field::before {
+  background: #fff;
+  border-color: var(--border);
+}
+[data-theme="light"] .field:focus-within::before {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.14);
+}
+[data-theme="light"] .field-prefix {
+  color: var(--dim);
+}
+[data-theme="light"] .field-input::placeholder {
+  color: #8c959f;
+}
+[data-theme="light"] .drop {
+  background:
+    linear-gradient(var(--well), var(--well)) padding-box,
+    repeating-linear-gradient(90deg, var(--border-2) 0 8px, transparent 8px 14px) border-box;
+  border-color: var(--border-2);
+}
+[data-theme="light"] .drop:hover {
+  border-color: var(--dim);
+}
+[data-theme="light"] .drop.is-drag {
+  border-color: var(--teal);
+  background: rgba(15, 118, 110, 0.06);
+  box-shadow:
+    0 0 0 6px rgba(15, 118, 110, 0.1),
+    inset 0 0 40px rgba(15, 118, 110, 0.08);
+}
+[data-theme="light"] .drop.has-file {
+  border-color: var(--teal);
+}
+[data-theme="light"] .drop-icon {
+  background: rgba(15, 118, 110, 0.08);
+  border-color: rgba(15, 118, 110, 0.3);
+}
+[data-theme="light"] .both-badge i {
+  border-color: var(--border-2);
+}
+[data-theme="light"] .drop-veil {
+  background: rgba(255, 255, 255, 0.88);
+}
+[data-theme="light"] .drop-veil::before {
+  border-color: var(--teal);
+  box-shadow: inset 0 0 90px rgba(15, 118, 110, 0.08);
+}
+[data-theme="light"] .drop-veil span {
+  font-family: var(--f-mono);
+  font-weight: 700;
+  font-size: clamp(26px, 4.5vw, 44px);
+  letter-spacing: -0.03em;
+  text-transform: none;
+  text-shadow: none;
+}
+
+/* pied de page */
+[data-theme="light"] .footer {
+  border-top-color: var(--border);
+  background: #fff;
+}
+[data-theme="light"] .footer-inner {
+  font-family: var(--f-mono);
+  font-size: 12.5px;
+}
+[data-theme="light"] .footer-tagline,
+[data-theme="light"] .footer-links {
+  font-size: 12.5px;
+}
+
+/* pages de texte */
+[data-theme="light"] .prose h1 {
+  font-family: var(--f-mono);
+  font-size: clamp(30px, 5vw, 44px);
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  text-transform: none;
+}
+[data-theme="light"] .prose h2 {
+  font-family: var(--f-mono);
+  font-size: 18px;
+  letter-spacing: -0.02em;
+  text-transform: none;
 }

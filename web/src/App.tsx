@@ -1,4 +1,5 @@
-// Racine : langue, routes, décor commun.
+// Racine : langue, routes, décor commun, thème par page.
+import { useEffect } from "react";
 import { Ambient, Footer, SkipLink, TopBar } from "./components/Chrome";
 import { LangProvider } from "./i18n";
 import { isMock } from "./lib/api";
@@ -46,17 +47,41 @@ function Routes() {
   return <NotFound />;
 }
 
-export function App() {
-  if (window.location.pathname === "/__devices" && isMock()) return <Devices />;
+/** Thème clair (celui d'azerit.tech) pour l'accueil et les pages de texte ; la carte et sa révélation restent de nuit. */
+function isLightPath(path: string): boolean {
+  return path === "/" || path === "" || /^\/(confidentialite|privacy)\/?$/.test(path);
+}
+
+function useTheme(): "light" | "dark" {
+  const path = usePath();
+  const theme = isLightPath(path) ? "light" : "dark";
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", theme === "light" ? "#ffffff" : "#0a0f16");
+  }, [theme]);
+  return theme;
+}
+
+function Shell() {
+  const theme = useTheme();
   return (
-    <LangProvider>
+    <>
       <SkipLink />
-      <Ambient />
+      <Ambient light={theme === "light"} />
       <div className="shell">
         <TopBar />
         <Routes />
         <Footer />
       </div>
+    </>
+  );
+}
+
+export function App() {
+  if (window.location.pathname === "/__devices" && isMock()) return <Devices />;
+  return (
+    <LangProvider>
+      <Shell />
     </LangProvider>
   );
 }
