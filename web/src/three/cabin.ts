@@ -2,6 +2,7 @@
 // (KONE, Otis) : mesures, matières et lumière. Construite une fois ; la
 // séquence (walkout.ts) anime les portes, l'afficheur et la lumière de la gaine.
 import * as THREE from "three";
+import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import { RectAreaLightUniformsLib } from "three/examples/jsm/lights/RectAreaLightUniformsLib.js";
 import type { PbrSet } from "./assets";
 import { createWallScreen, type WallScreen } from "./ledWall";
@@ -190,6 +191,9 @@ export interface CabinOptions {
   /** Couleur du tier (filets de LED, bouton de l'étage). */
   accent: string;
   wood: PbrSet;
+  /** L'étage d'arrivée (la note) : numéros de la boîte à boutons. */
+  floor: number;
+  lang: "fr" | "en";
 }
 
 export interface Cabin {
@@ -223,6 +227,14 @@ export function createCabin(o: CabinOptions): Cabin {
   };
   const box = (w: number, h: number, d: number, mat: THREE.Material, x: number, y: number, z: number, parent: THREE.Object3D = scene) => {
     const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+    m.position.set(x, y, z);
+    m.receiveShadow = true;
+    parent.add(m);
+    return m;
+  };
+  /** Une boîte aux arêtes adoucies : rien n'est coupé au rasoir dans une vraie cabine. */
+  const rbox = (w: number, h: number, d: number, r: number, mat: THREE.Material, x: number, y: number, z: number, parent: THREE.Object3D = scene) => {
+    const m = new THREE.Mesh(new RoundedBoxGeometry(w, h, d, 3, r), mat);
     m.position.set(x, y, z);
     m.receiveShadow = true;
     parent.add(m);
@@ -330,6 +342,11 @@ export function createCabin(o: CabinOptions): Cabin {
     rail.rotation.x = Math.PI / 2;
     rail.position.set(x - sx * 0.065, 0.92, 0.45 + (CAB_D - 0.7) / 2);
     cabin.add(rail);
+    for (const z of [0.45, CAB_D - 0.25]) {
+      const cap = new THREE.Mesh(new THREE.SphereGeometry(0.019, 16, 12), steel);
+      cap.position.set(x - sx * 0.065, 0.92, z);
+      cabin.add(cap);
+    }
     for (const z of [0.5, CAB_D / 2 + 0.2, CAB_D - 0.3]) {
       const post = new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.011, 0.06, 10), steel);
       post.rotation.z = Math.PI / 2;
@@ -380,8 +397,10 @@ export function createCabin(o: CabinOptions): Cabin {
   // la façade : inox brossé, portes en retrait de 6 cm, seuil en alu rainuré,
   // afficheur noir dans l'imposte, boîte à boutons en verre noir à droite
   const sideW = (CAB_W - DOOR_W) / 2;
-  for (const sx of [-1, 1]) box(sideW, CAB_H, 0.12, brushedSteel, sx * (DOOR_W / 2 + sideW / 2), CAB_H / 2, -0.06);
-  box(DOOR_W, CAB_H - DOOR_H, 0.12, brushedSteel, 0, (DOOR_H + CAB_H) / 2, -0.06);
+  for (const sx of [-1, 1]) rbox(sideW, CAB_H, 0.12, 0.008, brushedSteel, sx * (DOOR_W / 2 + sideW / 2), CAB_H / 2, -0.06);
+  rbox(DOOR_W + 0.016, CAB_H - DOOR_H, 0.12, 0.008, brushedSteel, 0, (DOOR_H + CAB_H) / 2, -0.06);
+  // le rideau de sécurité des portes : deux réglettes noires le long du passage
+  for (const sx of [-1, 1]) rbox(0.016, DOOR_H - 0.04, 0.012, 0.004, glassBlack, sx * (DOOR_W / 2 - 0.004), DOOR_H / 2 + 0.01, 0.004);
   box(DOOR_W + 0.02, 0.01, 0.16, steel, 0, 0.005, -0.04);
   for (let i = 0; i < 4; i++) box(DOOR_W, 0.002, 0.006, reveal, 0, 0.0105, -0.09 + i * 0.03);
   // les portes : même inox, plus mat, sinon le reflet du plafonnier fait une
@@ -396,7 +415,7 @@ export function createCabin(o: CabinOptions): Cabin {
   for (const dir of [-1, 1]) {
     // portes de la cabine, puis portes palières, qui s'ouvrent ensemble
     for (const z of [-0.06, -0.25]) {
-      const m = new THREE.Mesh(new THREE.BoxGeometry(DOOR_W / 2 - 0.004, DOOR_H, 0.035), doorSteel);
+      const m = new THREE.Mesh(new RoundedBoxGeometry(DOOR_W / 2 - 0.004, DOOR_H, 0.035, 3, 0.005), doorSteel);
       m.position.set((dir * DOOR_W) / 4, DOOR_H / 2, z);
       m.receiveShadow = true;
       scene.add(m);
@@ -417,14 +436,14 @@ export function createCabin(o: CabinOptions): Cabin {
   const DISP = { w: 0.96, h: 0.22 };
   const screen = keep(createWallScreen(o.accent, DISP));
   const dispY = (DOOR_H + CAB_H) / 2;
-  box(DISP.w + 0.05, DISP.h + 0.05, 0.01, glassBlack, 0, dispY, 0.004);
+  rbox(DISP.w + 0.05, DISP.h + 0.05, 0.01, 0.004, glassBlack, 0, dispY, 0.004);
   const display = new THREE.Mesh(new THREE.PlaneGeometry(DISP.w, DISP.h), screen.material);
   display.position.set(0, dispY, 0.0095);
   scene.add(display);
   // la boîte à boutons : verre noir, mini-afficheur, deux colonnes de boutons
   // inox cerclés de lumière ; l'étage d'arrivée à la couleur du tier
   const panelX = DOOR_W / 2 + sideW / 2;
-  box(0.16, 0.98, 0.012, glassBlack, panelX, 1.18, 0.006);
+  rbox(0.16, 0.98, 0.012, 0.005, glassBlack, panelX, 1.18, 0.006);
   const mini = new THREE.Mesh(new THREE.PlaneGeometry(0.12, 0.0275), screen.material);
   mini.position.set(panelX, 1.58, 0.0125);
   scene.add(mini);
@@ -442,6 +461,25 @@ export function createCabin(o: CabinOptions): Cabin {
       h.position.set(panelX + c * 0.038, y, 0.0125);
       scene.add(b, h);
     }
+  // les inscriptions : numéros gravés sur les boutons, braille, pictogrammes,
+  // grille de l'interphone, serrure pompiers
+  const copInk = keep(makePanelTexture(o.floor));
+  const ink = new THREE.Mesh(new THREE.PlaneGeometry(0.16, 0.98), new THREE.MeshBasicMaterial({ map: copInk, transparent: true, toneMapped: false, depthWrite: false }));
+  ink.position.set(panelX, 1.18, 0.0206);
+  scene.add(ink);
+  // la plaque de charge, vissée sur le retour gauche
+  rbox(0.15, 0.06, 0.003, 0.0012, brushedSteel, -panelX, 1.62, 0.0015);
+  const plateText = keep(makePlateTexture(o.lang));
+  const plateInk = new THREE.Mesh(new THREE.PlaneGeometry(0.15, 0.06), new THREE.MeshBasicMaterial({ map: plateText, transparent: true, depthWrite: false }));
+  plateInk.position.set(-panelX, 1.62, 0.0032);
+  scene.add(plateInk);
+  // le dôme de la caméra de sécurité, dans l'angle du plafond
+  const dome = new THREE.Mesh(new THREE.SphereGeometry(0.045, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2), glassBlack);
+  dome.rotation.x = Math.PI;
+  dome.position.set(CAB_W / 2 - 0.16, CAB_H, 0.18);
+  const domeRing = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.01, 32), steel);
+  domeRing.position.set(CAB_W / 2 - 0.16, CAB_H - 0.005, 0.18);
+  scene.add(dome, domeRing);
   // les reflets de la cabine : on la photographie de l'intérieur (deux fois,
   // pour que l'inox se reflète aussi dans l'inox) et ses matières reflètent cette image
   // projetée sur la boîte de la cabine : le reflet d'une paroi tombe à sa
@@ -548,6 +586,104 @@ function makeStoneTexture(): THREE.CanvasTexture {
   const t = new THREE.CanvasTexture(c);
   t.colorSpace = THREE.SRGBColorSpace;
   t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.anisotropy = 8;
+  return t;
+}
+
+/** Les étages de la boîte à boutons : l'arrivée en haut à droite, puis des étages en descendant jusqu'au rez-de-chaussée. */
+function panelFloors(top: number): string[] {
+  const out: number[] = [];
+  for (let k = 0; k < 12; k++) out.push(Math.round(top - (top * k) / 11));
+  // peu d'étages : les numéros se suivent, puis les sous-sols
+  const seen = new Set<number>();
+  let next = top;
+  return out.map((n) => {
+    let v = Math.min(n, next);
+    while (seen.has(v)) v--;
+    seen.add(v);
+    next = v - 1;
+    return v < 0 ? `-${-v}` : String(v);
+  });
+}
+
+/** Ce qui est gravé ou imprimé sur la boîte à boutons (1 px = 1 mm ; fond transparent). */
+function makePanelTexture(top: number): THREE.CanvasTexture {
+  const c = document.createElement("canvas");
+  c.width = 320;
+  c.height = 1960;
+  const g = c.getContext("2d")!;
+  g.scale(2, 2);
+  const X = (lx: number) => (lx + 0.08) * 1000;
+  const Y = (wy: number) => (1.67 - wy) * 1000;
+  const labels = panelFloors(top);
+  g.textAlign = "center";
+  g.textBaseline = "middle";
+  for (let r = 0; r < 7; r++)
+    for (const col of [-1, 1]) {
+      const cx = X(col * 0.038);
+      const cy = Y(1.46 - r * 0.075);
+      const i = r * 2 + (col === 1 ? 0 : 1);
+      // le numéro, rétroéclairé dans le bouton
+      let label = labels[i] ?? "";
+      if (r === 6) label = col === -1 ? "🔔" : "◀|▶";
+      g.fillStyle = "rgba(236,239,243,0.9)";
+      g.font = `700 ${label.length > 2 ? 11 : 14}px 'Barlow Condensed', 'Arial Narrow', sans-serif`;
+      g.fillText(label, cx, cy + 1);
+      // le braille, à gauche du bouton
+      g.fillStyle = "rgba(170,176,184,0.55)";
+      for (let k = 0; k < 6; k++) {
+        if ((k * 7 + i * 3) % 5 === 0) continue;
+        g.beginPath();
+        g.arc(cx - 27 + (k % 2) * 3, cy - 3 + Math.floor(k / 2) * 3, 0.9, 0, Math.PI * 2);
+        g.fill();
+      }
+    }
+  // la grille de l'interphone
+  g.fillStyle = "rgba(150,156,164,0.5)";
+  for (let yy = 0; yy < 7; yy++)
+    for (let xx = 0; xx < 7; xx++) {
+      const dx = xx - 3;
+      const dy = yy - 3;
+      if (dx * dx + dy * dy > 10) continue;
+      g.beginPath();
+      g.arc(80 + dx * 5, Y(0.86) + dy * 5, 1.3, 0, Math.PI * 2);
+      g.fill();
+    }
+  // la serrure pompiers
+  g.strokeStyle = "rgba(170,176,184,0.7)";
+  g.lineWidth = 1.5;
+  g.beginPath();
+  g.arc(80, Y(0.75), 8, 0, Math.PI * 2);
+  g.stroke();
+  g.fillStyle = "rgba(170,176,184,0.7)";
+  g.fillRect(79, Y(0.75) - 5, 2, 10);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 8;
+  return t;
+}
+
+/** La plaque de charge réglementaire : gravure sombre sur l'inox. */
+function makePlateTexture(lang: "fr" | "en"): THREE.CanvasTexture {
+  const c = document.createElement("canvas");
+  c.width = 600;
+  c.height = 240;
+  const g = c.getContext("2d")!;
+  g.fillStyle = "rgba(20,22,26,0.85)";
+  g.textAlign = "center";
+  g.textBaseline = "middle";
+  g.font = "700 74px 'Barlow Condensed', 'Arial Narrow', sans-serif";
+  g.fillText(lang === "fr" ? "630 kg · 8 personnes" : "630 kg · 8 persons", 300, 92);
+  g.font = "500 34px 'JetBrains Mono', ui-monospace, monospace";
+  g.fillText("EN 81-20 · AZERIT LIFT", 300, 170);
+  // les quatre vis
+  for (const [x, y] of [[22, 22], [578, 22], [22, 218], [578, 218]] as const) {
+    g.beginPath();
+    g.arc(x, y, 9, 0, Math.PI * 2);
+    g.fill();
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
   t.anisotropy = 8;
   return t;
 }

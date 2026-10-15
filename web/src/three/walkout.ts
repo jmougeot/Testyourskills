@@ -213,7 +213,7 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
   });
   const darkPanel = new THREE.MeshStandardMaterial({ color: 0x0c0f14, roughness: 0.55, metalness: 0.3 });
   const accentGlow = new THREE.MeshBasicMaterial({ color: hdr(accent.a, 2), toneMapped: false });
-  const cab = createCabin({ scene, renderer, accent: accent.a, wood: assets.wood });
+  const cab = createCabin({ scene, renderer, accent: accent.a, wood: assets.wood, floor: Math.max(1, Math.min(99, o.overall)), lang: o.lang });
   disposables.push(cab);
   const { doors, screen, brushedSteel, shaftTex, shaftMat, shaftGap, btnOn, seam, seamMat } = cab;
 
