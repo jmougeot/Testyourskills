@@ -282,9 +282,15 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
   for (const sx of [-1, 1]) box(0.06, DOOR_H + 0.06, 0.05, frameMat, sx * (DOOR_W / 2 + 0.03), (DOOR_H + 0.06) / 2, 0.02);
   box(DOOR_W + 0.12, 0.06, 0.05, frameMat, 0, DOOR_H + 0.03, 0.02);
   box(DOOR_W + 0.12, 0.012, 0.14, steel, 0, 0.006, 0.04);
+  // les portes : même inox, plus mat, sinon le reflet du plafonnier fait une
+  // barre blanche qui écrase le joint central (surtout en portrait)
+  const doorSteel = brushedSteel.clone();
+  doorSteel.roughness = 0.62;
+  doorSteel.anisotropy = 0.3;
+  doorSteel.envMapIntensity = 0.18;
   const doors: { mesh: THREE.Mesh; dir: number }[] = [];
   for (const dir of [-1, 1]) {
-    const m = new THREE.Mesh(new THREE.BoxGeometry(DOOR_W / 2 - 0.004, DOOR_H, 0.04), brushedSteel);
+    const m = new THREE.Mesh(new THREE.BoxGeometry(DOOR_W / 2 - 0.004, DOOR_H, 0.04), doorSteel);
     m.position.set((dir * DOOR_W) / 4, DOOR_H / 2, -0.03);
     m.receiveShadow = true;
     scene.add(m);
@@ -747,6 +753,10 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
   let frameMs = 16;
   let wallState = "";
   let wallSwitch = -99;
+  /** Le statut ne s'affiche qu'au franchissement d'un palier, puis l'afficheur revient à l'étage seul. */
+  const STATUS_HOLD = 0.9;
+  let lastStatus = -1;
+  let statusUntil = -99;
   const autoFired = new Set<number>();
   const shakeSeed = Math.random() * 100;
   let cardTarget: THREE.Vector3 | null = null;
@@ -783,10 +793,10 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
     return V(F_POS.x + nx * d * tanH * camera.aspect, F_POS.y + ny * d * tanH, F_POS.z - d);
   };
 
-  const setWall = (state: string, t: number, draw: () => void) => {
+  const setWall = (state: string, t: number, draw: () => void, glitch = true) => {
     if (wallState === state) return;
     wallState = state;
-    wallSwitch = t;
+    if (glitch) wallSwitch = t;
     draw();
   };
   const setCue = (c: WalkoutCue) => {
@@ -950,7 +960,13 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
     else if (t < plan.depart) setWall("ground", t, () => screen.caption("", ""));
     else {
       const si = statusAt(Math.max(1, level));
-      setWall(`status-${si}`, t, () => screen.caption(o.texts.statusLabel, o.texts.statuses[si]?.label ?? ""));
+      if (si !== lastStatus) {
+        lastStatus = si;
+        statusUntil = t + STATUS_HOLD;
+      }
+      // à l'arrivée, le statut final reste
+      if (t < statusUntil || t >= plan.arrive) setWall(`status-${si}`, t, () => screen.caption(o.texts.statusLabel, o.texts.statuses[si]?.label ?? ""));
+      else setWall("floor", t, () => screen.caption("", ""), false);
     }
     const glitch = t >= 0 ? 1 - seg(t, wallSwitch, 0.22) : 0;
     screen.uniforms.uGlitch.value = glitch * 0.6;
