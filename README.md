@@ -10,6 +10,8 @@ cp .env.example .env      # puis renseigner GITHUB_TOKEN et OPENROUTER_API_KEY
 npm run dev               # Vite sur http://localhost:5180, API sur http://localhost:8787
 ```
 
+Trois entrées : la home (`/`), la page d'une carte partagée (`/c/<id>`, qui porte aussi le champ pour les visiteurs) et l'URL directe `/<pseudo>`, qui lance la carte sans champ (route gérée côté navigateur, servie par le repli SPA). Coller une URL GitHub ou déposer un PDF n'importe où sur la page lance aussi la carte.
+
 Vite proxifie `/api`, `/og` et `/c/` vers l'API. La page `/c/:id` est rendue par l'API : en dev elle demande le `index.html` transformé au serveur Vite (`DEV_WEB_URL`, défaut `http://localhost:5180`) et y injecte les balises Open Graph ; si Vite ne tourne pas, elle sert une page autonome avec les balises et l'image. On ouvre donc toujours `http://localhost:5180/c/<id>`.
 
 Tests du serveur : `npx vitest run --root . server/src` (la config Vite a `root: "web"`, d'où le `--root .`).

@@ -3,7 +3,9 @@ import { Ambient, Footer, SkipLink, TopBar } from "./components/Chrome";
 import { LangProvider } from "./i18n";
 import { isMock } from "./lib/api";
 import { usePath } from "./lib/router";
+import { parseLogin } from "./lib/util";
 import { CardPage } from "./pages/CardPage";
+import { DirectCard } from "./pages/DirectCard";
 import { Home } from "./pages/Home";
 import { NotFound, Privacy } from "./pages/Privacy";
 
@@ -20,12 +22,27 @@ function Devices() {
   );
 }
 
+function safeDecode(s: string): string {
+  try {
+    return decodeURIComponent(s);
+  } catch {
+    return s;
+  }
+}
+
+/** Premiers segments réservés : jamais pris pour un pseudo GitHub. */
+const RESERVED = new Set(["api", "og", "c", "auth", "avatar", "assets", "privacy", "confidentialite"]);
+
 function Routes() {
   const path = usePath();
   const card = /^\/c\/([A-Za-z0-9_-]+)\/?$/.exec(path);
   if (card) return <CardPage key={card[1]} id={card[1]} />;
   if (path === "/" || path === "") return <Home />;
   if (/^\/(confidentialite|privacy)\/?$/.test(path)) return <Privacy />;
+  // /{pseudo} : la carte sans champ (§6.1).
+  const direct = /^\/([^/]+)\/?$/.exec(path);
+  const login = direct && !RESERVED.has(direct[1].toLowerCase()) ? parseLogin(safeDecode(direct[1])) : null;
+  if (login) return <DirectCard key={login} login={login} />;
   return <NotFound />;
 }
 

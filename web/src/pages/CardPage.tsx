@@ -7,6 +7,7 @@ import { styleOf } from "../../../shared/types";
 import { AddSource, AzeritCta, Contest, DeleteCard, EmailForm, LinkedInPhoto, Roast, ShareBar, Why, useToast } from "../components/After";
 import type { Shareable } from "../components/After";
 import { ComparisonStage } from "../components/Comparison";
+import { EntryForm } from "../components/EntryForm";
 import { IconArrow } from "../components/Icons";
 import { RevealCard, ScreenFlash, useReveal } from "../components/Reveal";
 import { Waiting } from "../components/Waiting";
@@ -232,11 +233,10 @@ function Result({ item, animate, owner, fresh, notice, onDeleted }: ResultProps)
     <main className={`page page-card page-result${animating ? " is-animating" : ""}`} id="main" style={style}>
       {visitor && (
         <div className="visitor-banner">
-          <p>{t.result.sharedBanner(main.name)}</p>
-          <a className="btn-primary btn-small" href="/" onClick={(e) => onLinkClick(e, "/")}>
-            {t.result.makeYours}
-            <IconArrow />
-          </a>
+          <p>
+            {t.result.sharedBanner(main.name)} <b>{t.result.yourTurn}</b>
+          </p>
+          <EntryForm variant="inline" />
         </div>
       )}
 

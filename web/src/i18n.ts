@@ -42,6 +42,8 @@ const fr = {
     dropReplace: "Changer de fichier",
     dropRemove: "Retirer le fichier",
     reassure: "Sans compte. Ton CV est lu en mémoire puis jeté.",
+    dropAnywhere: "Lâche ton CV, on s'occupe du reste",
+    inlineCv: "ou avec ton CV",
     exampleLabel: "Exemple de carte",
     errLogin: "Ce pseudo ne ressemble pas à un pseudo GitHub.",
     errEmptyLogin: "Donne-nous un pseudo GitHub (ou une URL de profil).",
@@ -124,6 +126,7 @@ const fr = {
     yourCard: "Ta carte",
     sharedBanner: (name: string) => `La carte de ${name}, jugée par une IA en quelques secondes.`,
     makeYours: "Fais la tienne",
+    yourTurn: "À toi : ton pseudo suffit.",
     reliability: (n: number) => `Fiabilité ${n} %`,
     share: {
       title: "Partage-la",
@@ -307,6 +310,8 @@ const en: Dict = {
     dropReplace: "Change file",
     dropRemove: "Remove file",
     reassure: "No account. Your CV is read in memory, then thrown away.",
+    dropAnywhere: "Let go of your CV, we'll take it from here",
+    inlineCv: "or with your CV",
     exampleLabel: "Example card",
     errLogin: "That doesn't look like a GitHub username.",
     errEmptyLogin: "Give us a GitHub username (or profile URL).",
@@ -388,6 +393,7 @@ const en: Dict = {
     yourCard: "Your card",
     sharedBanner: (name) => `${name}'s card, judged by an AI in a few seconds.`,
     makeYours: "Make yours",
+    yourTurn: "Your turn: a username is enough.",
     reliability: (n) => `Reliability ${n}%`,
     share: {
       title: "Share it",

@@ -252,6 +252,14 @@ L'IA peut poser un seul statut par carte, choisi ici d'après ce qu'elle a lu da
 
 Une page, un champ, deux onglets : « Ton GitHub » (pseudo ou URL) et « Ton CV » (dépôt de PDF, 5 Mo et 10 pages maximum). Un lien discret « les deux » pour la comparaison. Rien d'autre au-dessus de la ligne de flottaison, à part une carte d'exemple qui bouge pour montrer ce qu'on va recevoir.
 
+Trois raccourcis qui évitent le champ ou le clic :
+
+- **L'URL directe** `/{pseudo}` lance la carte sans rien saisir et remplace l'adresse par `/c/{id}`. C'est le lien à mettre dans les messages de sourcing d'Azerit, qui connaissent déjà le pseudo. En cas d'erreur (pseudo inconnu, limite atteinte), retour à l'entrée avec le pseudo prérempli et le message.
+- **Coller une URL GitHub ou déposer un PDF n'importe où sur la page** lance la carte. Un mot collé seul ne déclenche rien : il faut une URL `github.com/…`. Un dépôt en mode comparaison remplit le CV et attend le pseudo s'il manque.
+- **Le bandeau d'une carte partagée porte le champ.** La plupart des visiteurs arrivent sur `/c/{id}` depuis LinkedIn : ils saisissent leur pseudo là, sans repasser par l'accueil. Un lien « ou avec ton CV » renvoie à l'entrée, onglet CV.
+
+Sur desktop, le champ a le focus à l'arrivée. Pas sur mobile : le clavier cacherait la carte d'exemple. Le clavier mobile affiche « Ouvrir » comme touche d'envoi.
+
 ### 6.2 Attente
 
 Entre cinq et quinze secondes. Afficher des messages qui défilent, en lien avec les faits déjà collectés quand c'est possible :
@@ -392,6 +400,7 @@ Chaque étape a sa définition de « fini ». On ne passe à la suivante qu'une 
 - **Modèle IA : Haiku 5.5** (`anthropic/claude-haiku-5.5`) à la place de Haiku 4.5 (demande de Jacques, 14 octobre 2026) : successeur direct, 0,10 $ / 0,50 $ par million de tokens sur OpenRouter contre 1 $ / 5 $, soit dix fois moins cher, avec `structured_outputs`. Comme Sonnet et Opus 5, il refuse `temperature` : le client ne l'envoie pas (sinon OpenRouter répond 404 avec `require_parameters`). Réglé par `AI_MODEL_CODE` et `AI_MODEL_CV` ; la valeur de repli du code reste Haiku 4.5 tant que la calibration (§4.6) n'a pas tourné sur 5.5.
 - **Photo LinkedIn** (demande de Jacques, 14 octobre 2026) : après la carte, le créateur (celui qui détient le jeton de suppression) peut cliquer sur « Mettre ma photo LinkedIn ». Le bouton passe par « Sign in with LinkedIn using OpenID Connect » (scopes `openid profile`) et récupère le claim `picture`. Pas de scraping de LinkedIn : c'est interdit par leurs conditions, bloqué par le mur d'authentification, et ça permettrait de mettre la photo de quelqu'un sur une carte qu'il n'a pas demandée. La photo est téléchargée, stockée avec la carte et supprimée avec elle. Le token LinkedIn n'est jamais conservé. Les variables `LINKEDIN_CLIENT_ID` et `LINKEDIN_CLIENT_SECRET` sont nécessaires ; sans elles, le bouton est masqué.
 - **Nom et sous-domaine** : « Testyourskills » et `skills.azerit.tech` en attendant un choix.
+- **Onboarding raccourci** (demande de Jacques, 14 octobre 2026) : les trois raccourcis du §6.1 (URL directe `/{pseudo}`, collage et dépôt n'importe où, champ dans le bandeau visiteur) et le focus automatique sur desktop. La route `/{pseudo}` est servie par le repli SPA du serveur et traitée côté navigateur : aucun appel GitHub ou IA tant que le JavaScript ne tourne pas, donc aucun coût sur un crawl. Les premiers segments `api`, `og`, `c`, `auth`, `avatar`, `assets`, `privacy` et `confidentialite` ne sont jamais pris pour un pseudo. Les onglets GitHub / CV et le lien « les deux » restent : l'idée d'un champ unique sans onglets est écartée pour l'instant, parce qu'elle cacherait le chemin CV qui porte le message.
 
 ### 16.1 Barème : ajustements de la première version (0.1.0)
 
