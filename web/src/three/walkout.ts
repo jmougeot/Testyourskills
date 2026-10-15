@@ -23,6 +23,7 @@ import { SVGLoader } from "three/examples/jsm/loaders/SVGLoader.js";
 import type { WalkoutAssets } from "./assets";
 import { CAB_H, DOOR_H, DOOR_W, createCabin } from "./cabin";
 import { createCardMesh } from "./cardMesh";
+import { createElevatorSound } from "./elevatorSound";
 import { createPlayer } from "./player";
 import { createWorkstation } from "./workstation";
 import { createCityBackdrop, createFloorReflection, createStudioEnvironment } from "./stage";
@@ -76,6 +77,8 @@ export interface WalkoutOptions {
   onHandoff: () => void;
   onDone: () => void;
   onCue?: (cue: WalkoutCue) => void;
+  /** Son coupé au départ (choix mémorisé du visiteur). */
+  muted?: boolean;
 }
 
 export interface WalkoutHandle {
@@ -83,6 +86,8 @@ export interface WalkoutHandle {
   skip(): void;
   /** Clic ou Espace pendant la séquence : vrai si la scène l'a utilisé (feux d'artifice). */
   interact(): boolean;
+  /** Coupe ou remet le son de l'ascenseur. */
+  setMuted(muted: boolean): void;
   dispose(): void;
 }
 
@@ -215,6 +220,8 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
   const accentGlow = new THREE.MeshBasicMaterial({ color: hdr(accent.a, 2), toneMapped: false });
   const cab = createCabin({ scene, renderer, accent: accent.a, wood: assets.wood, floor: Math.max(1, Math.min(99, o.overall)), lang: o.lang });
   disposables.push(cab);
+  const sound = createElevatorSound({ depart: plan.depart, arrive: plan.arrive, doors: plan.doors }, o.muted ?? false);
+  disposables.push(sound);
   const { doors, screen, brushedSteel, shaftTex, shaftMat, shaftGap, btnOn, seam, seamMat } = cab;
 
   /* ---------- l'open space ---------- */
@@ -843,6 +850,7 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
     /* la montée : l'étage est la note ; la gaine défile dans les fentes */
     const climb = ascent(t);
     const speed = ascentSpeed(t);
+    sound.update(t, speed);
     const moving = t >= plan.ascent[0] && t < plan.arrive;
     const level = Math.round(climb * SCORE);
     screen.floor(level, o.double ? 2 : 1, moving);
@@ -1107,12 +1115,16 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
       t0 = performance.now();
     },
     skip() {
+      sound.setMuted(true);
       if (!doneSent) {
         doneSent = true;
         handoffSent = true;
         setCue(null);
         o.onDone();
       }
+    },
+    setMuted(m) {
+      sound.setMuted(m);
     },
     interact() {
       if (!within(tNow, plan.fireworks)) return false;

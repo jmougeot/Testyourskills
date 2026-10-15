@@ -1629,6 +1629,31 @@ svg {
   border-color: var(--dim);
 }
 
+/* le son de l'ascenseur, à côté du bouton Passer */
+.sound-btn {
+  position: fixed;
+  right: max(16px, env(safe-area-inset-right));
+  bottom: max(24px, env(safe-area-inset-bottom));
+  z-index: 8;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  border: 1px solid var(--border-2);
+  background: rgba(10, 15, 22, 0.75);
+  color: var(--dim);
+  backdrop-filter: blur(6px);
+  transition:
+    color 0.2s,
+    border-color 0.2s;
+}
+.sound-btn:hover,
+.sound-btn[aria-pressed="false"] {
+  color: var(--text);
+  border-color: var(--dim);
+}
+
 /* ============ sous la carte ============ */
 
 .visitor-banner {

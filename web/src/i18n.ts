@@ -109,6 +109,8 @@ const fr = {
   reveal: {
     tap: "Touche pour ouvrir",
     skip: "Passer l'animation",
+    mute: "Couper le son",
+    unmute: "Activer le son",
     opening: "Ouverture du pack",
     revealed: (tier: string, overall: number) => `Carte ${tier}, note ${overall}.`,
     fireworks: "Clique ou Espace : feux d'artifice",
@@ -406,6 +408,8 @@ const en: Dict = {
   reveal: {
     tap: "Tap to open",
     skip: "Skip animation",
+    mute: "Mute",
+    unmute: "Unmute",
     opening: "Opening the pack",
     revealed: (tier, overall) => `${tier} card, rated ${overall}.`,
     fireworks: "Click or Space: fireworks",

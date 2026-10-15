@@ -283,9 +283,11 @@ Walkout calqué sur FC 27, **en vraie 3D** (Three.js, WebGL), transposé dans un
    - portes en inox brossé avec le joint au milieu, en retrait dans une façade en inox, seuil en alu rainuré ; les portes palières s'ouvrent avec elles ;
    - afficheur d'étage en verre noir dans l'imposte, au-dessus des portes ;
    - boîte à boutons en verre noir à droite : mini-afficheur, deux colonnes de boutons inox cerclés de lumière ;
-   - parois en panneaux de noyer à fil vertical, joints fins, plinthe inox, mains courantes inox sur platines ;
+   - parois en panneaux de noyer à fil vertical, joints fins, plinthe inox, mains courantes inox sur platines ; chaque panneau prend un autre morceau de la feuille de placage, un sur deux en miroir ;
    - plafond bronze sombre à six spots ronds, sol en grandes dalles de pierre grise ;
-   - lumière chaude : un éclairage d'ensemble doux et deux spots qui lèchent la façade ; les métaux reflètent la cabine elle-même ;
+   - lumière chaude, précalculée par surface (lightmaps calculées à la construction) : les spots dessinent sur les parois les arcs de lumière des vraies cabines, les angles s'assombrissent, les mains courantes portent une ombre douce ; deux spots en direct lèchent la façade ;
+   - les métaux reflètent la cabine elle-même, reflets projetés sur ses parois (ils se décalent quand la caméra avance) ;
+   - arêtes adoucies ; les détails de toute vraie cabine : numéros rétroéclairés sur les boutons (l'étage d'arrivée en haut à droite), braille, alarme, grille d'interphone, serrure pompiers, plaque « 630 kg · 8 personnes », réglettes du rideau de sécurité, dôme de caméra ;
    - deux filets de LED fins à la couleur du tier, dans les angles des portes et sous le plafond.
 
    Un premier essai faisait de toute la paroi un écran LED : on ne comprenait pas qu'on était dans un ascenseur. Le second, une boîte inox sombre de 3,2 m (2,3 m en portrait) avec des néons aux angles et des fentes sur la gaine, a été jugé « pas du tout réaliste » ; la cabine actuelle reprend des photos de vraies cabines (KONE, Otis). Ses 2,1 m de large gardent les parois, les mains courantes et les boutons dans le cadre, en portrait comme en paysage.
@@ -296,6 +298,7 @@ Walkout calqué sur FC 27, **en vraie 3D** (Three.js, WebGL), transposé dans un
    - Une flèche pour une carte seule, deux ▲▲ pour une comparaison GitHub × CV (le « double »).
    - La cabine accélère doucement, file à vitesse constante, puis freine à l'approche (profil de vitesse en trapèze : 18 % d'accélération, 30 % de freinage). La lumière des paliers passe dans le jour entre les deux portes, à la même vitesse, de plus en plus visible avec la vitesse.
    - Le bouton de l'étage d'arrivée est allumé à la couleur du tier.
+   - **Le son**, synthétisé en direct (Web Audio, aucun fichier) : le frein qui se relâche au départ, le moteur et le souffle de la gaine qui suivent la vitesse, le « ding » à l'arrivée, le moteur des portes. Un bouton en bas à droite le coupe ; le choix est mémorisé dans le navigateur.
    - L'afficheur reste sous le seuil du bloom : lisible, pas éblouissant.
 3. **Les indices**, chacun en 3D chromé devant les portes, l'objet avec son nom en lettres 3D au-dessus :
    - le **poste** ;

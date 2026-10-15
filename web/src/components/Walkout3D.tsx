@@ -24,6 +24,15 @@ const DOC_PATH = "M6 2h8l6 6v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm7
 const CODE_PATH = "M8.7 16.6 4.1 12l4.6-4.6L7.3 6l-6 6 6 6 1.4-1.4zm6.6 0 4.6-4.6-4.6-4.6L16.7 6l6 6-6 6-1.4-1.4z";
 /** Au-delà, on renonce à la scène plutôt que de faire attendre. */
 const ASSET_TIMEOUT = 12000;
+/** Le choix du visiteur pour le son de l'ascenseur, d'une révélation à l'autre. */
+const MUTE_KEY = "tys-walkout-muted";
+const readMuted = () => {
+  try {
+    return window.localStorage.getItem(MUTE_KEY) === "1";
+  } catch {
+    return false;
+  }
+};
 
 export interface WalkoutControl {
   /** Clic sur la scène pendant la séquence : vrai si la scène l'a utilisé. */
@@ -51,6 +60,17 @@ export function Walkout3D({ card, lang, double, phase, anchorRef, controlRef, on
   const cb = useRef({ onHandoff, onDone });
   cb.current = { onHandoff, onDone };
   const [cue, setCue] = useState<WalkoutCue>(null);
+  const [muted, setMuted] = useState(readMuted);
+  const toggleSound = () => {
+    const m = !muted;
+    setMuted(m);
+    handle.current?.setMuted(m);
+    try {
+      window.localStorage.setItem(MUTE_KEY, m ? "1" : "0");
+    } catch {
+      // stockage indisponible (navigation privée) : le choix vaut pour cette fois
+    }
+  };
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -103,6 +123,7 @@ export function Walkout3D({ card, lang, double, phase, anchorRef, controlRef, on
           onHandoff: () => cb.current.onHandoff(),
           onDone: () => cb.current.onDone(),
           onCue: (c) => alive && setCue(c),
+          muted: readMuted(),
         });
         handle.current = h;
         controlRef.current = { interact: () => h.interact() };
@@ -141,6 +162,18 @@ export function Walkout3D({ card, lang, double, phase, anchorRef, controlRef, on
   return (
     <>
       <canvas ref={canvasRef} className={`walkout-canvas${phase === "handoff" ? " is-fading" : ""}`} aria-hidden />
+      {phase === "playing" && (
+        <button type="button" className="sound-btn" aria-pressed={!muted} aria-label={muted ? t.reveal.unmute : t.reveal.mute} title={muted ? t.reveal.unmute : t.reveal.mute} onClick={toggleSound}>
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden>
+            <path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor" />
+            {muted ? (
+              <path d="m16 9 5 6m0-6-5 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+            ) : (
+              <path d="M16 8.5a5 5 0 0 1 0 7m2.5-9.5a8.5 8.5 0 0 1 0 12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+            )}
+          </svg>
+        </button>
+      )}
       {cue && phase === "playing" && (
         <p key={cue} className="walkout-cue" aria-hidden>
           {t.reveal.fireworks}
