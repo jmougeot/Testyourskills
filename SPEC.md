@@ -253,6 +253,8 @@ L'IA peut poser un seul statut par carte, choisi ici d'après ce qu'elle a lu da
 
 Une page, un champ, deux onglets : « Ton GitHub » (pseudo ou URL) et « Ton CV » (dépôt de PDF, 5 Mo et 10 pages maximum). Un lien discret « les deux » pour la comparaison. Au-dessus du champ, la promesse en gros : « Ta carte de dev. Les 5 meilleurs ont un entretien. », et une ligne qui la précise. En face, **une seule carte d'exemple : la vraie carte de Jacques** (`jmougeot`, fondateur d'Azerit), rendue par `GET /api/showcase` et recalculée au plus une fois par semaine ; tant que le serveur ne l'a pas calculée, une maquette aux faits publics réels (nom, avatar, langage, club) tient la place. Un lien sous la carte mène à sa carte complète.
 
+**Pas un mot de plus que nécessaire.** Sur l'accueil, chaque texte doit attirer ou aider à comprendre, sinon il saute : pas de sous-titre qui répète le titre, pas de ligne de réassurance sur l'onglet GitHub (elle ne s'affiche que sur l'onglet CV, où elle rassure sur le fichier), pas de slogan en pied de page, un seul sélecteur de langue (en haut). Sous la carte, une seule ligne, cliquable : « La vraie carte de Jacques, fondateur d'Azerit ».
+
 **Rien d'autre sur la page.** Les sections sous la ligne de flottaison (comment ça marche, les six stats, l'éventail des tiers, le rappel d'appel à l'action) et le carrousel de cartes fictives ont été retirés le 15 octobre 2026 : trop d'informations, les gens veulent aller à l'essentiel. Le thème reste de nuit, celui de la carte et de l'ascenseur ; l'essai d'accueil en thème clair avec une scène de pack opening (branche `design/accueil-azerit`) est abandonné.
 
 Trois raccourcis qui évitent le champ ou le clic :

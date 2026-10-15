@@ -23,8 +23,7 @@ const fr = {
   home: {
     kicker: "Jugé par une IA sur ton GitHub · 10 s",
     titleA: "Ta carte de dev.",
-    titleB: "Les 5 meilleurs ont un entretien.",
-    sub: "Chaque semaine, les cinq meilleures cartes décrochent un entretien avec une boîte qui recrute.",
+    titleB: "Les 5 meilleurs de la semaine ont un entretien.",
     tabGithub: "Ton GitHub",
     tabCv: "Ton CV",
     tabsLabel: "Source de la carte",
@@ -46,8 +45,7 @@ const fr = {
     dropAnywhere: "Lâche ton CV, on s'occupe du reste",
     inlineCv: "ou avec ton CV",
     exampleLabel: "Exemple de carte",
-    exampleCaption: "Jacques, fondateur d'Azerit, jugé sur son GitHub.",
-    exampleLink: "Sa carte complète",
+    exampleCaption: "La vraie carte de Jacques, fondateur d'Azerit",
     errLogin: "Ce pseudo ne ressemble pas à un pseudo GitHub.",
     errEmptyLogin: "Donne-nous un pseudo GitHub (ou une URL de profil).",
     errEmptyCv: "Dépose un CV au format PDF.",
@@ -260,7 +258,6 @@ const fr = {
     generic: "Quelque chose a cassé de notre côté.",
   },
   footer: {
-    tagline: "Un outil Azerit. On lit le travail, pas le CV.",
     privacy: "Confidentialité",
   },
   privacy: {
@@ -322,8 +319,7 @@ const en: Dict = {
   home: {
     kicker: "Judged by an AI on your GitHub · 10 s",
     titleA: "Your dev card.",
-    titleB: "Top 5 get an interview.",
-    sub: "Every week, the five best cards land an interview with a company that's hiring.",
+    titleB: "The week's top 5 get an interview.",
     tabGithub: "Your GitHub",
     tabCv: "Your CV",
     tabsLabel: "Card source",
@@ -345,8 +341,7 @@ const en: Dict = {
     dropAnywhere: "Let go of your CV, we'll take it from here",
     inlineCv: "or with your CV",
     exampleLabel: "Example card",
-    exampleCaption: "Jacques, Azerit's founder, judged on his GitHub.",
-    exampleLink: "Full card",
+    exampleCaption: "The real card of Jacques, Azerit's founder",
     errLogin: "That doesn't look like a GitHub username.",
     errEmptyLogin: "Give us a GitHub username (or profile URL).",
     errEmptyCv: "Drop a CV as a PDF.",
@@ -556,7 +551,6 @@ const en: Dict = {
     generic: "Something broke on our side.",
   },
   footer: {
-    tagline: "An Azerit tool. We read the work, not the CV.",
     privacy: "Privacy",
   },
   privacy: {

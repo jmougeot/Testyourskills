@@ -44,9 +44,9 @@ function ExampleCard() {
         <CardView card={card} lang={lang} interactive idPrefix="hero" />
       </figure>
       <p className="example-caption">
-        {t.home.exampleCaption}{" "}
         <a href={href} onClick={(e) => onLinkClick(e, href)}>
-          {t.home.exampleLink}
+          {t.home.exampleCaption}
+          {" →"}
         </a>
       </p>
     </div>
@@ -74,7 +74,6 @@ export function Home() {
             <span className="hero-a">{h.titleA}</span>
             <span className="hero-b">{h.titleB}</span>
           </h1>
-          <p className="hero-sub">{h.sub}</p>
           <EntryForm inputRef={inputRef} />
         </div>
         <div className="hero-card">

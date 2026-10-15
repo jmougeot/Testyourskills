@@ -640,14 +640,6 @@ svg {
   animation: shimmer-text 9s ease-in-out infinite alternate;
   filter: drop-shadow(0 0 28px rgba(82, 208, 189, 0.22));
 }
-.hero-sub {
-  max-width: 44ch;
-  margin: -16px 0 30px;
-  font-size: 17px;
-  line-height: 1.5;
-  color: var(--dim);
-  text-wrap: pretty;
-}
 @keyframes shimmer-text {
   to {
     background-position: 100% 0;
@@ -2764,12 +2756,6 @@ svg {
   font-weight: 700;
   font-size: 14px;
   min-height: 40px;
-}
-.footer-tagline {
-  flex: 1;
-  font-size: 13px;
-  color: var(--dim);
-  min-width: 200px;
 }
 .footer-links {
   display: flex;

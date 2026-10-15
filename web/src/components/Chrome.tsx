@@ -60,7 +60,6 @@ export function Footer() {
           <AzeritMark size={16} />
           <span>Azerit</span>
         </a>
-        <p className="footer-tagline">{t.footer.tagline}</p>
         <nav className="footer-links">
           <a
             href="https://azerit.tech"
@@ -73,7 +72,6 @@ export function Footer() {
           <a href={privacy} onClick={(e) => onLinkClick(e, privacy)}>
             {t.footer.privacy}
           </a>
-          <LangToggle />
         </nav>
       </div>
     </footer>

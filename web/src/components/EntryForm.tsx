@@ -440,7 +440,7 @@ export function EntryForm({ inputRef, variant = "full" }: Props) {
       {errorLine}
 
       <div className="entry-foot" id={`${uid}-hint`}>
-        <span className="entry-reassure">{h.reassure}</span>
+        {showCv && <span className="entry-reassure">{h.reassure}</span>}
         <button
           type="button"
           className="link-both"
