@@ -132,6 +132,44 @@ function bakeLight(pl: BakePlane): THREE.DataTexture {
   return t;
 }
 
+/* ---------- les reflets projetés sur la boîte ----------
+ * Une carte d'environnement est photographiée depuis un seul point : sans
+ * correction, une matière la reflète comme si la cabine était infiniment
+ * loin (le reflet ne bouge pas avec la caméra). On prolonge le rayon réfléchi
+ * jusqu'aux parois de la cabine et on lit la carte dans la direction du point
+ * touché, vue depuis le point de prise de vue. */
+const IBL_DIR = "reflectVec = transformDirectionByInverseViewMatrix( reflectVec, viewMatrix );";
+function boxProjection(mat: THREE.Material, probe: THREE.Vector3, min: THREE.Vector3, max: THREE.Vector3) {
+  mat.onBeforeCompile = (shader) => {
+    shader.uniforms.uBoxMin = { value: min };
+    shader.uniforms.uBoxMax = { value: max };
+    shader.uniforms.uProbe = { value: probe };
+    shader.vertexShader = shader.vertexShader
+      .replace("#include <common>", "#include <common>\nvarying vec3 vBoxPos;")
+      .replace("#include <worldpos_vertex>", "#include <worldpos_vertex>\nvBoxPos = worldPosition.xyz;");
+    shader.fragmentShader = shader.fragmentShader
+      .replace(
+        "#include <common>",
+        `#include <common>
+        varying vec3 vBoxPos;
+        uniform vec3 uBoxMin;
+        uniform vec3 uBoxMax;
+        uniform vec3 uProbe;
+        vec3 boxProjected( vec3 dir ) {
+          vec3 p = vBoxPos;
+          // hors de la cabine (portes palières, bureaux) : pas de correction
+          if ( any( lessThan( p, uBoxMin - 0.12 ) ) || any( greaterThan( p, uBoxMax + 0.12 ) ) ) return dir;
+          vec3 d = dir + sign( dir ) * 1e-5;
+          vec3 t = mix( ( uBoxMin - p ) / d, ( uBoxMax - p ) / d, step( vec3( 0.0 ), dir ) );
+          float f = max( min( min( t.x, t.y ), t.z ), 0.0 );
+          return normalize( p + dir * f - uProbe );
+        }`,
+      )
+      .replace("#include <envmap_physical_pars_fragment>", THREE.ShaderChunk.envmap_physical_pars_fragment.replace(IBL_DIR, `${IBL_DIR}\nreflectVec = boxProjected( reflectVec );`));
+  };
+  mat.customProgramCacheKey = () => "cabin-box-projection";
+}
+
 /** Les coordonnées de lightmap (uv1) d'un maillage posé sur une surface précalculée. */
 function lightUv(mesh: THREE.Mesh, pl: BakePlane) {
   mesh.updateMatrixWorld(true);
@@ -406,10 +444,14 @@ export function createCabin(o: CabinOptions): Cabin {
     }
   // les reflets de la cabine : on la photographie de l'intérieur (deux fois,
   // pour que l'inox se reflète aussi dans l'inox) et ses matières reflètent cette image
+  // projetée sur la boîte de la cabine : le reflet d'une paroi tombe à sa
+  // vraie place et se décale quand la caméra avance
+  const probe = V(0, 1.45, 1.4);
+  for (const m of cabinMats) boxProjection(m, probe, V(-CAB_W / 2, 0, -0.02), V(CAB_W / 2, CAB_H, CAB_D));
   const pmrem = new THREE.PMREMGenerator(renderer);
   let cabinEnv: THREE.Texture | null = null;
   for (let pass = 0; pass < 2; pass++) {
-    const next = pmrem.fromScene(scene, 0.02, 0.02, 20, { position: V(0, 1.45, 1.4) }).texture;
+    const next = pmrem.fromScene(scene, 0.02, 0.02, 20, { position: probe }).texture;
     for (const m of cabinMats) m.envMap = next;
     cabinEnv?.dispose();
     cabinEnv = next;
