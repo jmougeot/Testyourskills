@@ -1826,12 +1826,12 @@ svg {
 }
 
 .skip-btn {
-  position: absolute;
+  position: fixed;
   left: 50%;
-  bottom: 4px;
+  bottom: max(24px, env(safe-area-inset-bottom));
   transform: translateX(-50%);
   z-index: 8;
-  min-height: 36px;
+  min-height: 44px;
   padding: 0 14px;
   border-radius: 999px;
   border: 1px solid var(--border-2);
