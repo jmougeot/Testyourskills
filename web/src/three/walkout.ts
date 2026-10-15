@@ -105,7 +105,11 @@ const hdr = (hex: THREE.ColorRepresentation, k: number) => new THREE.Color(hex).
 const V = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z);
 
 /* ---------- géométrie (mètres) : sol à y = 0, l'ascenseur s'ouvre vers -z ---------- */
-const CAB_W = 3.2; // cabine : x de -1,6 à 1,6, z de 0 (portes) à 3,4
+/** Largeur de la cabine : large en paysage ; en portrait, une vraie cabine
+ * étroite, pour que les parois, les mains courantes et les boutons restent dans
+ * le cadre. Sinon on ne voit que les portes et on ne comprend pas où l'on est. */
+const CAB_W_WIDE = 3.2; // x de -1,6 à 1,6, z de 0 (portes) à 3,4
+const CAB_W_NARROW = 2.3;
 const CAB_H = 2.9;
 const CAB_D = 3.4;
 const DOOR_W = 1.2;
@@ -126,20 +130,24 @@ const TELL_POS = V(0, 1.24, 0.7);
 /* ---------- chronologie ---------- */
 type Win = [number, number];
 const PLAN = {
+  /** Après l'éclatement, l'ascenseur s'établit seul : l'afficheur passe à
+   * l'étage 00, la flèche s'allume, le bouton aussi. Rien d'autre. */
+  depart: 1.9,
   /** L'étage défile, vite puis de plus en plus lentement. */
-  ascent: [0.9, 10.3] as Win,
-  position: [1.3, 3.3] as Win,
-  lang: [3.3, 5.1] as Win,
-  league: [5.1, 6.9] as Win,
-  loading: [6.9, 7.9] as Win,
-  club: [7.9, 9.9] as Win,
-  arrive: 10.3,
-  doors: 10.7,
+  ascent: [1.9, 10.9] as Win,
+  /** Les révélations ne commencent qu'une fois la montée lancée : une chose à la fois. */
+  position: [2.7, 4.5] as Win,
+  lang: [4.5, 6.2] as Win,
+  league: [6.2, 7.8] as Win,
+  loading: [7.8, 8.6] as Win,
+  club: [8.6, 10.5] as Win,
+  arrive: 10.9,
+  doors: 11.3,
   /** Les néons de l'open space, rangée par rangée. */
-  lights: 10.85,
-  fireworks: [11.6, 15.0] as Win,
-  autoFire: [12.0, 12.8, 13.7, 14.4],
-  card: 15.0,
+  lights: 11.45,
+  fireworks: [12.2, 15.6] as Win,
+  autoFire: [12.6, 13.4, 14.3, 15.0],
+  card: 15.6,
 };
 
 interface Burst {
@@ -163,6 +171,8 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
   const T_END = T_HANDOFF + 0.6;
   const T_TURN = T_CARD - 1.05;
   const low = window.matchMedia("(pointer: coarse)").matches || Math.min(window.innerWidth, window.innerHeight) < 560;
+  const portrait = window.innerWidth < window.innerHeight * 0.8;
+  const CAB_W = portrait ? CAB_W_NARROW : CAB_W_WIDE;
 
   /* ---------- rendu ---------- */
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, stencil: false, powerPreference: "high-performance" });
@@ -826,7 +836,7 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
   const K = (t: number, pos: THREE.Vector3, look: THREE.Vector3, fov: number): Key => ({ t, pos, look, fov });
   const keys: Key[] = [
     K(0, CAB_CAM.clone(), PACK_POS.clone().add(V(0, 0.05, 0)), 50),
-    K(1.6, V(0, 1.48, 3.1), V(0, 1.62, 0), 60),
+    K(plan.depart, V(0, 1.48, 3.1), V(0, 1.62, 0), 60),
     K(plan.league[0], V(0, 1.48, 2.95), V(0, 1.6, 0), 60),
     K(plan.club[1], V(0, 1.48, 2.7), V(0, 1.56, 0), 58),
     K(plan.doors + 0.35, V(0, 1.5, 2.5), V(0, 1.4, -6), 56),
@@ -893,6 +903,12 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
       bokeh = lerp(2.0, 0, inOut(seg(t, T_SETTLE, 0.9)));
     }
     camera.position.copy(camPos);
+    // la cabine tasse au départ et à l'arrivée : un simple creux vertical, pas une secousse
+    const lurch = (at: number, sign: number) => {
+      const p = seg(t, at, 0.55);
+      return p > 0 && p < 1 ? sign * 0.018 * Math.sin(Math.PI * p) * (1 - p * 0.4) : 0;
+    };
+    camera.position.y += lurch(plan.depart, -1) + lurch(plan.arrive - 0.1, 1);
     camera.lookAt(camLook);
     // une seule secousse : l'éclatement du pack (traumatisme au carré, en rotation)
     const trauma = t >= T_BURST ? Math.max(0, 0.5 * (1 - (t - T_BURST) / 0.6)) : 0;
@@ -927,9 +943,11 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
     shaftMat.opacity = (0.3 + 0.7 * speed) * dim;
     cabinLight.intensity = 9 * dim;
 
-    /* l'afficheur : le statut change à chaque palier franchi */
+    /* l'afficheur : le pack, puis l'étage 00 seul (l'ascenseur s'établit),
+     * puis le statut, qui change à chaque palier franchi */
     screen.uniforms.uTime.value = wall;
-    if (t < plan.ascent[0]) setWall("idle", t, () => screen.caption(o.texts.idleSubtitle, o.texts.idleTitle));
+    if (t < T_BURST + 0.35) setWall("idle", t, () => screen.caption(o.texts.idleSubtitle, o.texts.idleTitle));
+    else if (t < plan.depart) setWall("ground", t, () => screen.caption("", ""));
     else {
       const si = statusAt(Math.max(1, level));
       setWall(`status-${si}`, t, () => screen.caption(o.texts.statusLabel, o.texts.statuses[si]?.label ?? ""));
@@ -937,8 +955,8 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
     const glitch = t >= 0 ? 1 - seg(t, wallSwitch, 0.22) : 0;
     screen.uniforms.uGlitch.value = glitch * 0.6;
     screen.uniforms.uOn.value = dim;
-    // le bouton de l'étage d'arrivée s'allume, puis s'éteint à l'arrivée
-    btnOn.color.copy(hdr(accent.a, t >= 0 && t < plan.arrive ? 2.4 : 0.35));
+    // le bouton de l'étage s'allume un peu avant le départ, puis s'éteint à l'arrivée
+    btnOn.color.copy(hdr(accent.a, t >= plan.depart - 0.5 && t < plan.arrive ? 2.4 : 0.35));
 
     /* les portes */
     const open = t >= plan.doors ? inOut(seg(t, plan.doors, 1.0)) : 0;

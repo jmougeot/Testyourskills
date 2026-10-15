@@ -281,8 +281,9 @@ Walkout calqué sur FC 27, **en vraie 3D** (Three.js, WebGL), transposé dans un
    - panneau de boutons à droite ;
    - mains courantes, plafonnier, filets de LED aux angles.
 
-   Un premier essai faisait de toute la paroi un écran LED : on ne comprenait pas qu'on était dans un ascenseur.
-2. **La montée : l'étage, c'est la note.** L'ascenseur monte jusqu'à la note du dev ; une carte à 95 arrive au 95e.
+   Un premier essai faisait de toute la paroi un écran LED : on ne comprenait pas qu'on était dans un ascenseur. Deuxième leçon (15 octobre 2026) : en portrait, une cabine de 3,2 m de large sort du cadre et on ne voit que les portes. Sur téléphone la cabine fait 2,3 m, pour garder les parois, les fentes sur la gaine, les mains courantes et les boutons dans l'image.
+2. **Le départ, seul.** Après l'éclatement, l'ascenseur s'établit pendant une seconde et demie sans rien d'autre : l'afficheur passe à l'étage 00, le bouton s'allume, puis la flèche ▲, un léger tassement de la cabine, et la montée commence. Les révélations chromées n'arrivent qu'une fois la montée lancée. Avant, tout partait dans la même seconde (particules, étage, statut, premier objet) et on ne comprenait pas où l'on était.
+3. **La montée : l'étage, c'est la note.** L'ascenseur monte jusqu'à la note du dev ; une carte à 95 arrive au 95e.
    - Sur l'afficheur, la flèche ▲ et l'étage à gauche, à droite le **statut atteint**, qui change à chaque palier franchi (tableau ci-dessous), avec un bref parasite.
    - Une flèche pour une carte seule, deux ▲▲ pour une comparaison GitHub × CV (le « double »).
    - La cabine accélère doucement, file à vitesse constante, puis freine à l'approche (profil de vitesse en trapèze : 18 % d'accélération, 30 % de freinage). La lumière de la gaine glisse dans les fentes à la même vitesse : deux paliers éclairés aux bords doux par tuile, de plus en plus visibles avec la vitesse.
