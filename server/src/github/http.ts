@@ -73,7 +73,8 @@ export async function rest<T>(
     ctx.calls.rest++;
     const res = await fetch(path.startsWith("http") ? path : API + path, {
       headers: {
-        authorization: `bearer ${ctx.token}`,
+        // Sans jeton, pas d'en-tête : un « bearer » vide vaut 401, l'anonyme passe (60 requêtes par heure).
+        ...(ctx.token ? { authorization: `bearer ${ctx.token}` } : {}),
         accept: opts.accept ?? "application/vnd.github+json",
         "x-github-api-version": "2022-11-28",
         "user-agent": UA,
@@ -95,6 +96,8 @@ export async function graphql<T>(
   variables: Record<string, unknown> = {},
   opts: { timeoutMs?: number } = {},
 ): Promise<{ data: T | null; errors: { type?: string; message: string }[] }> {
+  // GraphQL refuse l'anonyme : sans jeton (dev), les champs qui en dépendent restent vides.
+  if (!ctx.token) return { data: null, errors: [{ message: "GraphQL indisponible sans jeton GitHub" }] };
   return ctx.limit(async () => {
     ctx.calls.graphql++;
     const res = await fetch(API + "/graphql", {
