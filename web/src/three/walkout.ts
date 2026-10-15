@@ -552,7 +552,7 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
   /* ---------- le dev à son poste ---------- */
   // De dos, face à ses écrans et aux baies ; la chaise pivote vers la caméra juste avant la carte.
   const desk = createWorkstation({ accent: accent.a, lang: o.langKey, login: o.login, seed: o.overall, graphLabel: o.texts.graphLabel });
-  const player = createPlayer(assets.player, hdr("#cfe2ff", 1.2));
+  const player = createPlayer(assets.player);
   desk.group.rotation.y = Math.PI;
   desk.group.position.set(0, 0, DESK_Z);
   player.root.position.set(0, 0.03, 0);
@@ -998,9 +998,6 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
       const typing = 1 - seg(t, T_TURN - 0.15, 0.3);
       player.pose(t, typing, turn);
       desk.update(Math.max(0, t - plan.doors), seg(t, plan.doors - 0.2, 0.6) * dim);
-      // de dos devant ses écrans, le dev est une silhouette ; le liseré monte quand il se tourne
-      player.rim.value.copy(hdr("#b5cfdf", 0.06 + 0.1 * turn + 0.5 * seg(t, T_CARD - 0.3, 0.3)));
-      player.body.value = 0.025 + 0.035 * turn;
     }
 
     /* la carte */

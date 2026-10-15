@@ -1,18 +1,11 @@
-// Le dev assis à son poste : le modèle (squelette Mixamo en pose en T, regard
-// vers +z) posé assis par code, os par os, puis animé en train de taper. Habillé
-// en silhouette à contre-jour : corps presque noir, liseré de lumière en Fresnel
-// sur les contours, intensité pilotée par la séquence.
+// Personnage habillé et texturé, posé assis à partir des axes de son squelette.
+// Les matériaux de peau, cheveux et vêtements sont ceux du modèle GLTF.
 import * as THREE from "three";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { clone as cloneSkinned } from "three/examples/jsm/utils/SkeletonUtils.js";
 
 export interface Player {
   root: THREE.Object3D;
-  /** Couleur (HDR) du liseré, à moduler pendant la séquence. */
-  rim: { value: THREE.Color };
-  /** 0 : silhouette noire, 1 : corps éclairé. */
-  body: { value: number };
-  material: THREE.MeshStandardMaterial;
   /** Pose assise ; typing 0 → 1 (mains sur le clavier), look 0 → 1 (tête relevée). */
   pose(t: number, typing: number, look: number): void;
 }
@@ -47,62 +40,82 @@ const AIMS: Aim[] = [
   { bone: "RightHand", rest: [-1, 0, 0], to: (t, k) => [0.12 * k, -0.25 + 0.12 * k * wave(t, 12, 3), 1] },
 ];
 
-export function createPlayer(gltf: GLTF, rimColor: THREE.ColorRepresentation): Player {
-  const root = cloneSkinned(gltf.scene);
-  const rim = { value: new THREE.Color(rimColor) };
-  const body = { value: 0 };
-  const material = new THREE.MeshStandardMaterial({ color: 0x0b0f16, roughness: 0.55, metalness: 0.35, envMapIntensity: 0.4 });
-  material.onBeforeCompile = (shader) => {
-    shader.uniforms.uRim = rim;
-    shader.uniforms.uBody = body;
-    shader.fragmentShader = shader.fragmentShader
-      .replace("#include <common>", "#include <common>\nuniform vec3 uRim;\nuniform float uBody;")
-      .replace(
-        "#include <emissivemap_fragment>",
-        `#include <emissivemap_fragment>
-        float fres = 1.0 - clamp(abs(dot(normal, normalize(vViewPosition))), 0.0, 1.0);
-        totalEmissiveRadiance += uRim * (pow(fres, 3.0) * 1.4 + pow(fres, 9.0) * 3.0);
-        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.42, 0.46, 0.52), uBody);`,
-      );
-  };
+export function createPlayer(gltf: GLTF): Player {
+  const model = cloneSkinned(gltf.scene);
+  const root = new THREE.Group();
+  root.add(model);
+  const height = new THREE.Box3().setFromObject(model).getSize(new THREE.Vector3()).y;
+  model.scale.multiplyScalar(1.78 / height);
+  root.name = "developer";
   root.traverse((o) => {
     const m = o as THREE.SkinnedMesh;
     if (m.isMesh) {
-      m.material = material;
+      m.geometry = m.geometry.clone();
+      const copy = (source: THREE.Material) => {
+        const material = source.clone() as THREE.MeshStandardMaterial;
+        material.metalness = 0;
+        material.roughness = 0.92;
+        material.envMapIntensity = 0.7;
+        // Conserver les plis et les textures du tissu avec une tenue sobre.
+        if (/Outfit_(Top|Bottom)/.test(m.name)) {
+          const bottom = /Bottom/.test(m.name);
+          material.onBeforeCompile = (shader) => {
+            shader.fragmentShader = shader.fragmentShader.replace("#include <map_fragment>", `
+              #include <map_fragment>
+              float cloth = dot(diffuseColor.rgb, vec3(0.2126, 0.7152, 0.0722));
+              diffuseColor.rgb = cloth * ${bottom ? "vec3(0.10, 0.16, 0.23)" : "vec3(0.19, 0.23, 0.26)"};
+            `);
+          };
+          material.customProgramCacheKey = () => bottom ? "developer-denim" : "developer-shirt";
+        }
+        return material;
+      };
+      m.material = Array.isArray(m.material) ? m.material.map(copy) : copy(m.material);
       m.castShadow = true;
+      m.receiveShadow = true;
       m.frustumCulled = false;
     }
   });
 
   const bones = new Map<string, THREE.Bone>();
   root.traverse((o) => {
-    if ((o as THREE.Bone).isBone) bones.set(o.name.replace("mixamorig", ""), o as THREE.Bone);
+    if ((o as THREE.Bone).isBone) bones.set(o.name.replace(/^mixamorig:?/, ""), o as THREE.Bone);
   });
   const hips = bones.get("Hips");
-  // assis : le bassin descend à hauteur d'assise (centimètres du squelette)
-  if (hips) hips.position.y = 60;
-  const armature = hips?.parent ?? root;
+  // Le GLTF utilise un repère d'armature tourné de 90° et des centimètres.
+  // Placer le bassin dans le repère métrique du personnage, pas sur un axe supposé.
+  root.updateWorldMatrix(true, true);
+  if (hips?.parent) hips.position.copy(hips.parent.worldToLocal(root.localToWorld(new THREE.Vector3(0, 0.56, 0))));
+  const childOf: Record<string, string> = {
+    Spine: "Spine1", Spine2: "Neck", Neck: "Head", Head: "HeadTop_End",
+    LeftUpLeg: "LeftLeg", RightUpLeg: "RightLeg", LeftLeg: "LeftFoot", RightLeg: "RightFoot",
+    LeftFoot: "LeftToeBase", RightFoot: "RightToeBase",
+    LeftArm: "LeftForeArm", RightArm: "RightForeArm", LeftForeArm: "LeftHand", RightForeArm: "RightHand",
+    LeftHand: "LeftHandMiddle1", RightHand: "RightHandMiddle1",
+  };
+  const joints = AIMS.flatMap((aim) => {
+    const bone = bones.get(aim.bone);
+    const child = bones.get(childOf[aim.bone]!);
+    if (!bone?.parent || !child) return [];
+    const bind = bone.quaternion.clone();
+    return [{ aim, bone, bind, axis: child.position.clone().normalize().applyQuaternion(bind) }];
+  });
   const qParent = new THREE.Quaternion();
-  const qArm = new THREE.Quaternion();
+  const qRoot = new THREE.Quaternion();
   const v = new THREE.Vector3();
-  const rest = new THREE.Vector3();
   const q = new THREE.Quaternion();
 
   const pose = (t: number, typing: number, look: number) => {
-    armature.updateWorldMatrix(true, false);
-    armature.getWorldQuaternion(qArm).invert();
-    for (const a of AIMS) {
-      const b = bones.get(a.bone);
-      if (!b?.parent) continue;
-      // orientation du parent dans le repère du personnage
-      b.parent.updateWorldMatrix(true, false);
-      b.parent.getWorldQuaternion(qParent).premultiply(qArm);
-      v.set(...a.to(t, typing, look)).normalize().applyQuaternion(qParent.invert());
-      rest.set(...a.rest).normalize();
-      b.quaternion.copy(q.setFromUnitVectors(rest, v));
+    root.updateWorldMatrix(true, false);
+    root.getWorldQuaternion(qRoot);
+    for (const { aim, bone, bind, axis } of joints) {
+      bone.parent!.updateWorldMatrix(true, false);
+      bone.parent!.getWorldQuaternion(qParent).invert();
+      v.set(...aim.to(t, typing, look)).normalize().applyQuaternion(qRoot).applyQuaternion(qParent);
+      bone.quaternion.copy(q.setFromUnitVectors(axis, v)).multiply(bind);
     }
   };
   pose(0, 1, 0);
 
-  return { root, rim, body, material, pose };
+  return { root, pose };
 }

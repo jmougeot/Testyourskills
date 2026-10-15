@@ -72,6 +72,9 @@ export function Footer() {
           <a href={privacy} onClick={(e) => onLinkClick(e, privacy)}>
             {t.footer.privacy}
           </a>
+          <a href="/3d/CREDITS.txt" target="_blank" rel="noopener">
+            {lang === "fr" ? "Crédits 3D" : "3D credits"}
+          </a>
         </nav>
       </div>
     </footer>

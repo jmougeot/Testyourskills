@@ -1,8 +1,8 @@
 // Assets de la scène 3D (web/public/3d) : la ville de nuit derrière les baies
 // (Poly Haven, shanghai_bund, CC0, recadrée), le grain du béton (Poly Haven, garage_floor, CC0),
-// le dev (Xbot des exemples three.js, sans ses animations : il est posé assis
-// par code, meshopt) et la police Barlow Condensed 800 en typeface (SIL OFL). ~1 Mo en
-// tout, préchargés pendant l'attente du scoring, une seule fois par page.
+// le dev (personnage habillé, posé assis par code ; sources : public/3d/CREDITS.txt)
+// et la police Barlow Condensed 800 en typeface (SIL OFL). Préchargés pendant
+// l'attente du scoring, une seule fois par page.
 import * as THREE from "three";
 import { GLTFLoader, type GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { FontLoader, type Font } from "three/examples/jsm/loaders/FontLoader.js";
@@ -58,7 +58,7 @@ export function preloadWalkoutAssets(): Promise<WalkoutAssets> {
         t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping;
         return t;
       }),
-      gltf.loadAsync(BASE + "player.glb"),
+      gltf.loadAsync(BASE + "developer-v2.glb"),
       new FontLoader().loadAsync(BASE + "barlow-800.typeface.json"),
       pbr(tex, "garage_floor"),
       surface(tex, "walnut"),
