@@ -336,6 +336,14 @@ describe("carte vitrine de l'accueil (§6.1)", () => {
     expect(await res.json()).toEqual({ card: null });
     expect(ctx.calls.collect).toBe(0);
   });
+
+  it("remplace l'avatar GitHub par la photo vitrine", async () => {
+    const ctx = setup({}, { showcaseLogin: "jmougeot", showcasePhoto: "/jmougeot-linkedin.jpg" });
+    await ctx.app.request("/api/showcase");
+    await ctx.pipeline.drain();
+    const json = (await (await ctx.app.request("/api/showcase")).json()) as { card: CardData | null };
+    expect(json.card).toMatchObject({ avatarUrl: "/jmougeot-linkedin.jpg", photoSource: "linkedin" });
+  });
 });
 
 describe("limite de 20 cartes par IP et par jour", () => {

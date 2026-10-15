@@ -40,6 +40,8 @@ export interface AppOptions {
   avatarDir?: string;
   /** Pseudo GitHub de la carte d'exemple de l'accueil (§6.1). Absent : pas de vitrine. */
   showcaseLogin?: string;
+  /** Photo de la carte vitrine, à la place de l'avatar GitHub. */
+  showcasePhoto?: string;
 }
 
 /** La carte vitrine est recalculée au plus une fois par semaine. */
@@ -153,7 +155,9 @@ export function createApp(opts: AppOptions) {
     const row = store.findLatestGithub(login);
     const stale = !row || Date.now() - row.createdAt > SHOWCASE_MS;
     if (stale && !pipeline.inflightFor(login)) pipeline.start({ lang: "fr", login });
-    return c.json({ card: row ? stripToken(row.data as CardData) : null });
+    if (!row) return c.json({ card: null });
+    const card = stripToken(row.data as CardData);
+    return c.json({ card: opts.showcasePhoto ? { ...card, avatarUrl: opts.showcasePhoto, photoSource: "linkedin" } : card });
   });
 
   // POST /api/card : JSON { login, lang } ou multipart (cv, login?, lang?).

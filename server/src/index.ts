@@ -63,6 +63,7 @@ const { app, pipeline } = createApp({
   leadsEndpoint: process.env.LEADS_ENDPOINT || undefined,
   ipSalt: process.env.IP_SALT || undefined,
   showcaseLogin: process.env.SHOWCASE_LOGIN ?? "jmougeot",
+  showcasePhoto: process.env.SHOWCASE_PHOTO ?? (process.env.SHOWCASE_LOGIN ? undefined : "/jmougeot-linkedin.jpg"),
   staticRoot: prod ? webRoot : undefined,
   indexHtml,
   linkedin,
