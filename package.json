@@ -5,10 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "concurrently -k -n web,api \"vite\" \"tsx watch server/src/index.ts\"",
+    "dev": "concurrently -k -n web,api \"vite\" \"tsx watch --env-file-if-exists=.env server/src/index.ts\"",
     "dev:web": "vite",
     "dev:api": "tsx watch server/src/index.ts",
+    "dev:api": "tsx watch --env-file-if-exists=.env server/src/index.ts",
     "build": "tsc -b && vite build",
     "start": "NODE_ENV=production tsx server/src/index.ts",
+    "start": "NODE_ENV=production tsx --env-file-if-exists=.env server/src/index.ts",
     "test": "vitest run",
     "typecheck": "tsc -b"
   },
