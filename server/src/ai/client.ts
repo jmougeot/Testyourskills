@@ -94,9 +94,9 @@ export const openRouterClient: ChatClient = {
 
 export const DEFAULT_MODEL = "anthropic/claude-haiku-4.5";
 
-/** Température 0 seulement là où le modèle l'accepte (Sonnet 5.x la refuse). */
+/** Température 0 seulement là où le modèle l'accepte (la génération 5 de Claude la refuse). */
 function supportsTemperature(model: string): boolean {
-  return !/claude-(sonnet|opus)-5|claude-fable/.test(model);
+  return !/claude-(haiku|sonnet|opus)-5|claude-fable/.test(model);
 }
 
 /** Modèles pour lesquels aucun fournisseur n'accepte `response_format` : repli sur un outil forcé. */

@@ -150,7 +150,7 @@ Deux appels, chacun avec un schéma de sortie imposé, température zéro, barè
 
 `technos_described` ne contient que les technos rattachées à une responsabilité concrète, pas celles d'une simple liste. `writing_quality` de 1 à 5 juge la structure et la clarté du CV, pas la personne. Le code compte lui-même les mots creux et la longueur.
 
-Modèle par défaut : Haiku 4.5. Passer à Sonnet 5.5 pour la lecture de code seulement si la calibration (§4.6) montre qu'il le faut.
+Modèle par défaut : Haiku 5.5 (voir §16). Passer à Sonnet 5.5 pour la lecture de code seulement si la calibration (§4.6) montre qu'il le faut.
 
 ### 4.4 Le barème, carte GitHub
 
@@ -323,7 +323,7 @@ Reprendre les habitudes des autres projets Azerit, pas de nouvelle stack.
 
 - **Front** : Vite, React 19, TypeScript, CSS simple avec variables, comme `../LandingPage`. Aucune librairie UI.
 - **Backend** : Node 22, TypeScript, Hono. Endpoints : `POST /api/card` (pseudo ou PDF) qui répond un id et traite en tâche de fond, `GET /api/card/:id` pour le résultat, `GET /c/:id` page rendue côté serveur avec les balises OG, `GET /og/:id.png` et `GET /og/:id-portrait.png`.
-- **IA** : via OpenRouter (API compatible OpenAI, appelée en `fetch`), sortie structurée par schéma, température zéro, barème et consignes en cache de prompt. Haiku 4.5 (`anthropic/claude-haiku-4.5`) par défaut.
+- **IA** : via OpenRouter (API compatible OpenAI, appelée en `fetch`), sortie structurée par schéma, température zéro, barème et consignes en cache de prompt. Haiku 5.5 (`anthropic/claude-haiku-5.5`) par défaut dans `.env`.
 - **GitHub** : REST et GraphQL avec un token serveur. Plus tard, une app OAuth pour le mode roast.
 - **PDF** : extraction de texte côté serveur, en mémoire, puis suppression.
 - **Images** : rendu du composant carte en SVG puis PNG côté serveur (satori et resvg), mis en cache sur disque.
@@ -389,6 +389,7 @@ Chaque étape a sa définition de « fini ». On ne passe à la suivante qu'une 
 - **Génération sur le pseudo de quelqu'un d'autre en v1** : oui, en mode taquin (proposition du §15 retenue).
 - **Analytics** : la landing n'embarque aucun outil d'analytics. Les quatre événements du §9 sont enregistrés par le serveur dans une table `events` SQLite (`POST /api/event`) et relayés à `LEADS_ENDPOINT` si défini.
 - **Fournisseur IA : OpenRouter** à la place de l'API Anthropic directe (demande de Jacques, 14 octobre 2026). Mêmes modèles Claude, appelés par `https://openrouter.ai/api/v1/chat/completions` avec `response_format` json_schema strict et `cache_control` sur le prompt système. Modèles surchargeables par `AI_MODEL_CODE` et `AI_MODEL_CV`, budget du jour par `AI_DAILY_BUDGET_USD`.
+- **Modèle IA : Haiku 5.5** (`anthropic/claude-haiku-5.5`) à la place de Haiku 4.5 (demande de Jacques, 14 octobre 2026) : successeur direct, 0,10 $ / 0,50 $ par million de tokens sur OpenRouter contre 1 $ / 5 $, soit dix fois moins cher, avec `structured_outputs`. Comme Sonnet et Opus 5, il refuse `temperature` : le client ne l'envoie pas (sinon OpenRouter répond 404 avec `require_parameters`). Réglé par `AI_MODEL_CODE` et `AI_MODEL_CV` ; la valeur de repli du code reste Haiku 4.5 tant que la calibration (§4.6) n'a pas tourné sur 5.5.
 - **Photo LinkedIn** (demande de Jacques, 14 octobre 2026) : après la carte, le créateur (celui qui détient le jeton de suppression) peut cliquer sur « Mettre ma photo LinkedIn ». Le bouton passe par « Sign in with LinkedIn using OpenID Connect » (scopes `openid profile`) et récupère le claim `picture`. Pas de scraping de LinkedIn : c'est interdit par leurs conditions, bloqué par le mur d'authentification, et ça permettrait de mettre la photo de quelqu'un sur une carte qu'il n'a pas demandée. La photo est téléchargée, stockée avec la carte et supprimée avec elle. Le token LinkedIn n'est jamais conservé. Les variables `LINKEDIN_CLIENT_ID` et `LINKEDIN_CLIENT_SECRET` sont nécessaires ; sans elles, le bouton est masqué.
 - **Nom et sous-domaine** : « Testyourskills » et `skills.azerit.tech` en attendant un choix.
 

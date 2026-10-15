@@ -24,6 +24,7 @@ interface Price {
 
 // Repli si OpenRouter ne renvoie pas `cost` : tarifs publics par modèle.
 const PRICES: { match: RegExp; price: Price }[] = [
+  { match: /haiku-5[.-]5/, price: { input: 0.1, output: 0.5 } },
   { match: /haiku-4[.-]5/, price: { input: 1, output: 5 } },
   { match: /sonnet-5/, price: { input: 2, output: 10 } },
   { match: /sonnet-4/, price: { input: 3, output: 15 } },

@@ -22,8 +22,8 @@ Sans `GITHUB_TOKEN`, l'API démarre en dev avec un avertissement (GitHub limite 
 |---|---|---|
 | `GITHUB_TOKEN` | token serveur pour l'API GitHub (REST et GraphQL) | obligatoire en prod |
 | `OPENROUTER_API_KEY` | lecture du code et du CV par l'IA, via OpenRouter | sans IA si absent |
-| `AI_MODEL_CODE` | modèle OpenRouter pour la lecture du code | `anthropic/claude-haiku-4.5` |
-| `AI_MODEL_CV` | modèle OpenRouter pour la lecture du CV | `anthropic/claude-haiku-4.5` |
+| `AI_MODEL_CODE` | modèle OpenRouter pour la lecture du code | `anthropic/claude-haiku-4.5` (`.env.example` : `anthropic/claude-haiku-5.5`) |
+| `AI_MODEL_CV` | modèle OpenRouter pour la lecture du CV | `anthropic/claude-haiku-4.5` (`.env.example` : `anthropic/claude-haiku-5.5`) |
 | `AI_DAILY_BUDGET_USD` | budget IA par jour ; au-delà, cartes sans lecture IA | `5` |
 | `BASE_URL` | URL publique, pour `og:url`, `og:image` et les liens | `https://skills.azerit.tech` en prod, `http://localhost:5180` en dev |
 | `DB_PATH` | base SQLite ; le cache des PNG vit à côté, dans `og/` | `./var/cards.db` |
