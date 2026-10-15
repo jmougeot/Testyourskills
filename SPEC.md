@@ -23,7 +23,7 @@ Chaque point ci-dessous est une instruction. Si une fonctionnalité contredit l'
 2. **Onboarding réduit à un champ.** Pas de compte, pas de formulaire, pas d'étape intermédiaire. Pseudo GitHub ou dépôt de PDF, puis la carte.
 3. **L'IA ne note jamais.** Elle lit et rend des constats structurés. Un barème fixe en code transforme les constats en chiffres. Une même entrée donne toujours la même carte.
 4. **On se moque des CV et des pratiques, jamais des personnes.** Les statuts viennent d'une liste fermée, déclenchés par des règles. Aucun texte libre sur quelqu'un. Jamais sur l'origine, l'âge, le genre, le nom, la santé, l'apparence, le lieu ou l'employeur.
-5. **Chaque note est explicable.** Sous la carte, « Pourquoi cette note ? » liste les faits derrière chaque axe. Si quelqu'un conteste, il voit sur quoi ça repose.
+5. **Chaque note est explicable.** Sous la carte, « Pourquoi cette note ? » montre la formule de la note globale et chaque axe avec sa valeur. Ni le détail des faits, ni les statuts, ni la fiabilité n'y sont affichés.
 6. **Le CV n'est jamais stocké.** Il est lu en mémoire, les constats sont gardés, le fichier et le texte sont jetés.
 7. **Azerit est visible, pas envahissant.** Un logo discret sur la carte, une ligne de CTA sous la carte, c'est tout.
 8. **Bilingue français et anglais** dès la v1, car la landing est en anglais.
@@ -280,7 +280,7 @@ Ouverture de pack, sautable d'un clic, moins de trois secondes en tout : le pack
 Dans cet ordre, sous la carte :
 
 1. Boutons de partage (§7) et téléchargement de l'image.
-2. « Pourquoi cette note ? » déplié : les faits par axe, la liste des statuts avec leur règle.
+2. « Pourquoi cette note ? » déplié : la formule de la note globale et chaque axe avec sa valeur (sans description, détail des faits, statuts ni fiabilité).
 3. « Contester ma note » : réponse canned et drôle, puis renvoi vers les faits. Easter egg, pas un vrai formulaire.
 4. Si une seule source : « Ajoute ton CV (ou ton GitHub) pour voir l'écart ».
 5. « Passer en mode roast » : demande GitHub OAuth, réservé au propriétaire du compte.

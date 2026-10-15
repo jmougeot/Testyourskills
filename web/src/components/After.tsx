@@ -1,7 +1,7 @@
 // Tout ce qui vient sous la carte (§6.4), dans l'ordre de la spec.
 import { useEffect, useRef, useState } from "react";
 import type { CSSProperties, FormEvent } from "react";
-import type { CardData, ComparisonData, Lang, Stat, StatusInstance } from "../../../shared/types";
+import type { CardData, ComparisonData, Lang, Stat } from "../../../shared/types";
 import { STAT_CODES, styleOf } from "../../../shared/types";
 import { pick, useT } from "../i18n";
 import { api, images, isMock, tokens } from "../lib/api";
@@ -181,10 +181,8 @@ export function LinkedInPhoto({ cardId, hasAvatar }: { cardId: string; hasAvatar
 
 /* ---------- pourquoi cette note ---------- */
 
-const TONE_ORDER: StatusInstance["tone"][] = ["special", "gap", "negative", "positive"];
-
 function StatRow({ stat, index }: { stat: Stat; index: number }) {
-  const { t, lang } = useT();
+  const { t } = useT();
   const meta = t.stats[stat.code];
   const isBuzz = stat.code === "BUZZ";
   return (
@@ -198,26 +196,14 @@ function StatRow({ stat, index }: { stat: Stat; index: number }) {
       <div className="why-bar" aria-hidden>
         <span style={{ width: `${(stat.value / 99) * 100}%` }} />
       </div>
-      <p className="why-what">{meta.what}</p>
-      {stat.facts.length > 0 ? (
-        <ul className="why-facts">
-          {stat.facts.map((f, i) => (
-            <li key={i}>{pick(f, lang)}</li>
-          ))}
-        </ul>
-      ) : (
-        <p className="why-facts-empty">{t.result.why.noFacts}</p>
-      )}
     </li>
   );
 }
 
 function WhyCard({ card }: { card: CardData }) {
-  const { t, lang } = useT();
+  const { t } = useT();
   const w = t.result.why;
   const stats = STAT_CODES.map((c) => card.stats.find((s) => s.code === c)).filter((s): s is Stat => !!s);
-  const ok = stats.filter((s) => s.code !== "BUZZ" && s.sufficient).length;
-  const statuses = [...card.statuses].sort((a, b) => TONE_ORDER.indexOf(a.tone) - TONE_ORDER.indexOf(b.tone));
   return (
     <>
       <p className="why-formula">{w.overallLine}</p>
@@ -227,33 +213,6 @@ function WhyCard({ card }: { card: CardData }) {
         ))}
       </ol>
       <p className="why-buzz">{w.buzzNote}</p>
-
-      <h3 className="why-sub">{w.statusesTitle}</h3>
-      <ul className="why-statuses">
-        {statuses.map((s) => (
-          <li key={s.id} className={`tone-${s.tone}`}>
-            <span className="why-status-label">
-              {pick(s.label, lang)}
-              {s.byAI && (
-                <em className="ai-badge" title={w.byAI}>
-                  {lang === "fr" ? "IA" : "AI"}
-                </em>
-              )}
-            </span>
-            <span className="why-status-rule">{pick(s.rule, lang)}</span>
-          </li>
-        ))}
-      </ul>
-
-      <h3 className="why-sub">{w.reliabilityTitle}</h3>
-      <div className="why-reliability">
-        <div className="rel-meter" aria-hidden>
-          {Array.from({ length: 5 }, (_, i) => (
-            <span key={i} className={i < ok ? "on" : ""} />
-          ))}
-        </div>
-        <p>{w.reliabilityText(card.reliability, ok)}</p>
-      </div>
     </>
   );
 }
