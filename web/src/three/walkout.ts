@@ -215,7 +215,7 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
   const accentGlow = new THREE.MeshBasicMaterial({ color: hdr(accent.a, 2), toneMapped: false });
   const cab = createCabin({ scene, renderer, accent: accent.a, wood: assets.wood });
   disposables.push(cab);
-  const { doors, screen, brushedSteel, shaftTex, shaftMat, shaftGap, cabinLight, wash, btnOn, seam, seamMat } = cab;
+  const { doors, screen, brushedSteel, shaftTex, shaftMat, shaftGap, btnOn, seam, seamMat } = cab;
 
   /* ---------- l'open space ---------- */
   const office = new THREE.Group();
@@ -849,8 +849,7 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
     shaftTex.offset.y = climb * 7;
     shaftMat.opacity = speed * dim;
     shaftGap.visible = t < plan.arrive;
-    cabinLight.intensity = 5 * dim;
-    for (const s of wash) s.intensity = 3.5 * dim;
+    cab.setLight(dim);
 
     /* l'afficheur : le pack, puis l'étage 00 seul (l'ascenseur s'établit),
      * puis le statut, qui change à chaque palier franchi */
