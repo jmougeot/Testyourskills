@@ -9,6 +9,7 @@ import { FontLoader, type Font } from "three/examples/jsm/loaders/FontLoader.js"
 import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";
 
 export interface PbrSet {
+  map?: THREE.Texture;
   normalMap: THREE.Texture;
   roughnessMap: THREE.Texture;
 }
@@ -18,6 +19,7 @@ export interface WalkoutAssets {
   player: GLTF;
   font: Font;
   floor: PbrSet;
+  wood: PbrSet;
 }
 
 const BASE = "/3d/";
@@ -37,6 +39,15 @@ async function pbr(loader: THREE.TextureLoader, name: string): Promise<PbrSet> {
   return { normalMap, roughnessMap };
 }
 
+async function surface(loader: THREE.TextureLoader, name: string): Promise<PbrSet> {
+  const [map, normalMap, roughnessMap] = await Promise.all([
+    texture(loader, `${name}-color.webp`, true),
+    texture(loader, `${name}-normal.webp`),
+    texture(loader, `${name}-roughness.webp`),
+  ]);
+  return { map, normalMap, roughnessMap };
+}
+
 /** Lance (une fois) le chargement des assets ; sans risque à appeler souvent. */
 export function preloadWalkoutAssets(): Promise<WalkoutAssets> {
   if (!pending) {
@@ -50,7 +61,8 @@ export function preloadWalkoutAssets(): Promise<WalkoutAssets> {
       gltf.loadAsync(BASE + "player.glb"),
       new FontLoader().loadAsync(BASE + "barlow-800.typeface.json"),
       pbr(tex, "garage_floor"),
-    ]).then(([city, player, font, floor]) => ({ city, player, font, floor }));
+      surface(tex, "walnut"),
+    ]).then(([city, player, font, floor, wood]) => ({ city, player, font, floor, wood }));
     // un échec ne doit pas rester en cache : on retentera à la prochaine révélation
     pending.catch(() => {
       pending = null;

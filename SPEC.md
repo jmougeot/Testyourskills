@@ -276,18 +276,22 @@ Entre cinq et quinze secondes. Afficher des messages qui défilent, en lien avec
 Walkout calqué sur FC 27, **en vraie 3D** (Three.js, WebGL), transposé dans un décor qui parle à tout le monde : **l'ascenseur qui monte jusqu'à l'étage du dev**. Les portes d'ascenseur remplacent celles du tunnel, et le compteur d'étages fait monter le suspense. Les portes s'ouvrent sur un open space de nuit, avec la ville derrière les baies. La séquence est sautable avec le bouton ou Échap ; un clic saute aussi, sauf pendant la fenêtre des feux d'artifice. La scène finit au pixel près sur la carte HTML. Dans l'ordre :
 
 1. **Le pack** flotte dans la cabine d'un ascenseur de nuit, devant les portes floues (profondeur de champ). Clic ou délai : il tremble, une couture de lumière s'ouvre, il éclate en étincelles, avec un flash bref. La cabine doit se reconnaître au premier coup d'œil :
-   - portes en inox brossé avec le joint au milieu, encadrement sombre et seuil ;
-   - afficheur d'étage au-dessus des portes ;
-   - panneau de boutons à droite ;
-   - mains courantes, plafonnier, filets de LED aux angles.
+   - les mesures d'une vraie cabine de bureaux : 2,1 m de large, 2,6 m de profondeur, 2,45 m sous plafond, portes de 1 m sur 2,1 m ;
+   - portes en inox brossé avec le joint au milieu, en retrait dans une façade en inox, seuil en alu rainuré ; les portes palières s'ouvrent avec elles ;
+   - afficheur d'étage en verre noir dans l'imposte, au-dessus des portes ;
+   - boîte à boutons en verre noir à droite : mini-afficheur, deux colonnes de boutons inox cerclés de lumière ;
+   - parois en panneaux de noyer à fil vertical, joints fins, plinthe inox, mains courantes inox sur platines ;
+   - plafond bronze sombre à six spots ronds, sol en grandes dalles de pierre grise ;
+   - lumière chaude : un éclairage d'ensemble doux et deux spots qui lèchent la façade ; les métaux reflètent la cabine elle-même ;
+   - deux filets de LED fins à la couleur du tier, dans les angles des portes et sous le plafond.
 
-   Un premier essai faisait de toute la paroi un écran LED : on ne comprenait pas qu'on était dans un ascenseur. Deuxième leçon (15 octobre 2026) : en portrait, une cabine de 3,2 m de large sort du cadre et on ne voit que les portes. Sur téléphone la cabine fait 2,3 m, pour garder les parois, les fentes sur la gaine, les mains courantes et les boutons dans l'image.
+   Un premier essai faisait de toute la paroi un écran LED : on ne comprenait pas qu'on était dans un ascenseur. Le second, une boîte inox sombre de 3,2 m (2,3 m en portrait) avec des néons aux angles et des fentes sur la gaine, a été jugé « pas du tout réaliste » ; la cabine actuelle reprend des photos de vraies cabines (KONE, Otis). Ses 2,1 m de large gardent les parois, les mains courantes et les boutons dans le cadre, en portrait comme en paysage.
 2. **Le départ, seul.** Après l'éclatement, l'ascenseur s'établit pendant une seconde et demie sans rien d'autre : l'afficheur passe à l'étage 00, le bouton s'allume, puis la flèche ▲, un léger tassement de la cabine, et la montée commence. Les révélations chromées n'arrivent qu'une fois la montée lancée. Avant, tout partait dans la même seconde (particules, étage, statut, premier objet) et on ne comprenait pas où l'on était.
 3. **La montée : l'étage, c'est la note.** L'ascenseur monte jusqu'à la note du dev ; une carte à 95 arrive au 95e.
    - Sur l'afficheur, la flèche ▲ et l'étage à gauche. À droite, le **statut atteint** n'apparaît qu'au franchissement d'un palier (tableau ci-dessous), avec un bref parasite, et s'efface au bout de 0,9 s : le reste du temps, l'afficheur ne montre que l'étage. À l'arrivée, le statut final reste. Décision du 15 octobre 2026, pour ne montrer qu'une chose à la fois pendant que les objets chromés défilent devant les portes.
    - Les portes sont un inox plus mat que les parois : sinon le reflet du plafonnier fait une barre blanche qui écrase le joint central.
    - Une flèche pour une carte seule, deux ▲▲ pour une comparaison GitHub × CV (le « double »).
-   - La cabine accélère doucement, file à vitesse constante, puis freine à l'approche (profil de vitesse en trapèze : 18 % d'accélération, 30 % de freinage). La lumière de la gaine glisse dans les fentes à la même vitesse : deux paliers éclairés aux bords doux par tuile, de plus en plus visibles avec la vitesse.
+   - La cabine accélère doucement, file à vitesse constante, puis freine à l'approche (profil de vitesse en trapèze : 18 % d'accélération, 30 % de freinage). La lumière des paliers passe dans le jour entre les deux portes, à la même vitesse, de plus en plus visible avec la vitesse.
    - Le bouton de l'étage d'arrivée est allumé à la couleur du tier.
    - L'afficheur reste sous le seuil du bloom : lisible, pas éblouissant.
 3. **Les indices**, chacun en 3D chromé devant les portes, l'objet avec son nom en lettres 3D au-dessus :
@@ -340,6 +344,7 @@ Le poste et ses lumières restent présents derrière les portes fermées dès l
 **Assets** (`web/public/3d`, environ 1 Mo, préchargés pendant l'attente du §6.2) :
 - la ville de nuit : Poly Haven `shanghai_bund`, CC0, recadrée sur la ligne d'horizon et posée sur un cylindre derrière les baies ;
 - le grain du béton : Poly Haven `garage_floor`, CC0 ;
+- le noyer de la cabine : Poly Haven `black_walnut_veneer_02`, CC0, couleur/normales/rugosité en WebP 1K ;
 - le personnage : Xbot des exemples three.js, sans ses animations, compressé meshopt ;
 - la police : Barlow Condensed 800 convertie en typeface (SIL OFL), pour les textes 3D.
 

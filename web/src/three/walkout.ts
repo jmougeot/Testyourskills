@@ -2,8 +2,8 @@
 // entreprise, dans un décor qui parle à tout le monde : l'ascenseur qui monte
 // jusqu'à l'étage du dev.
 // 1. le pack flotte dans la cabine d'un ascenseur de nuit ; il éclate ;
-// 2. l'ascenseur monte : l'étage défile en haut de la paroi des portes, qui est
-//    un écran, et la lumière de la gaine passe dans les fentes des parois ;
+// 2. l'ascenseur monte : l'étage défile sur l'afficheur au-dessus des portes,
+//    et la lumière des paliers passe dans le jour entre les portes ;
 // 3. sur l'écran, et en 3D chromée devant lui : le poste, le langage (le
 //    drapeau), la ligue (GitHub, CV, ou les deux), puis le club, qui se fait
 //    attendre ;
@@ -17,6 +17,7 @@
 //    (le « double »). Assets : web/src/three/assets.ts.
 import * as THREE from "three";
 import { BloomEffect, DepthOfFieldEffect, EffectComposer, EffectPass, NoiseEffect, RenderPass, ToneMappingEffect, ToneMappingMode, VignetteEffect, BlendFunction } from "postprocessing";
+import { RectAreaLightUniformsLib } from "three/examples/jsm/lights/RectAreaLightUniformsLib.js";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import { TextGeometry } from "three/examples/jsm/geometries/TextGeometry.js";
 import { SVGLoader } from "three/examples/jsm/loaders/SVGLoader.js";
@@ -105,27 +106,23 @@ const hdr = (hex: THREE.ColorRepresentation, k: number) => new THREE.Color(hex).
 const V = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z);
 
 /* ---------- géométrie (mètres) : sol à y = 0, l'ascenseur s'ouvre vers -z ---------- */
-/** Largeur de la cabine : large en paysage ; en portrait, une vraie cabine
- * étroite, pour que les parois, les mains courantes et les boutons restent dans
- * le cadre. Sinon on ne voit que les portes et on ne comprend pas où l'on est. */
-const CAB_W_WIDE = 3.2; // x de -1,6 à 1,6, z de 0 (portes) à 3,4
-const CAB_W_NARROW = 2.3;
-const CAB_H = 2.9;
-const CAB_D = 3.4;
-const DOOR_W = 1.2;
-const DOOR_H = 2.2;
+const CAB_W = 2.1; // cabine aux mesures d'une vraie : x de -1,05 à 1,05, z de 0 (portes) à 2,6
+const CAB_H = 2.45;
+const CAB_D = 2.6;
+const DOOR_W = 1.0;
+const DOOR_H = 2.1;
 const ROOM_W = 22; // open space : x de -11 à 11, z de 0 à -14 (baies)
 const WIN_Z = -14;
 const CEIL = 3.3;
 const DESK_Z = -7.8;
 /** Le pack et la caméra dans la cabine ; pose finale de la caméra (regard droit vers -z) et emplacement de la carte. */
-const PACK_POS = V(0, 1.5, 0.95);
-const CAB_CAM = V(0, 1.5, 3.1);
+const PACK_POS = V(0, 1.5, 0.7);
+const CAB_CAM = V(0, 1.5, 2.45);
 const F_POS = V(0, 1.5, -3.2);
 const CARD_POS = V(0, 1.45, -6.3);
 const CARD_W3 = 1.2;
 const CARD_H3 = (CARD_W3 * 520) / 360;
-const TELL_POS = V(0, 1.24, 0.7);
+const TELL_POS = V(0, 1.24, 0.5);
 
 /* ---------- chronologie ---------- */
 type Win = [number, number];
@@ -171,8 +168,6 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
   const T_END = T_HANDOFF + 0.6;
   const T_TURN = T_CARD - 1.05;
   const low = window.matchMedia("(pointer: coarse)").matches || Math.min(window.innerWidth, window.innerHeight) < 560;
-  const portrait = window.innerWidth < window.innerHeight * 0.8;
-  const CAB_W = portrait ? CAB_W_NARROW : CAB_W_WIDE;
 
   /* ---------- rendu ---------- */
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, stencil: false, powerPreference: "high-performance" });
@@ -222,105 +217,206 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
     clearcoatRoughness: 0.3,
     envMapIntensity: 0.15,
   });
-  const steel = new THREE.MeshPhysicalMaterial({ color: 0x2a3038, metalness: 1, roughness: 0.32, clearcoat: 0.4, envMapIntensity: 0.7 });
+  // inox poli : mains courantes, boutons, seuil
+  const steel = new THREE.MeshPhysicalMaterial({ color: 0xc4c9cf, metalness: 1, roughness: 0.2, envMapIntensity: 1 });
   const darkPanel = new THREE.MeshStandardMaterial({ color: 0x0c0f14, roughness: 0.55, metalness: 0.3 });
   const accentGlow = new THREE.MeshBasicMaterial({ color: hdr(accent.a, 2), toneMapped: false });
-  // inox brossé (portes et parois de la cabine) : rugosité striée, reflets étirés à la verticale
+  /* ---------- la cabine ----------
+   * D'après de vraies cabines de bureaux (KONE, Otis) : parois en noyer à
+   * joints fins, façade et portes en inox brossé, plafond sombre à spots
+   * ronds, mains courantes sur platines, plinthe inox, sol en grandes dalles
+   * de pierre, boîte à boutons en verre noir. Lumière chaude, pas de néon. */
+  // inox brossé : rugosité striée, reflets étirés à la verticale
   const brushed = keep(makeBrushedTexture());
-  const brushedSteel = new THREE.MeshPhysicalMaterial({ color: 0x6f7882, metalness: 1, roughness: 0.38, roughnessMap: brushed, anisotropy: 0.8, anisotropyRotation: Math.PI / 2, envMapIntensity: 0.4 });
+  const brushedSteel = new THREE.MeshPhysicalMaterial({ color: 0x9aa1a8, metalness: 1, roughness: 0.3, roughnessMap: brushed, anisotropy: 0.8, anisotropyRotation: Math.PI / 2, envMapIntensity: 1 });
+  const veneer = (src: THREE.Texture | undefined) => {
+    const t = keep(src!.clone());
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    // le fil du bois à la verticale, comme les placages de cabine
+    t.center.set(0.5, 0.5);
+    t.rotation = Math.PI / 2;
+    t.needsUpdate = true;
+    return t;
+  };
+  const walnut = new THREE.MeshStandardMaterial({
+    map: veneer(assets.wood.map),
+    normalMap: veneer(assets.wood.normalMap),
+    roughnessMap: veneer(assets.wood.roughnessMap),
+    color: 0x8c7867,
+    roughness: 0.55,
+    normalScale: new THREE.Vector2(0.25, 0.25),
+    envMapIntensity: 0.6,
+  });
+  const reveal = new THREE.MeshStandardMaterial({ color: 0x0d0b0a, roughness: 0.8 });
+  const stone = keep(makeStoneTexture());
+  stone.repeat.set(CAB_W / 1.2, CAB_D / 1.2);
+  const stoneMat = new THREE.MeshPhysicalMaterial({ map: stone, color: 0xc9c6c0, roughness: 0.42, clearcoat: 0.35, clearcoatRoughness: 0.25, envMapIntensity: 0.6 });
+  // plafond bronze sombre ; la lumière renvoyée par le sol est simulée par une faible émission
+  const ceilMat = new THREE.MeshStandardMaterial({ color: 0x4a443d, emissive: 0x3a332b, metalness: 0.4, roughness: 0.5, envMapIntensity: 0.8 });
+  const glassBlack = new THREE.MeshPhysicalMaterial({ color: 0x040506, metalness: 0, roughness: 0.06, clearcoat: 1, envMapIntensity: 1 });
+  const cabinMats = [brushedSteel, steel, walnut, stoneMat, ceilMat, glassBlack];
 
-  /* ---------- la cabine ---------- */
+  /** Un panneau plat, ses UV en mètres (1 m de placage par tuile). */
+  const panel = (w: number, h: number, mat: THREE.Material, x: number, y: number, z: number, ry: number, parent: THREE.Object3D) => {
+    const geo = new THREE.PlaneGeometry(w, h);
+    const uv = geo.attributes.uv as THREE.BufferAttribute;
+    for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * w, uv.getY(i) * h);
+    const m = new THREE.Mesh(geo, mat);
+    m.position.set(x, y, z);
+    m.rotation.y = ry;
+    m.receiveShadow = true;
+    parent.add(m);
+    return m;
+  };
+
   const cabin = new THREE.Group();
   scene.add(cabin);
-  box(CAB_W, 0.04, CAB_D, new THREE.MeshPhysicalMaterial({ color: 0x111317, roughness: 0.25, metalness: 0.1, clearcoat: 1, envMapIntensity: 0.3 }), 0, -0.02, CAB_D / 2, cabin);
-  box(CAB_W, 0.04, CAB_D, darkPanel, 0, CAB_H + 0.02, CAB_D / 2, cabin);
-  box(CAB_W, CAB_H, 0.05, brushedSteel, 0, CAB_H / 2, CAB_D + 0.025, cabin);
-  // parois latérales en inox, percées d'une fente vitrée près des portes : la gaine défile derrière
-  const SLIT = [0.38, 0.62];
+  box(CAB_W, 0.04, CAB_D, stoneMat, 0, -0.02, CAB_D / 2, cabin);
+  box(CAB_W, 0.04, CAB_D, ceilMat, 0, CAB_H + 0.02, CAB_D / 2, cabin);
+  for (const z of [0.9, 1.75]) box(CAB_W, 0.004, 0.008, reveal, 0, CAB_H - 0.002, z, cabin);
+  // parois : un fond sombre, des panneaux de noyer séparés par des joints de 8 mm
+  const KICK = 0.12;
+  const ledStrip = new THREE.MeshBasicMaterial({ color: hdr(accent.a, 1.1), toneMapped: false });
+  const JOINT = 0.008;
+  const panelsZ = [0.02, 0.9, 1.75, CAB_D];
   for (const sx of [-1, 1]) {
-    const x = (sx * (CAB_W + 0.05)) / 2;
-    box(0.05, CAB_H, SLIT[0]!, brushedSteel, x, CAB_H / 2, SLIT[0]! / 2, cabin);
-    box(0.05, CAB_H, CAB_D - SLIT[1]!, brushedSteel, x, CAB_H / 2, (SLIT[1]! + CAB_D) / 2, cabin);
-    box(0.05, 0.3, SLIT[1]! - SLIT[0]!, brushedSteel, x, 0.15, (SLIT[0]! + SLIT[1]!) / 2, cabin);
-    box(0.05, CAB_H - 2.6, SLIT[1]! - SLIT[0]!, brushedSteel, x, (2.6 + CAB_H) / 2, (SLIT[0]! + SLIT[1]!) / 2, cabin);
-    // main courante
-    const rail = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, CAB_D - 1.0, 12), steel);
+    const x = (sx * CAB_W) / 2;
+    box(0.02, CAB_H, CAB_D, reveal, x + sx * 0.01, CAB_H / 2, CAB_D / 2, cabin);
+    for (let i = 0; i < panelsZ.length - 1; i++) {
+      const z0 = panelsZ[i]! + JOINT / 2;
+      const z1 = panelsZ[i + 1]! - JOINT / 2;
+      panel(z1 - z0, CAB_H - KICK - 0.03, walnut, x - sx * 0.002, KICK + (CAB_H - KICK - 0.03) / 2 + 0.005, (z0 + z1) / 2, (-sx * Math.PI) / 2, cabin);
+    }
+    // plinthe inox
+    box(0.006, KICK, CAB_D, brushedSteel, x - sx * 0.003, KICK / 2, CAB_D / 2, cabin);
+    // main courante sur platines
+    const rail = new THREE.Mesh(new THREE.CylinderGeometry(0.019, 0.019, CAB_D - 0.7, 16), steel);
     rail.rotation.x = Math.PI / 2;
-    rail.position.set(x - sx * 0.08, 0.95, (SLIT[1]! + 0.25 + CAB_D - 0.15) / 2);
+    rail.position.set(x - sx * 0.065, 0.92, 0.45 + (CAB_D - 0.7) / 2);
     cabin.add(rail);
-    // filets de LED aux angles, à la couleur du tier
-    box(0.02, CAB_H - 0.1, 0.02, accentGlow, x - sx * 0.04, CAB_H / 2, 0.06, cabin);
-    box(0.02, CAB_H - 0.1, 0.02, accentGlow, x - sx * 0.04, CAB_H / 2, CAB_D - 0.06, cabin);
+    for (const z of [0.5, CAB_D / 2 + 0.2, CAB_D - 0.3]) {
+      const post = new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.011, 0.06, 10), steel);
+      post.rotation.z = Math.PI / 2;
+      post.position.set(x - sx * 0.035, 0.92, z);
+      cabin.add(post);
+      const rose = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.028, 0.008, 20), steel);
+      rose.rotation.z = Math.PI / 2;
+      rose.position.set(x - sx * 0.006, 0.92, z);
+      cabin.add(rose);
+    }
+    // filets de LED à la couleur du tier : dans l'angle des portes et sous le plafond
+    box(0.007, CAB_H - KICK - 0.04, 0.007, ledStrip, x - sx * 0.006, KICK + (CAB_H - KICK) / 2, 0.01, cabin);
+    box(0.007, 0.007, CAB_D, ledStrip, x - sx * 0.006, CAB_H - 0.01, CAB_D / 2, cabin);
   }
-  // la gaine : derrière chaque fente, les paliers éclairés défilent vers le bas
-  // au rythme de la cabine (bandes de lumière douces, glissées en continu)
-  const shaftTex = keep(makeShaftTexture());
-  const shaftMat = new THREE.MeshBasicMaterial({ map: shaftTex, color: hdr("#dfe9ff", 1.5), toneMapped: false, transparent: true, opacity: 0.3, depthWrite: false });
-  for (const sx of [-1, 1]) {
-    box(0.02, CAB_H + 2, 1.2, new THREE.MeshBasicMaterial({ color: 0x020305 }), (sx * (CAB_W + 0.6)) / 2, CAB_H / 2, 0.5, cabin);
-    const strip = new THREE.Mesh(new THREE.PlaneGeometry(0.6, 3.2), shaftMat);
-    strip.rotation.y = (-sx * Math.PI) / 2;
-    strip.position.set((sx * (CAB_W + 0.5)) / 2, 1.45, 0.5);
-    cabin.add(strip);
-  }
-  // plafonnier
-  const ceilPanelMat = new THREE.MeshBasicMaterial({ color: hdr("#e8efff", 1.4), toneMapped: false });
-  const ceilPanel = new THREE.Mesh(new THREE.PlaneGeometry(1.9, 1.3), ceilPanelMat);
-  ceilPanel.rotation.x = Math.PI / 2;
-  ceilPanel.position.set(0, CAB_H - 0.005, 1.9);
-  cabin.add(ceilPanel);
-  const cabinLight = new THREE.PointLight(0xdfe8ff, 9, 7, 1.6);
-  cabinLight.position.set(0, CAB_H - 0.3, 1.8);
+  panel(CAB_W, CAB_H - KICK, walnut, 0, KICK + (CAB_H - KICK) / 2, CAB_D - 0.002, Math.PI, cabin);
+  box(CAB_W, KICK, 0.006, brushedSteel, 0, KICK / 2, CAB_D - 0.003, cabin);
+  // plafond : six spots ronds, très lumineux, dans un cerclage inox
+  const spotGeo = new THREE.CircleGeometry(0.045, 24);
+  const ringGeo = new THREE.RingGeometry(0.045, 0.062, 32);
+  const downMat = new THREE.MeshBasicMaterial({ color: hdr("#fff1de", 6), toneMapped: false });
+  for (const x of [-0.5, 0.5])
+    for (const z of [0.5, 1.3, 2.1]) {
+      const d = new THREE.Mesh(spotGeo, downMat);
+      d.rotation.x = Math.PI / 2;
+      d.position.set(x, CAB_H - 0.002, z);
+      const r = new THREE.Mesh(ringGeo, steel);
+      r.rotation.x = Math.PI / 2;
+      r.position.set(x, CAB_H - 0.003, z);
+      cabin.add(d, r);
+    }
+  // la lumière : un éclairage d'ensemble doux, et les deux spots de devant
+  // qui lèchent la façade (les « festons » de lumière des vraies cabines)
+  RectAreaLightUniformsLib.init();
+  const cabinLight = new THREE.RectAreaLight(0xffe7cf, 5, 1.4, 2.0);
+  cabinLight.position.set(0, CAB_H - 0.01, 1.3);
+  cabinLight.lookAt(0, 0, 1.3);
   cabin.add(cabinLight);
+  const wash: THREE.SpotLight[] = [];
+  for (const sx of [-1, 1]) {
+    const s = new THREE.SpotLight(0xffe2c4, 3.5, 4, 0.8, 0.8, 1.6);
+    s.position.set(sx * 0.5, CAB_H - 0.03, 0.5);
+    s.target.position.set(sx * 0.55, 0.4, -0.05);
+    cabin.add(s, s.target);
+    wash.push(s);
+  }
 
-  // la paroi des portes : inox brossé, encadrement sombre, seuil, afficheur
-  // d'étage au-dessus des portes, boutons à droite
+  // la façade : inox brossé, portes en retrait de 6 cm, seuil en alu rainuré,
+  // afficheur noir dans l'imposte, boîte à boutons en verre noir à droite
   const sideW = (CAB_W - DOOR_W) / 2;
   for (const sx of [-1, 1]) box(sideW, CAB_H, 0.12, brushedSteel, sx * (DOOR_W / 2 + sideW / 2), CAB_H / 2, -0.06);
   box(DOOR_W, CAB_H - DOOR_H, 0.12, brushedSteel, 0, (DOOR_H + CAB_H) / 2, -0.06);
-  const frameMat = new THREE.MeshPhysicalMaterial({ color: 0x15181d, metalness: 1, roughness: 0.25, envMapIntensity: 0.8 });
-  for (const sx of [-1, 1]) box(0.06, DOOR_H + 0.06, 0.05, frameMat, sx * (DOOR_W / 2 + 0.03), (DOOR_H + 0.06) / 2, 0.02);
-  box(DOOR_W + 0.12, 0.06, 0.05, frameMat, 0, DOOR_H + 0.03, 0.02);
-  box(DOOR_W + 0.12, 0.012, 0.14, steel, 0, 0.006, 0.04);
+  box(DOOR_W + 0.02, 0.01, 0.16, steel, 0, 0.005, -0.04);
+  for (let i = 0; i < 4; i++) box(DOOR_W, 0.002, 0.006, reveal, 0, 0.0105, -0.09 + i * 0.03);
   // les portes : même inox, plus mat, sinon le reflet du plafonnier fait une
-  // barre blanche qui écrase le joint central (surtout en portrait)
+  // barre blanche qui écrase le joint central
   const doorSteel = brushedSteel.clone();
-  doorSteel.roughness = 0.62;
-  doorSteel.anisotropy = 0.3;
-  doorSteel.envMapIntensity = 0.18;
-  const doors: { mesh: THREE.Mesh; dir: number }[] = [];
+  doorSteel.color.set(0x6f767d);
+  doorSteel.roughness = 0.45;
+  doorSteel.anisotropy = 0.5;
+  doorSteel.envMapIntensity = 0.55;
+  cabinMats.push(doorSteel);
+  const doors: { mesh: THREE.Mesh; dir: number; closed: number }[] = [];
   for (const dir of [-1, 1]) {
-    const m = new THREE.Mesh(new THREE.BoxGeometry(DOOR_W / 2 - 0.004, DOOR_H, 0.04), doorSteel);
-    m.position.set((dir * DOOR_W) / 4, DOOR_H / 2, -0.03);
-    m.receiveShadow = true;
-    scene.add(m);
-    doors.push({ mesh: m, dir });
+    // portes de la cabine, puis portes palières, qui s'ouvrent ensemble
+    for (const z of [-0.06, -0.25]) {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(DOOR_W / 2 - 0.004, DOOR_H, 0.035), doorSteel);
+      m.position.set((dir * DOOR_W) / 4, DOOR_H / 2, z);
+      m.receiveShadow = true;
+      scene.add(m);
+      doors.push({ mesh: m, dir, closed: (dir * DOOR_W) / 4 });
+    }
   }
+  // la gaine, vue par le jour entre les portes : la lumière des paliers défile
+  const shaftTex = keep(makeShaftTexture());
+  const shaftMat = new THREE.MeshBasicMaterial({ map: shaftTex, color: hdr("#ffe9d0", 2), toneMapped: false, transparent: true, opacity: 0.3, depthWrite: false });
+  const shaftGap = new THREE.Mesh(new THREE.PlaneGeometry(0.08, DOOR_H), shaftMat);
+  shaftGap.position.set(0, DOOR_H / 2, -0.13);
+  scene.add(shaftGap);
   const seamMat = new THREE.MeshBasicMaterial({ color: hdr("#ffffff", 0), toneMapped: false, transparent: true });
-  const seam = new THREE.Mesh(new THREE.PlaneGeometry(0.012, DOOR_H), seamMat);
-  seam.position.set(0, DOOR_H / 2, -0.004);
+  const seam = new THREE.Mesh(new THREE.PlaneGeometry(0.008, DOOR_H), seamMat);
+  seam.position.set(0, DOOR_H / 2, -0.04);
   scene.add(seam);
-  // l'afficheur
-  const DISP = { w: 1.7, h: 0.4 };
+  // l'afficheur, dans l'imposte
+  const DISP = { w: 0.96, h: 0.22 };
   const screen = keep(createWallScreen(accent.a, DISP));
   const dispY = (DOOR_H + CAB_H) / 2;
-  box(DISP.w + 0.08, DISP.h + 0.08, 0.03, frameMat, 0, dispY, 0.012);
+  box(DISP.w + 0.05, DISP.h + 0.05, 0.01, glassBlack, 0, dispY, 0.004);
   const display = new THREE.Mesh(new THREE.PlaneGeometry(DISP.w, DISP.h), screen.material);
-  display.position.set(0, dispY, 0.03);
+  display.position.set(0, dispY, 0.0095);
   scene.add(display);
-  // le panneau de boutons : deux colonnes, l'étage d'arrivée allumé à la couleur du tier
+  // la boîte à boutons : verre noir, mini-afficheur, deux colonnes de boutons
+  // inox cerclés de lumière ; l'étage d'arrivée à la couleur du tier
   const panelX = DOOR_W / 2 + sideW / 2;
-  box(0.2, 0.62, 0.016, frameMat, panelX, 1.2, 0.008);
-  const btnGeo = new THREE.CylinderGeometry(0.022, 0.022, 0.012, 24);
+  box(0.16, 0.98, 0.012, glassBlack, panelX, 1.18, 0.006);
+  const mini = new THREE.Mesh(new THREE.PlaneGeometry(0.12, 0.0275), screen.material);
+  mini.position.set(panelX, 1.58, 0.0125);
+  scene.add(mini);
+  const btnGeo = new THREE.CylinderGeometry(0.017, 0.018, 0.008, 28);
   btnGeo.rotateX(Math.PI / 2);
-  const btnOff = new THREE.MeshBasicMaterial({ color: hdr("#cfd8e3", 0.35), toneMapped: false });
+  const haloGeo = new THREE.RingGeometry(0.019, 0.022, 32);
+  const btnOff = new THREE.MeshBasicMaterial({ color: hdr("#d9e2ec", 0.18), toneMapped: false });
   const btnOn = new THREE.MeshBasicMaterial({ color: hdr(accent.a, 0.35), toneMapped: false });
-  for (let r = 0; r < 6; r++)
+  for (let r = 0; r < 7; r++)
     for (const c of [-1, 1]) {
-      const b = new THREE.Mesh(btnGeo, r === 0 && c === 1 ? btnOn : btnOff);
-      b.position.set(panelX + c * 0.045, 1.43 - r * 0.085, 0.022);
-      scene.add(b);
+      const y = 1.46 - r * 0.075;
+      const b = new THREE.Mesh(btnGeo, steel);
+      b.position.set(panelX + c * 0.038, y, 0.016);
+      const h = new THREE.Mesh(haloGeo, r === 0 && c === 1 ? btnOn : r === 6 && c === -1 ? new THREE.MeshBasicMaterial({ color: hdr("#f5c542", 0.5), toneMapped: false }) : btnOff);
+      h.position.set(panelX + c * 0.038, y, 0.0125);
+      scene.add(b, h);
     }
+  // les reflets de la cabine : on la photographie de l'intérieur (deux fois,
+  // pour que l'inox se reflète aussi dans l'inox) et ses matières reflètent cette image
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  let cabinEnv: THREE.Texture | null = null;
+  for (let pass = 0; pass < 2; pass++) {
+    const next = pmrem.fromScene(scene, 0.02, 0.02, 20, { position: V(0, 1.45, 1.4) }).texture;
+    for (const m of cabinMats) m.envMap = next;
+    cabinEnv?.dispose();
+    cabinEnv = next;
+  }
+  pmrem.dispose();
+  disposables.push(cabinEnv!);
 
   /* ---------- l'open space ---------- */
   const office = new THREE.Group();
@@ -343,14 +439,16 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
   ceiling.position.set(0, CEIL, WIN_Z / 2);
   office.add(ceiling);
   // murs : les côtés, avec un liseré de LED au pied à la couleur du tier, et
-  // le mur de l'ascenseur, en trois morceaux autour de la cabine
+  // le mur de l'ascenseur, percé à la taille des portes, avec ses tableaux en inox
   for (const sx of [-1, 1]) {
     box(0.1, CEIL, -WIN_Z, darkPanel, (sx * ROOM_W) / 2, CEIL / 2, WIN_Z / 2, office);
     box(0.02, 0.025, -WIN_Z, accentGlow, sx * (ROOM_W / 2 - 0.06), 0.06, WIN_Z / 2, office);
   }
-  box((ROOM_W - CAB_W) / 2, CEIL, 0.1, darkPanel, -(ROOM_W + CAB_W) / 4, CEIL / 2, -0.25, office);
-  box((ROOM_W - CAB_W) / 2, CEIL, 0.1, darkPanel, (ROOM_W + CAB_W) / 4, CEIL / 2, -0.25, office);
-  box(CAB_W, CEIL - CAB_H, 0.1, darkPanel, 0, (CEIL + CAB_H) / 2, -0.25, office);
+  box((ROOM_W - DOOR_W) / 2, CEIL, 0.1, darkPanel, -(ROOM_W + DOOR_W) / 4, CEIL / 2, -0.25, office);
+  box((ROOM_W - DOOR_W) / 2, CEIL, 0.1, darkPanel, (ROOM_W + DOOR_W) / 4, CEIL / 2, -0.25, office);
+  box(DOOR_W, CEIL - DOOR_H, 0.1, darkPanel, 0, (CEIL + DOOR_H) / 2, -0.25, office);
+  for (const sx of [-1, 1]) box(0.03, DOOR_H, 0.2, brushedSteel, sx * (DOOR_W / 2 + 0.015), DOOR_H / 2, -0.2, office);
+  box(DOOR_W + 0.06, 0.03, 0.2, brushedSteel, 0, DOOR_H + 0.015, -0.2, office);
   // les baies : montants, allège, verre fumé
   const mullion = new THREE.MeshStandardMaterial({ color: 0x14181e, roughness: 0.4, metalness: 0.7 });
   for (let x = -ROOM_W / 2; x <= ROOM_W / 2 + 0.01; x += 2.2) box(0.08, CEIL, 0.12, mullion, x, CEIL / 2, WIN_Z, office);
@@ -845,11 +943,11 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
   }
   const K = (t: number, pos: THREE.Vector3, look: THREE.Vector3, fov: number): Key => ({ t, pos, look, fov });
   const keys: Key[] = [
-    K(0, CAB_CAM.clone(), PACK_POS.clone().add(V(0, 0.05, 0)), 50),
-    K(plan.depart, V(0, 1.48, 3.1), V(0, 1.62, 0), 60),
-    K(plan.league[0], V(0, 1.48, 2.95), V(0, 1.6, 0), 60),
-    K(plan.club[1], V(0, 1.48, 2.7), V(0, 1.56, 0), 58),
-    K(plan.doors + 0.35, V(0, 1.5, 2.5), V(0, 1.4, -6), 56),
+    K(0, CAB_CAM.clone(), PACK_POS.clone().add(V(0, 0.05, 0)), 54),
+    K(plan.depart, V(0, 1.48, 2.42), V(0, 1.62, 0), 64),
+    K(plan.league[0], V(0, 1.48, 2.32), V(0, 1.6, 0), 64),
+    K(plan.club[1], V(0, 1.48, 2.12), V(0, 1.56, 0), 62),
+    K(plan.doors + 0.35, V(0, 1.5, 1.95), V(0, 1.4, -6), 58),
     K(plan.doors + 2.0, V(0, 1.53, -1.5), V(0, 1.2, DESK_Z), 44),
     K(T_TURN - 0.4, V(0, 1.51, -2.9), V(0, 1.25, DESK_Z), 41),
     K(T_SETTLE, F_POS.clone(), V(F_POS.x, F_POS.y, F_POS.z - 10), 40),
@@ -950,8 +1048,10 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
     const level = Math.round(climb * SCORE);
     screen.floor(level, o.double ? 2 : 1, moving);
     shaftTex.offset.y = climb * 7;
-    shaftMat.opacity = (0.3 + 0.7 * speed) * dim;
-    cabinLight.intensity = 9 * dim;
+    shaftMat.opacity = speed * dim;
+    shaftGap.visible = t < plan.arrive;
+    cabinLight.intensity = 5 * dim;
+    for (const s of wash) s.intensity = 3.5 * dim;
 
     /* l'afficheur : le pack, puis l'étage 00 seul (l'ascenseur s'établit),
      * puis le statut, qui change à chaque palier franchi */
@@ -976,7 +1076,7 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
 
     /* les portes */
     const open = t >= plan.doors ? inOut(seg(t, plan.doors, 1.0)) : 0;
-    for (const d of doors) d.mesh.position.x = (d.dir * DOOR_W) / 4 + d.dir * open * (DOOR_W / 2 + 0.02);
+    for (const d of doors) d.mesh.position.x = d.closed + d.dir * open * (DOOR_W / 2 + 0.02);
     seamMat.color.copy(hdr("#ffffff", t >= plan.arrive ? 5 * seg(t, plan.arrive + 0.1, 0.3) * (1 - seg(t, plan.doors + 0.1, 0.4)) : 0));
     seam.visible = open < 0.05;
 
@@ -1306,5 +1406,36 @@ function makeShaftTexture(): THREE.CanvasTexture {
   }
   const t = new THREE.CanvasTexture(c);
   t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  return t;
+}
+
+/** Dalles de pierre grise de 60 cm (deux par deux, en tuile) : nuances marbrées, joints fins. */
+function makeStoneTexture(): THREE.CanvasTexture {
+  const c = document.createElement("canvas");
+  c.width = c.height = 512;
+  const g = c.getContext("2d")!;
+  for (let ty = 0; ty < 2; ty++)
+    for (let tx = 0; tx < 2; tx++) {
+      const k = tx + ty * 2;
+      const base = 118 + Math.floor(rnd(k, 91) * 14);
+      g.fillStyle = `rgb(${base},${base - 2},${base - 5})`;
+      g.fillRect(tx * 256, ty * 256, 256, 256);
+      for (let i = 0; i < 260; i++) {
+        const v = base + Math.floor((rnd(i + k * 300, 92) - 0.5) * 34);
+        g.fillStyle = `rgba(${v},${v - 2},${v - 4},0.22)`;
+        g.beginPath();
+        g.ellipse(tx * 256 + rnd(i + k * 300, 93) * 256, ty * 256 + rnd(i + k * 300, 94) * 256, 4 + rnd(i, 95) * 26, 2 + rnd(i, 96) * 10, rnd(i, 97) * Math.PI, 0, Math.PI * 2);
+        g.fill();
+      }
+    }
+  g.fillStyle = "rgba(40,38,36,0.9)";
+  for (const p of [0, 256]) {
+    g.fillRect(p, 0, 2, 512);
+    g.fillRect(0, p, 512, 2);
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.anisotropy = 8;
   return t;
 }
