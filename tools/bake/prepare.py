@@ -12,6 +12,11 @@
 # propre contenu. Un personnage riggé garde son squelette au repos, sans
 # animation, avec des noms d'os courts (« upperarm_l »), et regarde vers +z.
 # Les crédits sont dans web/public/3d/CREDITS.txt.
+#
+# Le mobilier de l'open space (FURNITURE) ne sert qu'au précalcul : il va dans
+# tools/bake/.cache/props, où tools/bake/office.py le prend ; un modèle à une
+# seule matière (atlas) y est découpé en matières de la scène d'après sa propre
+# texture (« parts »).
 import json
 import math
 import os
@@ -20,6 +25,7 @@ import sys
 import urllib.request
 
 import bpy
+import numpy as np
 from mathutils import Matrix, Vector
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
@@ -45,6 +51,31 @@ MODELS = [
     {"uid": "143a2b1ea5eb4385ae90a73657aca3bc", "out": "developer-v3.glb", "size": ("height", 1.78), "rigged": True},
 ]
 
+# Le mobilier des îlots (tools/bake/office.py) : précalculé dans office.glb,
+# jamais chargé tel quel par la page. Sketchfab, CC BY 4.0. « dims » : largeur,
+# hauteur, profondeur (m), mises chacune à sa cote.
+FURNITURE = [
+    # Bench de six postes : plateaux, écran de séparation au milieu, voiles de
+    # fond perforés, piètement en U. Daniel Quaresma. Remis aux cotes des îlots
+    # (trois postes de 1,5 m de chaque côté, 2 × 0,8 m de profondeur, plateau à
+    # 0,76 m, écran 30 cm au-dessus) ; sa matière unique est découpée d'après
+    # sa texture en plateau, écran et métal.
+    {"uid": "204cf9e210c34d908e92c89afe4f1dc3", "out": "desk-bench.glb", "dims": (4.5, 1.059, 1.6), "face": 0, "parts": "bench"},
+]
+for spec in FURNITURE:
+    spec["cache"] = True
+
+
+def bench_part(rgb, metal):
+    """Le bench : le métal (piètement, voiles) est métallique dans sa texture ;
+    le bois est saturé ; reste l'écran, gris chaud."""
+    if metal > 0.5:
+        return "metal"
+    hi, lo = max(rgb), min(rgb)
+    return "deskTop" if hi > 0 and (hi - lo) / hi > 0.2 else "panel"
+
+
+PARTS = {"bench": bench_part}
 
 def env_key():
     key = os.environ.get("SKETCHFAB_API_KEY")
@@ -92,8 +123,10 @@ def textures(limit):
 
 
 def export(spec):
+    dest = os.path.join(CACHE, "props") if spec.get("cache") else OUT
+    os.makedirs(dest, exist_ok=True)
     bpy.ops.export_scene.gltf(
-        filepath=os.path.join(OUT, spec["out"]),
+        filepath=os.path.join(dest, spec["out"]),
         export_format="GLB",
         use_selection=True,
         export_image_format="WEBP",
@@ -209,18 +242,22 @@ def prepare(spec):
     vs = verts()
     lo = Vector((min(v.x for v in vs), min(v.y for v in vs), min(v.z for v in vs)))
     hi = Vector((max(v.x for v in vs), max(v.y for v in vs), max(v.z for v in vs)))
-    axis, target = spec["size"]
-    s = target / {"height": hi.z - lo.z, "width": hi.x - lo.x, "depth": hi.y - lo.y}[axis]
+    if "dims" in spec:
+        w, h, d = spec["dims"]
+        scale = Matrix.Diagonal((w / (hi.x - lo.x), d / (hi.y - lo.y), h / (hi.z - lo.z), 1))
+    else:
+        axis, target = spec["size"]
+        scale = Matrix.Scale(target / {"height": hi.z - lo.z, "width": hi.x - lo.x, "depth": hi.y - lo.y}[axis], 4)
     if face == "back":
         foot = [v for v in vs if v.z < lo.z + 0.08 * (hi.z - lo.z)]
         c = sum(foot, Vector()) / len(foot)
     else:
         c = (lo + hi) / 2
-    m = Matrix.Scale(s, 4) @ Matrix.Translation((-c.x, -c.y, -lo.z))
+    m = scale @ Matrix.Translation((-c.x, -c.y, -lo.z))
     for p in parts:
         p.data.transform(m)
         p.data.update()
-    size = (hi - lo) * s
+    size = scale.to_3x3() @ (hi - lo)
     if screen is not None:
         # la dalle : uv projetés sur son plan, de 0 à 1, l'image à l'endroit
         # pour qui la regarde (depuis +y Blender) ; l'export glTF retourne v
@@ -232,12 +269,68 @@ def prepare(spec):
             co = me.vertices[loop.vertex_index].co
             uv.data[loop.index].uv = ((max(xs) - co.x) / (max(xs) - min(xs)), (co.z - min(zs)) / (max(zs) - min(zs)))
     print(f"[prepare] {spec['out']}: {sum(len(p.data.polygons) for p in parts)} faces, {size.x:.3f} × {size.z:.3f} × {size.y:.3f} m (l × h × p)", flush=True)
+    if "parts" in spec:
+        split_parts(parts[0], PARTS[spec["parts"]])
     textures(1024)
     bpy.ops.object.select_all(action="SELECT")
     export(spec)
 
 
+def texel(socket):
+    """L'image (en tableau h × l × 4) et le canal qui alimentent `socket`, directement ou par un « Separate Color »."""
+    if not socket.links:
+        return None, None
+    node, out = socket.links[0].from_node, socket.links[0].from_socket
+    channel = None
+    if node.type == "SEPARATE_COLOR":
+        channel = {"Red": 0, "Green": 1, "Blue": 2}[out.name]
+        if not node.inputs[0].links:
+            return None, None
+        node = node.inputs[0].links[0].from_node
+    img = getattr(node, "image", None)
+    if img is None:
+        return None, None
+    px = np.empty(img.size[0] * img.size[1] * 4, np.float32)
+    img.pixels.foreach_get(px)
+    return px.reshape(img.size[1], img.size[0], 4), channel
+
+
+def split_parts(ob, classify):
+    """Une matière par pièce, d'après le texel de couleur et de métal au centre
+    uv de chaque face ; les matières n'ont plus de texture (la scène met les siennes)."""
+    mat = ob.data.materials[0]
+    bsdf = next(n for n in mat.node_tree.nodes if n.type == "BSDF_PRINCIPLED")
+    color, _ = texel(bsdf.inputs["Base Color"])
+    metal, ch = texel(bsdf.inputs["Metallic"])
+    me = ob.data
+    uv = me.uv_layers.active.data
+    names = []
+    index = []
+    for poly in me.polygons:
+        u = sum(uv[i].uv.x for i in poly.loop_indices) / poly.loop_total
+        v = sum(uv[i].uv.y for i in poly.loop_indices) / poly.loop_total
+
+        def at(img, c=None):
+            h, w = img.shape[:2]
+            p = img[min(h - 1, max(0, int((v % 1) * h))), min(w - 1, max(0, int((u % 1) * w)))]
+            return p[:3] if c is None else p[c]
+
+        name = classify(at(color), at(metal, ch) if metal is not None else bsdf.inputs["Metallic"].default_value)
+        if name not in names:
+            names.append(name)
+        index.append(names.index(name))
+    me.materials.clear()
+    for name in names:
+        m = bpy.data.materials.new(name)
+        me.materials.append(m)
+    me.polygons.foreach_set("material_index", index)
+    for name in names:
+        print(f"[prepare]   {name}: {index.count(names.index(name))} faces", flush=True)
+    for img in list(bpy.data.images):
+        bpy.data.images.remove(img)
+
+
 only = sys.argv[sys.argv.index("--") + 1 :] if "--" in sys.argv else []
-for spec in MODELS:
+for spec in MODELS + FURNITURE:
     if not only or spec["out"] in only:
         prepare(spec)
