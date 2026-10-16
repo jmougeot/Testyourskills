@@ -81,6 +81,29 @@ Changes: 1K JPEG color, OpenGL normal and roughness maps converted to WebP.
 
 Poly Haven asset license: https://polyhaven.com/license
 
+ceiling-*.webp
+Source: ambientCG, OfficeCeiling001, CC0.
+https://ambientcg.com/view?id=OfficeCeiling001
+Changes: 1K JPEG color, OpenGL normal and roughness maps converted to WebP.
+
+plaster-*.webp
+Source: ambientCG, PaintedPlaster017, CC0.
+https://ambientcg.com/view?id=PaintedPlaster017
+Changes: 1K JPEG color and OpenGL normal maps converted to WebP.
+
+felt-*.webp
+Source: ambientCG, Fabric034, CC0.
+https://ambientcg.com/view?id=Fabric034
+Changes: color and OpenGL normal maps reduced to 512 px, converted to WebP.
+
+carpet-tile-*.webp
+Source: ambientCG, Carpet012, CC0.
+https://ambientcg.com/view?id=Carpet012
+Changes: color and OpenGL normal maps reduced to 512 px, converted to WebP.
+
+ambientCG textures prepared by tools/bake/prepare.py.
+ambientCG license (CC0 1.0): https://docs.ambientcg.com/license/
+
 barlow-800.typeface.json
 Barlow Condensed ExtraBold, Jeremy Tribby, SIL Open Font License 1.1.
 https://github.com/jpt/barlow

@@ -16,13 +16,15 @@
 # Le mobilier de l'open space (FURNITURE) ne sert qu'au précalcul : il va dans
 # tools/bake/.cache/props, où tools/bake/office.py le prend ; un modèle à une
 # seule matière (atlas) y est découpé en matières de la scène d'après sa propre
-# texture (« parts »).
+# texture (« parts »). Les surfaces (TEXTURES, ambientCG, CC0) vont dans
+# web/public/3d en <nom>-color/normal/roughness.webp.
 import json
 import math
 import os
 import re
 import sys
 import urllib.request
+import zipfile
 
 import bpy
 import numpy as np
@@ -76,6 +78,21 @@ def bench_part(rgb, metal):
 
 
 PARTS = {"bench": bench_part}
+
+# Les surfaces de l'open space : couleur, normales (OpenGL) et rugosité ;
+# « size » : largeur en px (1024 par défaut), « maps » : les cartes gardées
+# (une rugosité presque uniforme ne sert à rien). ambientCG, CC0.
+TEXTURES = [
+    # Dalles de plafond en fibre minérale, 60 cm, sur ossature (6 × 6 dalles).
+    {"acg": "OfficeCeiling001", "out": "ceiling"},
+    # Enduit peint, pour le grain des murs.
+    {"acg": "PaintedPlaster017", "out": "plaster", "maps": ("color", "normal")},
+    # Feutre, pour les écrans des bureaux, vus de loin.
+    {"acg": "Fabric034", "out": "felt", "size": 512, "maps": ("color", "normal")},
+    # Moquette en bouclette rase, pour le grain des dalles de moquette.
+    {"acg": "Carpet012", "out": "carpet-tile", "size": 512, "maps": ("color", "normal")},
+]
+
 
 def env_key():
     key = os.environ.get("SKETCHFAB_API_KEY")
@@ -330,7 +347,45 @@ def split_parts(ob, classify):
         bpy.data.images.remove(img)
 
 
+def prepare_texture(spec):
+    """Une surface ambientCG : couleur, normales OpenGL et rugosité en WebP."""
+    folder = os.path.join(CACHE, "ambientcg")
+    os.makedirs(folder, exist_ok=True)
+    path = os.path.join(folder, f"{spec['acg']}_1K-JPG.zip")
+    if not os.path.exists(path):
+        # (ambientCG refuse les requêtes sans agent)
+        req = urllib.request.Request(f"https://ambientcg.com/get?file={spec['acg']}_1K-JPG.zip", headers={"User-Agent": "Testyourskills/prepare.py"})
+        with open(path, "wb") as f:
+            f.write(urllib.request.urlopen(req).read())
+    bpy.ops.wm.read_factory_settings(use_empty=True)
+    with zipfile.ZipFile(path) as z:
+        for key, suffix, color in (("color", "Color", True), ("normal", "NormalGL", False), ("roughness", "Roughness", False)):
+            if key not in spec.get("maps", ("color", "normal", "roughness")):
+                continue
+            src = os.path.join(folder, f"{spec['acg']}_1K-JPG_{suffix}.jpg")
+            with open(src, "wb") as f:
+                f.write(z.read(os.path.basename(src)))
+            img = bpy.data.images.load(src)
+            img.colorspace_settings.name = "sRGB" if color else "Non-Color"
+            size = spec.get("size", 1024)
+            if img.size[0] > size:
+                img.scale(size, img.size[1] * size // img.size[0])
+            # en RGBA 8 bits : l'encodeur WebP refuse les niveaux de gris
+            w, h = img.size
+            rgba = bpy.data.images.new(f"{spec['out']}-{key}", w, h, alpha=True)
+            rgba.colorspace_settings.name = img.colorspace_settings.name
+            rgba.pixels.foreach_set(list(img.pixels))
+            rgba.file_format = "WEBP"
+            out = os.path.join(OUT, f"{spec['out']}-{key}.webp")
+            rgba.save(filepath=out, quality=82)
+            print(f"[prepare] {os.path.basename(out)}: {w} × {h}, {os.path.getsize(out) // 1024} Ko", flush=True)
+    print(f"[prepare] crédit : ambientCG {spec['acg']}, CC0, https://ambientcg.com/view?id={spec['acg']}", flush=True)
+
+
 only = sys.argv[sys.argv.index("--") + 1 :] if "--" in sys.argv else []
 for spec in MODELS + FURNITURE:
     if not only or spec["out"] in only:
         prepare(spec)
+for spec in TEXTURES:
+    if not only or spec["out"] in only:
+        prepare_texture(spec)
