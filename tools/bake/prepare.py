@@ -13,6 +13,8 @@
 # bureau aussi, nommé « top », avec des uv en mètres pour le placage de la
 # scène. Un personnage riggé garde son squelette au repos, sans animation,
 # avec des noms d'os courts (« upperarm_l »), et regarde vers +z.
+# La cabine d'ascenseur est remise aux cotes de la scène, ses pièces animées
+# nommées (voir prepare_cabin).
 # Les crédits sont dans web/public/3d/CREDITS.txt.
 import json
 import math
@@ -71,7 +73,20 @@ MODELS = [
     # Le dev : un humain scanné, riggé (squelette complet, doigts, yeux), sans son animation de marche.
     # Renderpeople, CC BY 4.0. Il regarde vers +z three.js ; la scène le pose assis (web/src/three/player.ts).
     {"uid": "143a2b1ea5eb4385ae90a73657aca3bc", "out": "developer-v3.glb", "size": ("height", 1.78), "rigged": True},
+    # La cabine d'ascenseur : un vrai projet de cabine de bureaux (verre blanc laqué, inox brossé,
+    # plafond lumineux, boîte à boutons). JNKM Design (Josh Nelson), CC BY 4.0. Voir prepare_cabin.
+    {"uid": "be05f33b31dc4b4ebf7ad7ff4cea1631", "out": "cabin.glb", "cabin": True},
 ]
+
+# La cabine, aux cotes de la scène (web/src/three/cabin.ts) : portes de 2,1 m
+# de haut, la face intérieure de la façade en z = 0, la cabine vers +z, 2,6 m
+# de profondeur (le modèle n'en a que 1,5 : la caméra recule jusqu'à 2,45 m).
+CABIN_DEPTH = 2.6
+DOOR_H = 2.1
+# ce qui ne se voit pas de l'intérieur, ou qui fermerait le passage des portes :
+# les deux coques extérieures, les faces arrière des parois (grille d'Unreal),
+# le doublon de l'afficheur de la boîte à boutons
+CABIN_DROP = r"(Outer_Wall|Int_Wall_Lift|WorldGridMaterial|Plane_44|M_poster)"
 
 
 def env_key():
@@ -151,6 +166,7 @@ def export(spec):
         export_yup=True,
         export_apply=True,
         export_animations=False,
+        export_extras=True,
     )
     if "polyhaven" in spec:
         meta = get(f"https://api.polyhaven.com/info/{spec['polyhaven']}")
@@ -206,11 +222,123 @@ def prepare_rigged(spec):
     export(spec)
 
 
+def split(ob, name_neg, name_pos):
+    """Coupe un maillage en deux selon x = 0 (les deux vantaux d'une porte d'un seul tenant)."""
+    halves = []
+    for name, keep in ((name_neg, lambda x: x < 0), (name_pos, lambda x: x >= 0)):
+        o = ob.copy()
+        o.data = ob.data.copy()
+        bpy.context.collection.objects.link(o)
+        bm = bmesh.new()
+        bm.from_mesh(o.data)
+        bmesh.ops.delete(bm, geom=[f for f in bm.faces if not keep(f.calc_center_median().x)], context="FACES")
+        bm.to_mesh(o.data)
+        bm.free()
+        o.name = o.data.name = name
+        halves.append(o)
+    bpy.data.objects.remove(ob)
+    return halves
+
+
+def prepare_cabin(spec):
+    """La cabine d'ascenseur : tout le décor vient du modèle, la scène n'y
+    ajoute que ce qui bouge ou change par carte. Le modèle est remis aux
+    cotes de la scène, sa profondeur étirée (verre, inox brossé et pierre
+    s'y prêtent), ses deux vantaux séparés, et les pièces que la scène
+    anime nommées : « door_l », « door_r », « cop_display » (le mini-afficheur
+    de la boîte à boutons), « ceiling_light » (le plafond lumineux),
+    « button_arrival » (l'anneau du bouton de l'étage d'arrivée, en haut à
+    droite) ; le centre des boutons va dans les extras de la scène."""
+    for o in [o for o in bpy.data.objects if o.type == "MESH"]:
+        o.select_set(True)
+    bpy.context.view_layer.objects.active = next(o for o in bpy.data.objects if o.type == "MESH")
+    bpy.ops.object.parent_clear(type="CLEAR_KEEP_TRANSFORM")
+    bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+    for o in list(bpy.data.objects):
+        if o.type != "MESH" or re.search(CABIN_DROP, o.name):
+            bpy.data.objects.remove(o)
+    # la photo de baseball du fond (droits incertains, hors sujet) : le même verre blanc que les côtés
+    glass = bpy.data.materials["M_White_Glass"]
+    for o in bpy.data.objects:
+        for i, m in enumerate(o.data.materials):
+            if m.name == "M_Oil_Bottel1":
+                o.data.materials[i] = glass
+    obs = {o.name: o for o in bpy.data.objects}
+    get = lambda pat: [o for n, o in obs.items() if re.search(pat, n)]
+
+    def bounds(objs):
+        vs = [v.co for o in objs for v in o.data.vertices]
+        return Vector([min(v[i] for v in vs) for i in range(3)]), Vector([max(v[i] for v in vs) for i in range(3)])
+
+    door_lo, door_hi = bounds(get(r"Lift_door"))
+    x0 = (door_lo.x + door_hi.x) / 2
+    y_face = bounds(get(r"EntryWall"))[0].y  # la face intérieure de la façade
+    y_back = bounds(get(r"Back_Wall"))[1].y  # la face du fond
+    s = DOOR_H / door_hi.z
+    k = CABIN_DEPTH / ((y_face - y_back) * s)
+    # cotes de la scène, en Blender (z en haut ; l'export donne y en haut et
+    # z three.js = -y Blender) : la cabine du côté des y négatifs, étirée en profondeur
+    for o in bpy.data.objects:
+        for v in o.data.vertices:
+            y = (v.co.y - y_face) * s
+            v.co = Vector(((v.co.x - x0) * s, y * k if y < 0 else y, v.co.z * s))
+        o.data.update()
+    # le sol : la pierre reprojetée à plat, une seule dalle sur toute la cabine (pas de raccord)
+    for o in get(r"Floor_41"):
+        me = o.data
+        lo, hi = bounds([o])
+        size = max(hi.x - lo.x, hi.y - lo.y)
+        uv = me.uv_layers.active
+        for loop in me.loops:
+            co = me.vertices[loop.vertex_index].co
+            uv.data[loop.index].uv = ((hi.x - co.x) / size, (co.y - lo.y) / size)
+    # les boutons : des milliers de facettes pour des pastilles de 3 cm
+    for o in get(r"M_Buttons_01"):
+        mod = o.modifiers.new("decimate", "DECIMATE")
+        mod.ratio = 0.2
+        bpy.context.view_layer.objects.active = o
+        bpy.ops.object.modifier_apply(modifier=mod.name)
+    # le centre de chaque bouton, en coordonnées three.js, du haut vers le bas, de gauche à droite
+    rings = get(r"Buttoon.*M_Glow2")
+    centers = []
+    for o in rings:
+        lo, hi = bounds([o])
+        c = (lo + hi) / 2
+        centers.append((round(c.x, 4), round(c.z, 4), round(-lo.y, 4), o))
+    centers.sort(key=lambda c: (-round(c[1], 2), c[0]))
+    top = max(c[1] for c in centers)
+    arrival = max((c for c in centers if c[1] > top - 0.01), key=lambda c: c[0])[3]
+    bpy.context.scene["buttons"] = json.dumps([c[:3] for c in centers])
+    # le mini-afficheur : uv de 0 à 1, l'image à l'endroit pour qui le regarde depuis la cabine
+    display = get(r"Lift_Button_Board_2_M_Glow1")[0]
+    me = display.data
+    lo, hi = bounds([display])
+    uv = me.uv_layers.active
+    for loop in me.loops:
+        co = me.vertices[loop.vertex_index].co
+        uv.data[loop.index].uv = ((co.x - lo.x) / (hi.x - lo.x), (co.z - lo.z) / (hi.z - lo.z))
+    door_l, door_r = split(get(r"Lift_door")[0], "door_l", "door_r")
+    named = {"cop_display": display, "ceiling_light": get(r"Ceiling_Light_18_M_Glow")[0], "button_arrival": arrival}
+    for n, o in named.items():
+        o.name = o.data.name = n
+    # le reste, immobile, en un seul objet (un maillage par matière dans three.js)
+    keep = {door_l, door_r, *named.values()}
+    join([o for o in bpy.data.objects if o not in keep], "cabin")
+    lo, hi = bounds(list(bpy.data.objects))
+    print(f"[prepare] {spec['out']}: {sum(len(o.data.polygons) for o in bpy.data.objects)} faces, échelle {s:.4f}, profondeur ×{k:.3f}, "
+          f"{hi.x - lo.x:.3f} × {hi.z - lo.z:.3f} × {hi.y - lo.y:.3f} m (l × h × p), {len(centers)} boutons", flush=True)
+    textures(1024)
+    bpy.ops.object.select_all(action="SELECT")
+    export(spec)
+
+
 def prepare(spec):
     bpy.ops.wm.read_factory_settings(use_empty=True)
     bpy.ops.import_scene.gltf(filepath=fetch(spec))
     if spec.get("rigged"):
         return prepare_rigged(spec)
+    if spec.get("cabin"):
+        return prepare_cabin(spec)
     meshes = [o for o in bpy.data.objects if o.type == "MESH"]
     bpy.ops.object.select_all(action="DESELECT")
     for o in meshes:

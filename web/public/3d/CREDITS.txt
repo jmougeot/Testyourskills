@@ -74,6 +74,15 @@ desk-bottle.glb
 https://sketchfab.com/3d-models/water-bottle-885543a7679c4026abbd6499185caf08
 Changes: environment sphere removed; rescaled to 24 cm, textures 512 px.
 
+cabin.glb
+"JNKM Design - Elevator Cab Interior" by Josh Nelson (JNKM Design), CC BY 4.0.
+https://sketchfab.com/3d-models/jnkm-design-elevator-cab-interior-be05f33b31dc4b4ebf7ad7ff4cea1631
+Changes: rescaled to 2.1 m doors and stretched to 2.6 m deep, outer shells
+removed, door split into two leaves, button meshes decimated, back-wall photo
+replaced by the white glass of the side walls, floor UVs reprojected
+(tools/bake/prepare.py); materials tuned and the floor display, button
+numbers and tier-coloured details added in the renderer.
+
 All models above: textures converted to WebP, meshopt compression
 (tools/bake/prepare.py). CC BY 4.0: https://creativecommons.org/licenses/by/4.0/
 
