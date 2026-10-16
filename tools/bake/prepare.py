@@ -1,16 +1,18 @@
-# Prépare les modèles tiers de la scène 3D (Sketchfab, CC BY) pour le web.
+# Prépare les modèles tiers de la scène 3D (Sketchfab, CC BY ; Poly Haven, CC0) pour le web.
 #
 #   SKETCHFAB_API_KEY=… blender -b -P tools/bake/prepare.py [-- nom.glb …]
 #
-# Télécharge chaque modèle (cache : tools/bake/.cache, hors dépôt), le remet
-# aux cotes réelles, l'oriente comme la scène (repère three.js : y en haut ;
-# l'utilisateur de l'objet est du côté -z : l'assis du fauteuil regarde vers
-# -z, la dalle d'un écran et l'avant d'un clavier sont tournés vers -z),
-# pose son origine au sol, au centre, compresse ses textures en WebP et sa
-# géométrie en meshopt, et l'écrit dans web/public/3d. La dalle d'un écran
-# reste un maillage à part, nommé « screen », pour que la scène y affiche son
-# propre contenu. Un personnage riggé garde son squelette au repos, sans
-# animation, avec des noms d'os courts (« upperarm_l »), et regarde vers +z.
+# Télécharge chaque modèle (cache : tools/bake/.cache, hors dépôt ; Poly Haven
+# sans clé, en glTF 1K), le remet aux cotes réelles, l'oriente comme la scène
+# (repère three.js : y en haut ; l'utilisateur de l'objet est du côté -z :
+# l'assis du fauteuil regarde vers -z, la dalle d'un écran et l'avant d'un
+# clavier sont tournés vers -z), pose son origine au sol, au centre, compresse
+# ses textures en WebP et sa géométrie en meshopt, et l'écrit dans
+# web/public/3d. La dalle d'un écran reste un maillage à part, nommé
+# « screen », pour que la scène y affiche son propre contenu ; le plateau d'un
+# bureau aussi, nommé « top », avec des uv en mètres pour le placage de la
+# scène. Un personnage riggé garde son squelette au repos, sans animation,
+# avec des noms d'os courts (« upperarm_l »), et regarde vers +z.
 # Les crédits sont dans web/public/3d/CREDITS.txt.
 import json
 import math
@@ -19,6 +21,7 @@ import re
 import sys
 import urllib.request
 
+import bmesh
 import bpy
 from mathutils import Matrix, Vector
 
@@ -26,6 +29,11 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 CACHE = os.path.join(ROOT, "tools", "bake", ".cache")
 OUT = os.path.join(ROOT, "web", "public", "3d")
 
+# Options : keep / drop, les pièces gardées ou retirées (regex sur les noms) ;
+# tilt, une bascule (degrés autour de l'axe gauche-droite) pour coucher un
+# objet ; top_at, la hauteur du plateau d'un bureau réglable, atteinte en
+# étirant ses colonnes dans la bande lift (m) ; decimate ; tex, la taille
+# maximale des textures (1024 par défaut).
 # face : comment trouver l'avant du modèle — "back" (le dossier d'un fauteuil,
 # le haut du modèle, va vers +z), "screen" (la normale de la dalle va vers -z),
 # ou un angle (degrés autour de la verticale) relevé à l'œil.
@@ -57,8 +65,30 @@ def env_key():
     raise SystemExit("SKETCHFAB_API_KEY manquant (variable d'environnement ou .env)")
 
 
-def fetch(uid):
+def get(url, path=None):
+    """Un GET avec un User-Agent : Poly Haven refuse celui de Python."""
+    with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": "testyourskills-prepare"})) as r:
+        data = r.read()
+    if path is None:
+        return json.loads(data)
+    with open(path, "wb") as f:
+        f.write(data)
+
+
+def fetch(spec):
     os.makedirs(CACHE, exist_ok=True)
+    if "polyhaven" in spec:
+        # Poly Haven (CC0) : le glTF 1K et ses fichiers, sans clé
+        ph = spec["polyhaven"]
+        folder = os.path.join(CACHE, "polyhaven", ph)
+        gltf = get(f"https://api.polyhaven.com/files/{ph}")["gltf"]["1k"]["gltf"]
+        path = os.path.join(folder, os.path.basename(gltf["url"]))
+        if not os.path.exists(path):
+            for rel, f in [*gltf["include"].items(), (os.path.basename(gltf["url"]), gltf)]:
+                os.makedirs(os.path.dirname(os.path.join(folder, rel)), exist_ok=True)
+                get(f["url"], os.path.join(folder, rel))
+        return path
+    uid = spec["uid"]
     path = os.path.join(CACHE, f"{uid}.glb")
     if not os.path.exists(path):
         req = urllib.request.Request(f"https://api.sketchfab.com/v3/models/{uid}/download", headers={"Authorization": f"Token {env_key()}"})
@@ -102,6 +132,10 @@ def export(spec):
         export_apply=True,
         export_animations=False,
     )
+    if "polyhaven" in spec:
+        meta = get(f"https://api.polyhaven.com/info/{spec['polyhaven']}")
+        print(f"[prepare] crédit : « {meta['name']} » par {', '.join(meta['authors'])}, CC0, https://polyhaven.com/a/{spec['polyhaven']}", flush=True)
+        return
     meta = json.load(urllib.request.urlopen(f"https://api.sketchfab.com/v3/models/{spec['uid']}"))
     print(f"[prepare] crédit : « {meta['name']} » par {meta['user']['displayName']}, {meta['license']['label']}, {meta['viewerUrl']}", flush=True)
 
@@ -154,7 +188,7 @@ def prepare_rigged(spec):
 
 def prepare(spec):
     bpy.ops.wm.read_factory_settings(use_empty=True)
-    bpy.ops.import_scene.gltf(filepath=fetch(spec["uid"]))
+    bpy.ops.import_scene.gltf(filepath=fetch(spec))
     if spec.get("rigged"):
         return prepare_rigged(spec)
     meshes = [o for o in bpy.data.objects if o.type == "MESH"]
@@ -168,19 +202,34 @@ def prepare(spec):
         bpy.data.objects.remove(o)
     # les pièces en trop, et les maillages vides (arêtes seules) des exports SketchUp
     for o in list(bpy.data.objects):
-        if not o.data.polygons or ("drop" in spec and re.search(spec["drop"], o.name)):
+        if not o.data.polygons or ("drop" in spec and re.search(spec["drop"], o.name)) or ("keep" in spec and not re.search(spec["keep"], o.name)):
             bpy.data.objects.remove(o)
     name = os.path.splitext(spec["out"])[0]
-    obs = list(bpy.data.objects)
-    screen = None
-    if "screen" in spec:
-        screen = join([o for o in obs if re.search(spec["screen"], o.name)], "screen")
-        for m in screen.data.materials:
-            m.name = "screen"
-        body = join([o for o in bpy.data.objects if o is not screen], name)
-        parts = [body, screen]
-    else:
-        parts = [join(obs, name)]
+    # des pièces à part, nommées pour la scène : la dalle d'un écran, le plateau d'un bureau
+    sep = {}
+    for k in ("screen", "top"):
+        if k in spec:
+            sep[k] = join([o for o in bpy.data.objects if o not in sep.values() and re.search(spec[k], o.name)], k)
+            for m in sep[k].data.materials:
+                m.name = k
+    screen = sep.get("screen")
+    parts = [join([o for o in bpy.data.objects if o not in sep.values()], name), *sep.values()]
+    if "decimate" in spec:
+        for p in parts:
+            # soudé d'abord : un scan découpé en îlots s'ouvrirait (les uv, par coin, restent)
+            bm = bmesh.new()
+            bm.from_mesh(p.data)
+            bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=1e-4 * max(p.dimensions))
+            bm.to_mesh(p.data)
+            bm.free()
+            bpy.context.view_layer.objects.active = p
+            mod = p.modifiers.new("decimate", "DECIMATE")
+            mod.ratio = spec["decimate"]
+            bpy.ops.object.modifier_apply(modifier=mod.name)
+    if "tilt" in spec:
+        # couché : on le bascule autour de l'axe gauche-droite avant de l'orienter
+        for p in parts:
+            p.data.transform(Matrix.Rotation(math.radians(spec["tilt"]), 4, "X"))
 
     def verts():
         return [v.co.copy() for p in parts for v in p.data.vertices]
@@ -220,7 +269,30 @@ def prepare(spec):
     for p in parts:
         p.data.transform(m)
         p.data.update()
-    size = (hi - lo) * s
+    if "top_at" in spec:
+        # un pied réglable : ses colonnes s'allongent ou se raccourcissent dans
+        # une bande de hauteur (lift, en m) pour amener le plateau à top_at
+        b0, b1 = spec["lift"]
+        d = spec["top_at"] - max(v.co.z for v in sep["top"].data.vertices)
+        for p in parts:
+            for v in p.data.vertices:
+                v.co.z += d * min(1.0, max(0.0, (v.co.z - b0) / (b1 - b0)))
+            p.data.update()
+    vs = verts()
+    lo = Vector((min(v.x for v in vs), min(v.y for v in vs), min(v.z for v in vs)))
+    hi = Vector((max(v.x for v in vs), max(v.y for v in vs), max(v.z for v in vs)))
+    size = hi - lo
+    if "top" in sep:
+        # le plateau : uv en mètres (projection par la face dominante), le fil
+        # le long du bureau ; la scène y pose son propre placage
+        me = sep["top"].data
+        uv = me.uv_layers.active or me.uv_layers.new()
+        for poly in me.polygons:
+            n = poly.normal
+            ax = max(range(3), key=lambda i: abs(n[i]))
+            for li in poly.loop_indices:
+                co = me.vertices[me.loops[li].vertex_index].co
+                uv.data[li].uv = [(co.y, co.z), (co.x, co.z), (co.x, co.y)][ax]
     if screen is not None:
         # la dalle : uv projetés sur son plan, de 0 à 1, l'image à l'endroit
         # pour qui la regarde (depuis +y Blender) ; l'export glTF retourne v
@@ -232,7 +304,7 @@ def prepare(spec):
             co = me.vertices[loop.vertex_index].co
             uv.data[loop.index].uv = ((max(xs) - co.x) / (max(xs) - min(xs)), (co.z - min(zs)) / (max(zs) - min(zs)))
     print(f"[prepare] {spec['out']}: {sum(len(p.data.polygons) for p in parts)} faces, {size.x:.3f} × {size.z:.3f} × {size.y:.3f} m (l × h × p)", flush=True)
-    textures(1024)
+    textures(spec.get("tex", 1024))
     bpy.ops.object.select_all(action="SELECT")
     export(spec)
 
