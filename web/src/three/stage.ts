@@ -77,44 +77,33 @@ export function createCityBackdrop(map: THREE.Texture, radius: number, arcDeg: n
 }
 
 const REFL_VERT = `
-uniform mat4 textureMatrix; varying vec4 vProj; varying vec2 vUv;
-void main(){ vUv = uv; vProj = textureMatrix * vec4(position, 1.0); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`;
+uniform mat4 textureMatrix; varying vec4 vProj; varying vec3 vWorld;
+void main(){ vProj = textureMatrix * vec4(position, 1.0); vec4 w = modelMatrix * vec4(position, 1.0); vWorld = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }`;
 const REFL_FRAG = `
-uniform sampler2D tDiffuse; uniform sampler2D tNormal; uniform vec2 uRepeat; uniform float uStrength; uniform vec3 color;
-varying vec4 vProj; varying vec2 vUv;
+uniform sampler2D tDiffuse; uniform float uStrength; uniform vec3 color; uniform vec3 uNormal;
+varying vec4 vProj; varying vec3 vWorld;
 void main(){
-  vec3 n = texture2D(tNormal, vUv * uRepeat).xyz * 2.0 - 1.0;
-  vec2 p = vProj.xy / vProj.w + n.xy * 0.018;
-  vec3 c = vec3(0.0);
-  float r = 0.0045;
-  c += texture2D(tDiffuse, p).rgb * 0.28;
-  c += texture2D(tDiffuse, p + vec2( r, 0.0)).rgb * 0.12;
-  c += texture2D(tDiffuse, p + vec2(-r, 0.0)).rgb * 0.12;
-  c += texture2D(tDiffuse, p + vec2(0.0,  r * 2.0)).rgb * 0.12;
-  c += texture2D(tDiffuse, p + vec2(0.0, -r * 2.0)).rgb * 0.12;
-  c += texture2D(tDiffuse, p + vec2( r,  r * 3.0)).rgb * 0.06;
-  c += texture2D(tDiffuse, p + vec2(-r, -r * 3.0)).rgb * 0.06;
-  c += texture2D(tDiffuse, p + vec2( r, -r * 3.0)).rgb * 0.06;
-  c += texture2D(tDiffuse, p + vec2(-r,  r * 3.0)).rgb * 0.06;
-  gl_FragColor = vec4(c * color * uStrength, 1.0);
+  // Fresnel d'un double vitrage : ~8 % de face, davantage en incidence rasante
+  float c = abs(dot(normalize(cameraPosition - vWorld), uNormal));
+  float f = 0.08 + 0.92 * pow(1.0 - c, 5.0);
+  gl_FragColor = vec4(texture2DProj(tDiffuse, vProj).rgb * color * uStrength * f, 1.0);
 }`;
 
-/** Réflexion plane du sol, ajoutée par-dessus le béton (mélange additif). */
-export function createFloorReflection(width: number, length: number, normal: THREE.Texture, repeat: THREE.Vector2, size: THREE.Vector2) {
-  const refl = new Reflector(new THREE.PlaneGeometry(width, length), {
+/** Le reflet de l'intérieur dans les baies, la nuit : un miroir plan ajouté par-dessus la ville. */
+export function createGlassReflection(width: number, height: number, size: THREE.Vector2) {
+  const refl = new Reflector(new THREE.PlaneGeometry(width, height), {
     textureWidth: size.x,
     textureHeight: size.y,
     clipBias: 0.003,
     color: 0xffffff,
     shader: {
-      name: "FloorReflection",
+      name: "GlassReflection",
       uniforms: {
         color: { value: null },
         tDiffuse: { value: null },
         textureMatrix: { value: null },
-        tNormal: { value: normal },
-        uRepeat: { value: repeat },
-        uStrength: { value: 0.42 },
+        uStrength: { value: 1 },
+        uNormal: { value: new THREE.Vector3(0, 0, 1) },
       },
       vertexShader: REFL_VERT,
       fragmentShader: REFL_FRAG,

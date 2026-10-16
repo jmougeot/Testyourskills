@@ -28,7 +28,7 @@ import { chairMaterial, createChair } from "./chair";
 import { createElevatorSound } from "./elevatorSound";
 import { createPlayer } from "./player";
 import { createWorkstation } from "./workstation";
-import { createCityBackdrop, createStudioEnvironment } from "./stage";
+import { createCityBackdrop, createGlassReflection, createStudioEnvironment } from "./stage";
 import * as T from "./textures";
 
 export type WalkoutCue = "fireworks" | null;
@@ -304,6 +304,14 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
   );
   glass.position.set(0, CEIL / 2, WIN_Z + 0.02);
   office.add(glass);
+  // la nuit, les baies reflètent le bureau éclairé (le décor précalculé ne coûte presque rien à redessiner)
+  let glassReflection: ReturnType<typeof createGlassReflection> | null = null;
+  if (!low) {
+    glassReflection = createGlassReflection(ROOM_W, CEIL - 0.25, new THREE.Vector2(640, 160));
+    glassReflection.mesh.position.set(0, (CEIL - 0.25) / 2, WIN_Z + 0.04);
+    scene.add(glassReflection.mesh);
+    disposables.push({ dispose: () => glassReflection?.mesh.dispose() });
+  }
   // la ville de nuit
   const city = createCityBackdrop(assets.city, 120, 70, -18, scene.background);
   city.mesh.position.set(0, 0, DESK_Z);
@@ -660,7 +668,7 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
   const WARM = new THREE.Color(0xffe0b9);
   const NIGHT = new THREE.Color(0x9ab8e6);
   const tierColor = new THREE.Color(accent.a);
-  const LIGHT = { neon: 1, hero: 1, city: 1, accent: 1 };
+  const LIGHT = { neon: 1, hero: 1, city: 1, accent: 1, glass: 1.6 };
 
   const resize = () => {
     const nw = Math.max(1, canvas.clientWidth || window.innerWidth);
@@ -895,6 +903,11 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
     baked.set("accent", tierColor, seg(t, plan.doors + 0.3, 0.9) * dim * LIGHT.accent);
     hemi.intensity = (0.12 + 0.6 * lit) * dim;
     city.uBright.value = 0.7 * dim;
+    if (glassReflection) {
+      // le miroir redessine la scène : seulement une fois les portes ouvertes
+      glassReflection.mesh.visible = t >= plan.doors;
+      glassReflection.strength.value = (0.15 + 0.85 * lit) * dim * LIGHT.glass;
+    }
     pendantMat.color.copy(hdr(0xffdfb8, (0.05 + 1.5 * seg(t, plan.doors + 0.6, 0.8)) * dim));
     deskSpots.forEach((d, k) => {
       const on = 0.25 + 0.75 * seg(t, plan.lights + d.row * 0.16, 0.3);
