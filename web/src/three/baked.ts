@@ -66,8 +66,20 @@ const LIGHT_COUNTS = [
   "NUM_POINT_LIGHTS",
   "NUM_HEMI_LIGHTS",
 ];
-const noLights = (src: string) =>
-  LIGHT_COUNTS.reduce((s, n) => s.replace(new RegExp(`\\b${n}\\b`, "g"), "0"), inline(src));
+const noLights = (src: string, keep: string[] = []) =>
+  LIGHT_COUNTS.filter((n) => !keep.some((k) => n.startsWith(k))).reduce((s, n) => s.replace(new RegExp(`\\b${n}\\b`, "g"), "0"), inline(src));
+
+/** Une matière qui n'évalue que certains types de lumières (les autres sont compilés à zéro). */
+export function limitLights(mat: THREE.Material, keep: ("NUM_RECT_AREA" | "NUM_POINT_LIGHTS" | "NUM_SPOT")[], cacheKey: string) {
+  const previous = mat.onBeforeCompile;
+  mat.onBeforeCompile = (shader, renderer) => {
+    previous.call(mat, shader, renderer);
+    shader.vertexShader = noLights(shader.vertexShader, keep);
+    shader.fragmentShader = noLights(shader.fragmentShader, keep);
+  };
+  const key = mat.customProgramCacheKey.bind(mat);
+  mat.customProgramCacheKey = () => `${cacheKey}|${key()}`;
+}
 
 export interface BakedLighting {
   /** Couleur × intensité de chaque groupe, partagées par toutes les matières du décor. */

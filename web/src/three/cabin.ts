@@ -5,6 +5,7 @@ import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import { RectAreaLightUniformsLib } from "three/examples/jsm/lights/RectAreaLightUniformsLib.js";
 import type { PbrSet } from "./assets";
+import { limitLights } from "./baked";
 import { createWallScreen, type WallScreen } from "./ledWall";
 
 /* ---------- géométrie (mètres) : sol à y = 0, les portes en z = 0, la cabine vers +z ---------- */
@@ -228,7 +229,6 @@ export function createCabin(o: CabinOptions): Cabin {
   const box = (w: number, h: number, d: number, mat: THREE.Material, x: number, y: number, z: number, parent: THREE.Object3D = scene) => {
     const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
     m.position.set(x, y, z);
-    m.receiveShadow = true;
     parent.add(m);
     return m;
   };
@@ -236,7 +236,6 @@ export function createCabin(o: CabinOptions): Cabin {
   const rbox = (w: number, h: number, d: number, r: number, mat: THREE.Material, x: number, y: number, z: number, parent: THREE.Object3D = scene) => {
     const m = new THREE.Mesh(new RoundedBoxGeometry(w, h, d, 3, r), mat);
     m.position.set(x, y, z);
-    m.receiveShadow = true;
     parent.add(m);
     return m;
   };
@@ -293,7 +292,6 @@ export function createCabin(o: CabinOptions): Cabin {
     const m = new THREE.Mesh(geo, mat);
     m.position.set(x, y, z);
     m.rotation.y = ry;
-    m.receiveShadow = true;
     parent.add(m);
     return m;
   };
@@ -301,11 +299,13 @@ export function createCabin(o: CabinOptions): Cabin {
   const cabin = new THREE.Group();
   scene.add(cabin);
   // la lumière des spots, précalculée par surface : une matière par surface, qui partage les textures
+  const lightmapped: THREE.Material[] = [];
   const baked = <M extends THREE.MeshStandardMaterial>(mat: M, plane: BakePlane): M => {
     const m = mat.clone() as M;
     m.lightMap = keep(bakeLight(plane));
     m.lightMapIntensity = LIGHTMAP_K;
     cabinMats.push(m);
+    lightmapped.push(m);
     return m;
   };
   // sol et plafond : leur lumière est précalculée (lightBake)
@@ -417,8 +417,7 @@ export function createCabin(o: CabinOptions): Cabin {
     for (const z of [-0.06, -0.25]) {
       const m = new THREE.Mesh(new RoundedBoxGeometry(DOOR_W / 2 - 0.004, DOOR_H, 0.035, 3, 0.005), doorSteel);
       m.position.set((dir * DOOR_W) / 4, DOOR_H / 2, z);
-      m.receiveShadow = true;
-      scene.add(m);
+        scene.add(m);
       doors.push({ mesh: m, dir, closed: (dir * DOOR_W) / 4 });
     }
   }
@@ -486,6 +485,10 @@ export function createCabin(o: CabinOptions): Cabin {
   // vraie place et se décale quand la caméra avance
   const probe = V(0, 1.45, 1.4);
   for (const m of cabinMats) boxProjection(m, probe, V(-CAB_W / 2, 0, -0.02), V(CAB_W / 2, CAB_H, CAB_D));
+  // Parois, sol et plafond ont leur lumière précalculée : ils ne gardent en
+  // direct que la dalle du plafond (les reflets) et les lumières ponctuelles
+  // (l'éclat du pack), pas les projecteurs du bureau ni leurs ombres.
+  for (const m of lightmapped) limitLights(m, ["NUM_RECT_AREA", "NUM_POINT_LIGHTS"], "cabin-lightmapped");
   const pmrem = new THREE.PMREMGenerator(renderer);
   let cabinEnv: THREE.Texture | null = null;
   for (let pass = 0; pass < 2; pass++) {
