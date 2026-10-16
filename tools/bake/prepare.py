@@ -48,6 +48,14 @@ MODELS = [
     {"uid": "6c95897de04143aeb5c75b7630707d27", "out": "mug.glb", "size": ("height", 0.098), "face": 0},
     # Lampe de bureau noire, sans son câble, son plateau ni son halo. nickbaker, CC BY 4.0.
     {"uid": "093e9b607a4544818e0c169074037e5f", "out": "lamp.glb", "size": ("height", 0.46), "face": 0, "drop": r"^Object_(2|5|7)$"},
+    # Bureau assis-debout à piètement noir (colonnes télescopiques, pieds en T,
+    # boîtier de commande) ; le plateau, à part et nommé « top », reçoit le noyer
+    # de la scène. Chairsolutions, CC BY 4.0.
+    {"uid": "b7341ee22ddd43efaef9ad3016a224f3", "out": "desk.glb", "size": ("width", 2.2), "face": 180, "top": r"^Object_1[56]$", "top_at": 0.7725, "lift": (0.15, 0.35), "decimate": 0.4},
+    # Souris Logitech MX Master 3S, scannée (Scaniverse), allégée. Zhirayr, CC BY 4.0.
+    {"uid": "be1d82499209475c8cd1d009df9aaa00", "out": "mouse.glb", "size": ("depth", 0.125), "face": 0, "decimate": 0.15},
+    # Sous-main de bureau. mfk, CC BY 4.0.
+    {"uid": "7690f727d87847aaa737c8110c8e6531", "out": "deskmat.glb", "size": ("width", 0.9), "face": 0, "decimate": 0.15},
     # Le dev : un humain scanné, riggé (squelette complet, doigts, yeux), sans son animation de marche.
     # Renderpeople, CC BY 4.0. Il regarde vers +z three.js ; la scène le pose assis (web/src/three/player.ts).
     {"uid": "143a2b1ea5eb4385ae90a73657aca3bc", "out": "developer-v3.glb", "size": ("height", 1.78), "rigged": True},

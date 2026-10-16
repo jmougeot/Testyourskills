@@ -41,6 +41,24 @@ lamp.glb
 https://sketchfab.com/3d-models/desk-lamp-093e9b607a4544818e0c169074037e5f
 Changes: cable, display table and light cone removed; rescaled to 46 cm.
 
+desk.glb
+"(CS) Ascend - Sit-stand, Workstation, Black" by chairsolutions, CC BY 4.0.
+https://sketchfab.com/3d-models/cs-ascend-sit-stand-workstation-black-b7341ee22ddd43efaef9ad3016a224f3
+Changes: rescaled to 2.2 m, reoriented, simplified (decimated); columns
+shortened so the top sits at 77 cm; desktop split off with UVs in metres; the
+renderer gives the desktop the walnut veneer below and the frame a black
+powder coat.
+
+mouse.glb
+"Logitech MX Master 3S by Scaniverse" by Zhirayr, CC BY 4.0.
+https://sketchfab.com/3d-models/logitech-mx-master-3s-by-scaniverse-be1d82499209475c8cd1d009df9aaa00
+Changes: rescaled to 12.5 cm, simplified (decimated).
+
+deskmat.glb
+"mouse pad (keyboard pad)" by mfk (mfkffzl), CC BY 4.0.
+https://sketchfab.com/3d-models/mouse-pad-keyboard-pad-7690f727d87847aaa737c8110c8e6531
+Changes: rescaled to 90 cm; felt and red edge recoloured grey in the renderer.
+
 All models above: textures converted to WebP, meshopt compression
 (tools/bake/prepare.py). CC BY 4.0: https://creativecommons.org/licenses/by/4.0/
 

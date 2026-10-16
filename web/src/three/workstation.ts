@@ -1,12 +1,12 @@
-// Le poste du dev : bureau en noyer, tapis et fauteuil de travail,
+// Le poste du dev : bureau assis-debout en noyer, tapis et fauteuil de travail,
 // trois écrans (le code dans son langage, un terminal où les
-// tests passent, le graphe de contributions), clavier rétroéclairé. Repère
+// tests passent, le graphe de contributions), clavier rétroéclairé. Tous les
+// objets sont de vrais modèles. Repère
 // local : le dev est assis à l'origine et regarde vers +z ; les écrans lui font
 // face. Les écrans se redessinent au fil de la frappe.
 import * as THREE from "three";
-import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
-import type { PbrSet } from "./assets";
+import type { DeskModel, PbrSet } from "./assets";
 
 export interface Workstation {
   group: THREE.Group;
@@ -105,13 +105,9 @@ function snippet(lang: string | undefined, login: string): Tok[][] {
   ];
 }
 
-/** Les objets du poste (Sketchfab, CC BY ; tools/bake/prepare.py) : origine au sol, l'utilisateur côté -z. */
-export interface DeskProps {
-  monitor: GLTF;
-  keyboard: GLTF;
-  mug: GLTF;
-  lamp: GLTF;
-}
+/** Le bureau et les objets du poste (Sketchfab, CC BY ; tools/bake/prepare.py) :
+ * origine au sol, l'utilisateur côté -z. */
+export type DeskProps = Record<DeskModel, GLTF>;
 
 /** Une copie d'un modèle, ses matières propres (on les retouche par copie). */
 function place(gltf: GLTF, x: number, y: number, z: number, ry = 0, scale = 1): THREE.Object3D {
@@ -138,52 +134,61 @@ export function createWorkstation(o: { accent: string; lang?: string; login: str
   };
   const accent = new THREE.Color(o.accent);
   // piètement en acier poudré noir : une peinture, donc un diélectrique
-  const dark = new THREE.MeshStandardMaterial({ color: 0x202224, roughness: 0.55, metalness: 0, envMapIntensity: 0.5 });
-  const fabric = new THREE.MeshStandardMaterial({ color: 0x303a3b, roughness: 0.96 });
+  const powder = keep(new THREE.MeshStandardMaterial({ color: 0x202224, roughness: 0.55, metalness: 0, envMapIntensity: 0.5 }));
   const glow = new THREE.MeshBasicMaterial({ color: accent, toneMapped: false });
   // Plateau en noyer (Poly Haven, black_walnut_veneer_02), le fil dans la
   // longueur. Le scan est un placage brut (L* 55) ; huilé, le noyer fonce
   // sans changer de teinte : un gris neutre l'amène à L* 38, a* 7, b* 15.
+  // Les uv du plateau sont en mètres : un motif tous les deux mètres environ.
   const veneer = (t: THREE.Texture | undefined) => {
     const c = keep(t!.clone());
-    c.repeat.set(1.2, 0.5);
+    c.repeat.set(0.49, 0.55);
     c.needsUpdate = true;
     return c;
   };
-  const wood = new THREE.MeshStandardMaterial({
-    map: veneer(o.wood.map),
-    normalMap: veneer(o.wood.normalMap),
-    roughnessMap: veneer(o.wood.roughnessMap),
-    color: 0xb3b3b3,
-    roughness: 0.7,
-    normalScale: new THREE.Vector2(0.15, 0.15),
-    // vu en incidence rasante, le plateau refléterait la bande bleue « baies »
-    // de l'environnement studio, bien plus claire que la ville de nuit : il virait au mauve
-    envMapIntensity: 0.2,
-  });
-  const box = (w: number, h: number, d: number, mat: THREE.Material, x: number, y: number, z: number) => {
-    const m = new THREE.Mesh(new RoundedBoxGeometry(w, h, d, 2, Math.min(w, h, d, 0.06) * 0.25), mat);
-    m.position.set(x, y, z);
-    m.castShadow = true;
-    m.receiveShadow = true;
-    group.add(m);
-    return m;
-  };
+  const wood = keep(
+    new THREE.MeshStandardMaterial({
+      map: veneer(o.wood.map),
+      normalMap: veneer(o.wood.normalMap),
+      roughnessMap: veneer(o.wood.roughnessMap),
+      color: 0xb3b3b3,
+      roughness: 0.7,
+      normalScale: new THREE.Vector2(0.15, 0.15),
+      // vu en incidence rasante, le plateau refléterait la bande bleue « baies »
+      // de l'environnement studio, bien plus claire que la ville de nuit : il virait au mauve
+      envMapIntensity: 0.2,
+    }),
+  );
+  const tint = (obj: THREE.Object3D, f: (m: THREE.MeshStandardMaterial, mesh: THREE.Mesh) => void) =>
+    obj.traverse((c) => {
+      const m = c as THREE.Mesh;
+      if (m.isMesh) f(m.material as THREE.MeshStandardMaterial, m);
+    });
 
   // le tapis est dans le décor précalculé (tools/bake/office.py), 2 cm d'épaisseur
   const Y0 = 0.02;
-
-  // le bureau
-  box(2.45, 0.065, 0.9, wood, 0, Y0 + 0.74, 0.75);
-  for (const x of [-1.04, 1.04]) {
-    box(0.055, 0.7, 0.055, dark, x, Y0 + 0.35, 0.46);
-    box(0.055, 0.7, 0.055, dark, x, Y0 + 0.35, 1.04);
-    box(0.065, 0.045, 0.68, dark, x, Y0 + 0.045, 0.75);
-  }
-  box(2.08, 0.065, 0.045, dark, 0, Y0 + 0.65, 1.04);
-  box(0.88, 0.006, 0.35, fabric, 0.08, Y0 + 0.777, 0.53);
-  // clavier mécanique rétroéclairé (à la couleur du tier), souris, tasse
   const TOP = Y0 + 0.7725; // le dessus du plateau
+
+  // Le bureau assis-debout (Chairsolutions Ascend) : plateau de 2,2 × 0,84 m, colonnes
+  // télescopiques réglées pour un plateau à 77 cm. Plateau en noyer, tout le
+  // reste en acier poudré noir sauf l'afficheur du boîtier de commande.
+  const desk = place(o.props.desk, 0, Y0, 0.75);
+  tint(desk, (m, mesh) => {
+    const to = mesh.name === "top" ? wood : m.emissive.getHex() === 0 ? powder : m;
+    if (to === m) return;
+    m.dispose();
+    mesh.material = to;
+  });
+  group.add(desk);
+  // sous-main en feutre gris, liseré piqué foncé
+  const mat = place(o.props.deskmat, -0.05, TOP, 0.54);
+  tint(mat, (m) => {
+    const rim = m.color.r > 0.5; // le liseré du modèle est rouge
+    m.color.set(rim ? 0x1b1c1e : 0x34383b);
+    m.roughness = rim ? 0.6 : 0.95;
+  });
+  group.add(mat);
+  // clavier mécanique rétroéclairé (à la couleur du tier), souris à droite, tasse
   const keyboard = place(o.props.keyboard, 0.02, TOP + 0.007, 0.5);
   const keyMats: THREE.MeshStandardMaterial[] = [];
   keyboard.traverse((c) => {
@@ -194,17 +199,17 @@ export function createWorkstation(o: { accent: string; lang?: string; login: str
     }
   });
   group.add(keyboard);
-  box(0.06, 0.025, 0.1, dark, 0.34, Y0 + 0.797, 0.5);
+  group.add(place(o.props.mouse, -0.37, TOP + 0.006, 0.5, -0.12));
   group.add(place(o.props.mug, -0.76, TOP, 0.5, 2.3));
   // Petite lampe orientée vers le plateau : contraste chaud / écrans froids.
-  const lamp = place(o.props.lamp, 1.03, TOP, 0.88, 1.22);
+  const lamp = place(o.props.lamp, 0.99, TOP, 0.9, 1.22);
   lamp.traverse((c) => {
     const m = c as THREE.Mesh;
     if (m.isMesh && /Transparent/.test((m.material as THREE.Material).name)) m.material = new THREE.MeshBasicMaterial({ color: new THREE.Color(0xffd4a0).multiplyScalar(1.8), toneMapped: false });
   });
   group.add(lamp);
   const lampLight = new THREE.PointLight(0xffd1a0, 0, 2.2, 2);
-  lampLight.position.set(0.87, Y0 + 1.24, 0.78);
+  lampLight.position.set(0.83, Y0 + 1.24, 0.8);
   group.add(lampLight);
 
   // trois écrans face au dev

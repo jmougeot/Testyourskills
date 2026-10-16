@@ -1,7 +1,7 @@
 // Assets de la scène 3D (web/public/3d) : la ville de nuit derrière les baies,
 // le décor de l'open space et sa lumière précalculés dans Blender
 // (tools/bake/office.py), la lumière de la cabine (tools/bake/cabin.py),
-// matières PBR de bois et de moquette, plante, fauteuil, personnage habillé et police Barlow Condensed. Sources et
+// matières PBR de bois et de moquette, plante, fauteuil, bureau et objets du poste, personnage habillé et police Barlow Condensed. Sources et
 // licences : public/3d/CREDITS.txt. Modèles compressés meshopt, textures
 // WebP, préchargés pendant le scoring, une seule fois par page.
 import * as THREE from "three";
@@ -24,13 +24,18 @@ export interface WalkoutAssets {
   carpet: PbrSet;
   plant: GLTF;
   chair: GLTF;
-  desk: { monitor: GLTF; keyboard: GLTF; mug: GLTF; lamp: GLTF };
+  /** Le poste du dev : bureau et objets (tools/bake/prepare.py). */
+  desk: Record<DeskModel, GLTF>;
   office: BakedOffice;
   /** La lumière de la cabine, précalculée dans Blender (tools/bake/cabin.py). */
   cabinLight: THREE.Texture;
 }
 
 const BASE = "/3d/";
+
+/** Les modèles du poste du dev, chacun dans web/public/3d/{nom}.glb. */
+export const DESK_MODELS = ["desk", "monitor", "keyboard", "mouse", "deskmat", "mug", "lamp"] as const;
+export type DeskModel = (typeof DESK_MODELS)[number];
 
 /** Géométries et matières des modèles chargés : partagées par toutes les scènes
  * de la page, une scène qui se ferme ne les libère pas (le GPU les garde). */
@@ -103,10 +108,10 @@ export function preloadWalkoutAssets(): Promise<WalkoutAssets> {
       surface(tex, "carpet"),
       gltf.loadAsync(BASE + "plant-v2.glb"),
       gltf.loadAsync(BASE + "chair.glb"),
-      Promise.all(["monitor", "keyboard", "mug", "lamp"].map((n) => gltf.loadAsync(`${BASE}${n}.glb`))),
+      Promise.all(DESK_MODELS.map((n) => gltf.loadAsync(`${BASE}${n}.glb`))),
       cabinLight(tex),
-    ]).then(([city, player, font, wood, office, carpet, plant, chair, [monitor, keyboard, mug, lamp], cabin]) => {
-      for (const g of [player, plant, chair, monitor!, keyboard!, mug!, lamp!]) share(g);
+    ]).then(([city, player, font, wood, office, carpet, plant, chair, deskModels, cabin]) => {
+      for (const g of [player, plant, chair, ...deskModels]) share(g);
       office.scene.traverse((o) => {
         if ((o as THREE.Mesh).isMesh) sharedResources.add((o as THREE.Mesh).geometry);
       });
@@ -119,7 +124,7 @@ export function preloadWalkoutAssets(): Promise<WalkoutAssets> {
         carpet,
         plant,
         chair,
-        desk: { monitor: monitor!, keyboard: keyboard!, mug: mug!, lamp: lamp! },
+        desk: Object.fromEntries(DESK_MODELS.map((n, i) => [n, deskModels[i]!])) as Record<DeskModel, GLTF>,
         cabinLight: cabin,
       };
     });
