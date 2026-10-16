@@ -22,6 +22,31 @@ converted to WebP, meshopt compression; leather tinted black and frame
 darkened in the renderer. Background chairs are a decimated copy with baked
 lighting, inside office.glb.
 
+monitor.glb
+"Monitor Dell P2314H" by GregorJan, CC BY 4.0.
+https://sketchfab.com/3d-models/monitor-dell-p2314h-c69f09bb812e46cdbd5bf6c62499b848
+Changes: rescaled from inches, reoriented, screen UVs reprojected so the scene
+draws the dev's code on it; body tinted black in the renderer.
+
+keyboard.glb
+"Mechanical keyboard" by FelikinRuslan, CC BY 4.0.
+https://sketchfab.com/3d-models/mechanical-keyboard-1ba4055c33674567b51b783701ed05ce
+Changes: cable and USB plug removed, rescaled, reoriented; backlight tinted
+with the card's tier colour in the renderer.
+
+mug.glb
+"Coffee Mug" by The Lister, CC BY 4.0.
+https://sketchfab.com/3d-models/coffee-mug-6c95897de04143aeb5c75b7630707d27
+Changes: rescaled to 9.8 cm.
+
+lamp.glb
+"Desk Lamp" by nickbaker, CC BY 4.0.
+https://sketchfab.com/3d-models/desk-lamp-093e9b607a4544818e0c169074037e5f
+Changes: cable, display table and light cone removed; rescaled to 46 cm.
+
+All models above: textures converted to WebP, meshopt compression
+(tools/bake/prepare.py). CC BY 4.0: https://creativecommons.org/licenses/by/4.0/
+
 office.glb, office-lm-*.webp
 Original work for Testyourskills: open-space set modelled and lit in Blender
 (tools/bake/office.py), lighting baked with Cycles. Contains the chair above

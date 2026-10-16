@@ -537,7 +537,7 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
 
   /* ---------- le dev à son poste ---------- */
   // De dos, face à ses écrans et aux baies ; la chaise pivote vers la caméra juste avant la carte.
-  const desk = createWorkstation({ accent: accent.a, lang: o.langKey, login: o.login, seed: o.overall, graphLabel: o.texts.graphLabel, wood: assets.wood, chair: createChair(assets.chair, 0x1d2023) });
+  const desk = createWorkstation({ accent: accent.a, lang: o.langKey, login: o.login, seed: o.overall, graphLabel: o.texts.graphLabel, wood: assets.wood, chair: createChair(assets.chair, 0x1d2023), props: assets.desk });
   const player = createPlayer(assets.player);
   desk.group.rotation.y = Math.PI;
   desk.group.position.set(0, 0, DESK_Z);

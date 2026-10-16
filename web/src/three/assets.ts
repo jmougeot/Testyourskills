@@ -24,6 +24,7 @@ export interface WalkoutAssets {
   carpet: PbrSet;
   plant: GLTF;
   chair: GLTF;
+  desk: { monitor: GLTF; keyboard: GLTF; mug: GLTF; lamp: GLTF };
   office: BakedOffice;
 }
 
@@ -75,7 +76,8 @@ export function preloadWalkoutAssets(): Promise<WalkoutAssets> {
       surface(tex, "carpet"),
       gltf.loadAsync(BASE + "plant-v2.glb"),
       gltf.loadAsync(BASE + "chair.glb"),
-    ]).then(([city, player, font, wood, office, carpet, plant, chair]) => ({
+      Promise.all(["monitor", "keyboard", "mug", "lamp"].map((n) => gltf.loadAsync(`${BASE}${n}.glb`))),
+    ]).then(([city, player, font, wood, office, carpet, plant, chair, [monitor, keyboard, mug, lamp]]) => ({
       city,
       player,
       font,
@@ -84,6 +86,7 @@ export function preloadWalkoutAssets(): Promise<WalkoutAssets> {
       carpet,
       plant,
       chair,
+      desk: { monitor: monitor!, keyboard: keyboard!, mug: mug!, lamp: lamp! },
     }));
     // un échec ne doit pas rester en cache : on retentera à la prochaine révélation
     pending.catch(() => {

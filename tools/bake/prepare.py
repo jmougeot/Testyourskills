@@ -30,6 +30,14 @@ OUT = os.path.join(ROOT, "web", "public", "3d")
 MODELS = [
     # Fauteuil de travail à accoudoirs alu. Giimann, CC BY 4.0.
     {"uid": "b78e87f34bbc45f297175dd66ece69eb", "out": "chair.glb", "size": ("height", 1.02), "face": "back"},
+    # Écran 23 pouces (Dell P2314H). GregorJan, CC BY 4.0.
+    {"uid": "c69f09bb812e46cdbd5bf6c62499b848", "out": "monitor.glb", "size": ("width", 0.54), "face": "screen", "screen": r"^Material2\.003$"},
+    # Clavier mécanique rétroéclairé, sans son câble. FelikinRuslan, CC BY 4.0.
+    {"uid": "1ba4055c33674567b51b783701ed05ce", "out": "keyboard.glb", "size": ("width", 0.44), "face": 180, "drop": r"^(wire|usb)_"},
+    # Tasse « Get shit done ». The Lister, CC BY 4.0.
+    {"uid": "6c95897de04143aeb5c75b7630707d27", "out": "mug.glb", "size": ("height", 0.098), "face": 0},
+    # Lampe de bureau noire, sans son câble, son plateau ni son halo. nickbaker, CC BY 4.0.
+    {"uid": "093e9b607a4544818e0c169074037e5f", "out": "lamp.glb", "size": ("height", 0.46), "face": 0, "drop": r"^Object_(2|5|7)$"},
 ]
 
 

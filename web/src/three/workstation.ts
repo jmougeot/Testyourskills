@@ -5,6 +5,7 @@
 // face. Les écrans se redessinent au fil de la frappe.
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
+import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import type { PbrSet } from "./assets";
 
 export interface Workstation {
@@ -104,7 +105,31 @@ function snippet(lang: string | undefined, login: string): Tok[][] {
   ];
 }
 
-export function createWorkstation(o: { accent: string; lang?: string; login: string; seed: number; graphLabel: string; wood: PbrSet; chair: THREE.Object3D }): Workstation {
+/** Les objets du poste (Sketchfab, CC BY ; tools/bake/prepare.py) : origine au sol, l'utilisateur côté -z. */
+export interface DeskProps {
+  monitor: GLTF;
+  keyboard: GLTF;
+  mug: GLTF;
+  lamp: GLTF;
+}
+
+/** Une copie d'un modèle, ses matières propres (on les retouche par copie). */
+function place(gltf: GLTF, x: number, y: number, z: number, ry = 0, scale = 1): THREE.Object3D {
+  const o = gltf.scene.clone(true);
+  o.traverse((c) => {
+    const m = c as THREE.Mesh;
+    if (!m.isMesh) return;
+    m.material = (m.material as THREE.Material).clone();
+    m.castShadow = true;
+    m.receiveShadow = true;
+  });
+  o.position.set(x, y, z);
+  o.rotation.y = ry;
+  o.scale.setScalar(scale);
+  return o;
+}
+
+export function createWorkstation(o: { accent: string; lang?: string; login: string; seed: number; graphLabel: string; wood: PbrSet; chair: THREE.Object3D; props: DeskProps }): Workstation {
   const group = new THREE.Group();
   const disposables: { dispose(): void }[] = [];
   const keep = <X extends { dispose(): void }>(x: X): X => {
@@ -113,7 +138,6 @@ export function createWorkstation(o: { accent: string; lang?: string; login: str
   };
   const accent = new THREE.Color(o.accent);
   const dark = new THREE.MeshStandardMaterial({ color: 0x242a30, roughness: 0.48, metalness: 0.35, envMapIntensity: 0.6 });
-  const metal = new THREE.MeshStandardMaterial({ color: 0x677079, roughness: 0.36, metalness: 0.85, envMapIntensity: 0.9 });
   const fabric = new THREE.MeshStandardMaterial({ color: 0x303a3b, roughness: 0.96 });
   const glow = new THREE.MeshBasicMaterial({ color: accent, toneMapped: false });
   // plateau en noyer (Poly Haven, black_walnut_veneer_02), le fil dans la longueur
@@ -153,61 +177,51 @@ export function createWorkstation(o: { accent: string; lang?: string; login: str
   }
   box(2.08, 0.065, 0.045, dark, 0, Y0 + 0.65, 1.04);
   box(0.88, 0.006, 0.35, fabric, 0.08, Y0 + 0.777, 0.53);
-  // clavier rétroéclairé, souris, tasse
-  box(0.44, 0.018, 0.15, dark, 0.02, Y0 + 0.791, 0.5);
-  const keysMat = new THREE.MeshStandardMaterial({ color: 0xc5c9c4, emissive: accent, emissiveIntensity: 0.15, roughness: 0.6 });
-  const keycaps = new THREE.InstancedMesh(new THREE.BoxGeometry(0.025, 0.006, 0.024), keysMat, 52);
-  const keyPose = new THREE.Object3D();
-  for (let i = 0; i < 52; i++) {
-    keyPose.position.set(-0.17 + (i % 13) * 0.031, Y0 + 0.803, 0.45 + Math.floor(i / 13) * 0.032);
-    keyPose.updateMatrix();
-    keycaps.setMatrixAt(i, keyPose.matrix);
-  }
-  group.add(keycaps);
+  // clavier mécanique rétroéclairé (à la couleur du tier), souris, tasse
+  const TOP = Y0 + 0.7725; // le dessus du plateau
+  const keyboard = place(o.props.keyboard, 0.02, TOP + 0.007, 0.5);
+  const keyMats: THREE.MeshStandardMaterial[] = [];
+  keyboard.traverse((c) => {
+    const m = (c as THREE.Mesh).material as THREE.MeshStandardMaterial | undefined;
+    if (m?.emissiveMap) {
+      m.emissive.copy(accent);
+      keyMats.push(m);
+    }
+  });
+  group.add(keyboard);
   box(0.06, 0.025, 0.1, dark, 0.34, Y0 + 0.797, 0.5);
-  const mug = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.036, 0.1, 20), new THREE.MeshStandardMaterial({ color: 0xe9edf2, roughness: 0.4 }));
-  mug.position.set(-0.76, Y0 + 0.823, 0.5);
-  group.add(mug);
-  const coffee = new THREE.Mesh(new THREE.CircleGeometry(0.032, 20), new THREE.MeshStandardMaterial({ color: 0x21130d, roughness: 0.25 }));
-  coffee.rotation.x = -Math.PI / 2;
-  coffee.position.set(-0.76, Y0 + 0.874, 0.5);
-  const handle = new THREE.Mesh(new THREE.TorusGeometry(0.032, 0.009, 8, 16), mug.material);
-  handle.position.set(-0.81, Y0 + 0.83, 0.5);
-  group.add(coffee, handle);
+  group.add(place(o.props.mug, -0.76, TOP, 0.5, 2.3));
   // Petite lampe orientée vers le plateau : contraste chaud / écrans froids.
-  box(0.17, 0.018, 0.17, dark, 1.03, Y0 + 0.79, 0.88);
-  box(0.018, 0.52, 0.018, metal, 1.03, Y0 + 1.05, 0.88);
-  box(0.32, 0.03, 0.09, dark, 0.9, Y0 + 1.31, 0.88);
-  const lampGlow = new THREE.MeshBasicMaterial({ color: new THREE.Color(0xffd4a0).multiplyScalar(1.8), toneMapped: false });
-  box(0.28, 0.004, 0.065, lampGlow, 0.9, Y0 + 1.292, 0.88);
+  const lamp = place(o.props.lamp, 1.03, TOP, 0.88, 1.22);
+  lamp.traverse((c) => {
+    const m = c as THREE.Mesh;
+    if (m.isMesh && /Transparent/.test((m.material as THREE.Material).name)) m.material = new THREE.MeshBasicMaterial({ color: new THREE.Color(0xffd4a0).multiplyScalar(1.8), toneMapped: false });
+  });
+  group.add(lamp);
   const lampLight = new THREE.PointLight(0xffd1a0, 0, 2.2, 2);
   lampLight.position.set(0.87, Y0 + 1.24, 0.78);
   group.add(lampLight);
 
   // trois écrans face au dev
   const screens: { canvas: HTMLCanvasElement; tex: THREE.CanvasTexture; kind: "code" | "term" | "graph" }[] = [];
+  // trois écrans 23 pouces identiques, celui du milieu en 32 pouces ; la dalle
+  // du modèle reçoit le contenu dessiné en direct
   const addMonitor = (x: number, z: number, yaw: number, kind: "code" | "term" | "graph") => {
-    const m = new THREE.Group();
-    const width = kind === "code" ? 0.79 : 0.57;
-    const height = kind === "code" ? 0.445 : 0.34;
-    const bezel = new THREE.Mesh(new RoundedBoxGeometry(width + 0.025, height + 0.025, 0.025, 2, 0.008), dark);
-    bezel.castShadow = true;
+    const m = place(o.props.monitor, x, TOP, z, yaw, kind === "code" ? 1.35 : 1);
     const canvas = document.createElement("canvas");
     canvas.width = 640;
     canvas.height = 362;
     const tex = keep(new THREE.CanvasTexture(canvas));
     tex.colorSpace = THREE.SRGBColorSpace;
     tex.anisotropy = 4;
-    const screen = new THREE.Mesh(new THREE.PlaneGeometry(width, height), new THREE.MeshBasicMaterial({ map: tex, toneMapped: false, color: new THREE.Color(1.1, 1.1, 1.1) }));
-    screen.position.z = -0.014;
-    screen.rotation.y = Math.PI; // la dalle regarde le dev (-z local)
-    const stand = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.24, 0.03), metal);
-    stand.position.set(0, -0.26, 0.03);
-    const foot = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.012, 0.14), metal);
-    foot.position.set(0, -0.375, 0.02);
-    m.add(bezel, screen, stand, foot);
-    m.position.set(x, Y0 + 0.76 + 0.38, z);
-    m.rotation.y = yaw;
+    tex.flipY = false; // les uv du modèle glTF
+    m.traverse((c) => {
+      const mesh = c as THREE.Mesh;
+      if (!mesh.isMesh) return;
+      // coque et pied noirs ; la dalle affiche le canvas
+      if (mesh.name === "screen") mesh.material = new THREE.MeshBasicMaterial({ map: tex, toneMapped: false, color: new THREE.Color(1.1, 1.1, 1.1) });
+      else (mesh.material as THREE.MeshStandardMaterial).color.set(0x1c1e21);
+    });
     group.add(m);
     screens.push({ canvas, tex, kind });
   };
@@ -310,7 +324,7 @@ export function createWorkstation(o: { accent: string; lang?: string; login: str
     swivel,
     screenLight,
     update(t, on) {
-      keysMat.emissiveIntensity = 0.08 + 0.16 * on;
+      for (const m of keyMats) m.emissiveIntensity = 0.2 + 0.8 * on;
       glow.color.copy(accent).multiplyScalar(0.25 + 0.65 * on);
       screenLight.intensity = 2 * on;
       lampLight.intensity = 1.3 * on;
