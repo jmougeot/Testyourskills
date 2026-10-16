@@ -157,12 +157,13 @@ def facade_material():
     wn2.noise_dimensions = "3D"
     nt.links.new(comb2.outputs[0], wn2.inputs["Vector"])
     occ = math_node(nt, "ADD", 0.04, math_node(nt, "MULTIPLY", math_node(nt, "POWER", math_node(nt, "FRACT", math_node(nt, "MULTIPLY", bld, 13.7)), 1.6), 0.4))
-    # les tours de bureaux restent bien plus allumées la nuit (ménage, veilleuses,
-    # étages entiers) : c'est ce qui dessine leur silhouette sur le ciel
-    occ_cw = math_node(nt, "ADD", 0.06, math_node(nt, "MULTIPLY", math_node(nt, "FRACT", math_node(nt, "MULTIPLY", bld, 13.7)), 0.22))
-    occ = math_node(nt, "ADD", occ, math_node(nt, "MULTIPLY", cw, math_node(nt, "SUBTRACT", occ_cw, occ)))
     chance = math_node(nt, "MULTIPLY", wn.outputs["Value"], math_node(nt, "ADD", 0.45, wn2.outputs["Value"]))
     lit = math_node(nt, "LESS_THAN", chance, occ)
+    # tours de bureaux vers 22 h : façades surtout sombres, quelques plateaux
+    # allumés d'un bloc (ménage, une équipe tardive), pas des fenêtres éparses
+    occ_cw = math_node(nt, "ADD", 0.04, math_node(nt, "MULTIPLY", math_node(nt, "FRACT", math_node(nt, "MULTIPLY", bld, 13.7)), 0.12))
+    lit_cw = math_node(nt, "MULTIPLY", math_node(nt, "LESS_THAN", wn2.outputs["Value"], occ_cw), math_node(nt, "LESS_THAN", wn.outputs["Value"], 0.85))
+    lit = math_node(nt, "ADD", lit, math_node(nt, "MULTIPLY", cw, math_node(nt, "SUBTRACT", lit_cw, lit)))
     # fenêtre seule, bandeau continu (style > 0.25), ou mur-rideau : vitrage
     # du sol au plafond, seulement coupé par les meneaux et les nez de dalle
     mx = math_node(nt, "MULTIPLY", math_node(nt, "GREATER_THAN", fx, 0.14), math_node(nt, "LESS_THAN", fx, 0.86))
@@ -221,7 +222,7 @@ def facade_material():
     em.inputs["B"].default_value = (1.0, 0.5, 0.22, 1)
     nt.links.new(em.outputs["Result"], bsdf.inputs["Emission Color"])
     up = math_node(nt, "MULTIPLY", math_node(nt, "MULTIPLY", up, math_node(nt, "SUBTRACT", 1.0, math_node(nt, "MAXIMUM", math_node(nt, "MULTIPLY", lit, glass), dim))), 0.12)
-    glow = math_node(nt, "MULTIPLY", dim, math_node(nt, "ADD", 0.02, math_node(nt, "MULTIPLY", wn2.outputs["Value"], 0.08)))
+    glow = math_node(nt, "MULTIPLY", dim, math_node(nt, "ADD", 0.02, math_node(nt, "MULTIPLY", wn2.outputs["Value"], 0.06)))
     nt.links.new(math_node(nt, "ADD", math_node(nt, "ADD", strength, up), glow), bsdf.inputs["Emission Strength"])
     fogged(nt, out, bsdf.outputs[0])
     return mat
@@ -475,6 +476,8 @@ def massing(tags, r, area):
         style = 1.0
     elif kind in HOMES or kind in HOUSES:
         style = 0.5 if (h > 40 and x < 0.4) or x < 0.08 else 0.0
+    elif h >= 90:
+        style = 1.0  # les grandes tours de bureaux : murs-rideaux, éclairées en plateaux
     elif h >= 60:
         style = 1.0 if x < 0.75 else 0.5 if x < 0.95 else 0.0
     elif officeish:
@@ -627,7 +630,7 @@ def build_city():
     lights = emissive_material("lamps", [(0.0, (1.0, 0.5, 0.18)), (0.5, (1.0, 0.86, 0.66))], 26.0)
     cars = emissive_material("cars", [(0.0, (1.0, 0.05, 0.02)), (0.5, (1.0, 0.9, 0.75))], 40.0)
     beacon_mat = emissive_material("beacons", [(0.0, (1.0, 0.04, 0.02)), (0.5, (1.0, 1.0, 1.0))], 60.0, k=0.8)
-    crown_mat = emissive_material("crowns", [(0.0, (0.85, 0.92, 1.0)), (0.4, (1.0, 0.75, 0.45)), (0.8, (0.35, 0.65, 1.0)), (0.95, (1.0, 0.25, 0.55))], 14.0, k=0.9)
+    crown_mat = emissive_material("crowns", [(0.0, (0.85, 0.92, 1.0)), (0.4, (1.0, 0.75, 0.45)), (0.8, (0.35, 0.65, 1.0)), (0.95, (1.0, 0.25, 0.55))], 5.0, k=0.9)
     m = Mesh("towers", facade, ("bld", "roof", "style"))
     beacons = Mesh("beacons", beacon_mat, ("c", "s"))
     crowns = Mesh("crowns", crown_mat, ("c", "s"))
@@ -665,8 +668,8 @@ def build_city():
             tall += 1
             for c in corners(ring, 2 if h < 160 else 4):  # feux d'obstacle rouges aux angles du toit
                 billboard(beacons, c[0], c[1], h + 1.5, 1.6, c=0.0, s=r.uniform(0.6, 1.0))
-            if r.random() < 0.4:  # couronne éclairée
-                col, st = r.choice((0.0, 0.0, 0.5, 0.9, 0.97)), r.uniform(0.5, 1.0)
+            if r.random() < 0.12:  # rares couronnes éclairées, d'une seule teinte douce
+                col, st = r.choice((0.5, 0.5, 0.9, 0.97)), r.uniform(0.5, 1.0)
                 big = [(cx + (x - cx) * 1.01 + 0.4 * (x > cx) - 0.4 * (x < cx), cy + (y - cy) * 1.01 + 0.4 * (y > cy) - 0.4 * (y < cy)) for x, y in ring]
                 for i in range(len(big)):
                     p, q = big[i], big[(i + 1) % len(big)]
@@ -744,6 +747,6 @@ w = min(4096, args.width)
 img.scale(w, round(H * w / args.width))
 img.file_format = "WEBP"
 dst = os.path.join(OUT, "city.webp")
-img.save(filepath=dst, quality=80)
+img.save(filepath=dst, quality=74)  # autour de 200 Ko
 os.remove(tmp)
 print("[city] écrit", dst, img.size[:])
