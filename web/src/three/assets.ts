@@ -1,6 +1,6 @@
 // Assets de la scène 3D (web/public/3d) : la ville de nuit derrière les baies,
 // le décor de l'open space et sa lumière précalculés dans Blender
-// (tools/bake/office.py), la lumière de la cabine (tools/bake/cabin.py),
+// (tools/bake/office.py), la cabine d'ascenseur (tools/bake/prepare.py),
 // matières PBR de bois et de moquette, plante, fauteuil, bureau et objets du poste, personnage habillé et police Barlow Condensed. Sources et
 // licences : public/3d/CREDITS.txt. Modèles compressés meshopt, textures
 // WebP, préchargés pendant le scoring, une seule fois par page.
@@ -27,8 +27,8 @@ export interface WalkoutAssets {
   /** Le poste du dev : bureau et objets (tools/bake/prepare.py). */
   desk: Record<DeskModel, GLTF>;
   office: BakedOffice;
-  /** La lumière de la cabine, précalculée dans Blender (tools/bake/cabin.py). */
-  cabinLight: THREE.Texture;
+  /** La cabine d'ascenseur (modèle de JNKM Design, préparé par tools/bake/prepare.py). */
+  cabin: GLTF;
 }
 
 const BASE = "/3d/";
@@ -79,18 +79,6 @@ async function bakedOffice(gltf: GLTFLoader): Promise<BakedOffice> {
   return { scene: model.scene, lightA, lightB, scale };
 }
 
-/** L'atlas de lumière de la cabine : lu tel quel (sRGB), sans mipmaps, sur le second jeu d'uv. */
-function cabinLight(loader: THREE.TextureLoader): Promise<THREE.Texture> {
-  return loader.loadAsync(BASE + "cabin-lm.webp").then((t) => {
-    t.colorSpace = THREE.SRGBColorSpace;
-    t.magFilter = THREE.LinearFilter;
-    t.minFilter = THREE.LinearFilter;
-    t.generateMipmaps = false;
-    t.channel = 1;
-    return t;
-  });
-}
-
 /** Lance (une fois) le chargement des assets ; sans risque à appeler souvent. */
 export function preloadWalkoutAssets(): Promise<WalkoutAssets> {
   if (!pending) {
@@ -109,9 +97,9 @@ export function preloadWalkoutAssets(): Promise<WalkoutAssets> {
       gltf.loadAsync(BASE + "plant-v2.glb"),
       gltf.loadAsync(BASE + "chair.glb"),
       Promise.all(DESK_MODELS.map((n) => gltf.loadAsync(`${BASE}${n}.glb`))),
-      cabinLight(tex),
+      gltf.loadAsync(BASE + "cabin.glb"),
     ]).then(([city, player, font, wood, office, carpet, plant, chair, deskModels, cabin]) => {
-      for (const g of [player, plant, chair, ...deskModels]) share(g);
+      for (const g of [player, plant, chair, ...deskModels, cabin]) share(g);
       office.scene.traverse((o) => {
         if ((o as THREE.Mesh).isMesh) sharedResources.add((o as THREE.Mesh).geometry);
       });
@@ -125,7 +113,7 @@ export function preloadWalkoutAssets(): Promise<WalkoutAssets> {
         plant,
         chair,
         desk: Object.fromEntries(DESK_MODELS.map((n, i) => [n, deskModels[i]!])) as Record<DeskModel, GLTF>,
-        cabinLight: cabin,
+        cabin,
       };
     });
     // un échec ne doit pas rester en cache : on retentera à la prochaine révélation
