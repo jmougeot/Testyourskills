@@ -13,6 +13,16 @@ Changes: removed animation clips; resized and compressed textures to WebP;
 meshopt compression; seated procedural pose; neutral clothing tint in the renderer.
 This sample is a generic scene character, not a portrait of the scored user.
 
+developer-v3.glb
+"Nathan Animated 003 - Walking 3D Man" by Renderpeople, CC BY 4.0.
+https://sketchfab.com/3d-models/nathan-animated-003-walking-3d-man-143a2b1ea5eb4385ae90a73657aca3bc
+https://creativecommons.org/licenses/by/4.0/
+Changes: walking animation removed, rest pose kept, bone names shortened,
+rescaled to 1.78 m (tools/bake/prepare.py); texture converted to WebP,
+meshopt compression; seated pose and typing animated in code; light blue
+T-shirt recoloured heather grey in the renderer.
+This scanned model is a generic scene character, not a portrait of the scored user.
+
 chair.glb
 "Ergonomic office chair with armrests" by Giimann, CC BY 4.0.
 https://sketchfab.com/3d-models/ergonomic-office-chair-with-armrests-b78e87f34bbc45f297175dd66ece69eb
