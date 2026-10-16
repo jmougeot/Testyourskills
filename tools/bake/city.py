@@ -528,6 +528,7 @@ cam.central_cylindrical_range_u_min = math.radians(-ARC / 2)
 cam.central_cylindrical_range_u_max = math.radians(ARC / 2)
 cam.central_cylindrical_range_v_min = math.tan(math.radians(V_MIN))
 cam.central_cylindrical_range_v_max = math.tan(math.radians(V_MAX))
+cam.clip_end = FAR * 1.5  # 1 km par défaut : la ville s'arrêtait là
 eye = bpy.data.objects.new("eye", cam)
 eye.location = (0, 0, EYE)
 eye.rotation_euler = (math.pi / 2, 0, 0)
