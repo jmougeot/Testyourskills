@@ -23,6 +23,17 @@ interface Props {
 /** Un collage ne lance la carte que s'il ressemble à une URL GitHub, pas à un simple mot. */
 const GITHUB_URL_RE = /github\.com\//i;
 
+/** Dès que le visiteur commence à saisir, la scène 3D de la révélation se
+ * télécharge (quelques Mo) ; l'attente du scoring sert ensuite à la préparer
+ * (§6.2). Pas avec l'économiseur de données : elle attendra l'envoi. */
+let prefetched = false;
+function prefetchReveal() {
+  if (prefetched) return;
+  prefetched = true;
+  if ((navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData) return;
+  void import("./Walkout3D").then((m) => m.preloadWalkoutAssets()).catch(() => undefined);
+}
+
 function isEditable(el: EventTarget | null): boolean {
   if (!(el instanceof HTMLElement)) return false;
   return el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement || el.isContentEditable;
@@ -313,7 +324,7 @@ export function EntryForm({ inputRef, variant = "full" }: Props) {
 
   if (inline) {
     return (
-      <form className="entry entry-inline" onSubmit={submit} noValidate>
+      <form className="entry entry-inline" onSubmit={submit} onInput={prefetchReveal} onPointerDown={prefetchReveal} noValidate>
         <div className="field">
           <label htmlFor={`${uid}-gh`} className="sr-only">
             {h.loginLabel}
@@ -346,7 +357,7 @@ export function EntryForm({ inputRef, variant = "full" }: Props) {
   }
 
   return (
-    <form className={`entry mode-${mode}`} onSubmit={submit} noValidate>
+    <form className={`entry mode-${mode}`} onSubmit={submit} onInput={prefetchReveal} onPointerDown={prefetchReveal} onDragEnter={prefetchReveal} noValidate>
       {mode === "single" ? (
         <div className="seg entry-tabs" role="tablist" aria-label={h.tabsLabel}>
           <span className="seg-thumb" data-pos={tab === "github" ? 0 : 1} aria-hidden />

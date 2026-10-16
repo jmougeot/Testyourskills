@@ -29,6 +29,19 @@ export interface WalkoutAssets {
 }
 
 const BASE = "/3d/";
+
+/** Géométries et matières des modèles chargés : partagées par toutes les scènes
+ * de la page, une scène qui se ferme ne les libère pas (le GPU les garde). */
+export const sharedResources = new WeakSet<object>();
+const share = (g: GLTF) => {
+  g.scene.traverse((o) => {
+    const m = o as THREE.Mesh;
+    if (!m.isMesh) return;
+    sharedResources.add(m.geometry);
+    for (const mat of Array.isArray(m.material) ? m.material : [m.material]) sharedResources.add(mat);
+  });
+  return g;
+};
 let pending: Promise<WalkoutAssets> | null = null;
 
 function texture(loader: THREE.TextureLoader, file: string, color = false): Promise<THREE.Texture> {
@@ -77,17 +90,23 @@ export function preloadWalkoutAssets(): Promise<WalkoutAssets> {
       gltf.loadAsync(BASE + "plant-v2.glb"),
       gltf.loadAsync(BASE + "chair.glb"),
       Promise.all(["monitor", "keyboard", "mug", "lamp"].map((n) => gltf.loadAsync(`${BASE}${n}.glb`))),
-    ]).then(([city, player, font, wood, office, carpet, plant, chair, [monitor, keyboard, mug, lamp]]) => ({
-      city,
-      player,
-      font,
-      wood,
-      office,
-      carpet,
-      plant,
-      chair,
-      desk: { monitor: monitor!, keyboard: keyboard!, mug: mug!, lamp: lamp! },
-    }));
+    ]).then(([city, player, font, wood, office, carpet, plant, chair, [monitor, keyboard, mug, lamp]]) => {
+      for (const g of [player, plant, chair, monitor!, keyboard!, mug!, lamp!]) share(g);
+      office.scene.traverse((o) => {
+        if ((o as THREE.Mesh).isMesh) sharedResources.add((o as THREE.Mesh).geometry);
+      });
+      return {
+        city,
+        player,
+        font,
+        wood,
+        office,
+        carpet,
+        plant,
+        chair,
+        desk: { monitor: monitor!, keyboard: keyboard!, mug: mug!, lamp: lamp! },
+      };
+    });
     // un échec ne doit pas rester en cache : on retentera à la prochaine révélation
     pending.catch(() => {
       pending = null;

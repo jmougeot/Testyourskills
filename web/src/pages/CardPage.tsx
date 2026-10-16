@@ -114,12 +114,14 @@ export function CardPage({ id }: { id: string }) {
     document.title = t.meta.titleCard(c.name, c.overall);
   }, [view, t]);
 
-  // La scène 3D (Three.js et ses assets) se charge pendant l'attente du scoring.
+  // La scène 3D (Three.js et ses assets) se charge pendant l'attente du
+  // scoring, et s'y prépare : shaders compilés, textures sur le GPU.
   useEffect(() => {
     if (view.s === "pending")
       loadWalkout()
-        .then((m) => m.preloadWalkoutAssets())
+        .then((m) => m.warmWalkout(lang))
         .catch(() => undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view.s]);
 
   if (view.s === "loading") {

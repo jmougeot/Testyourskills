@@ -1,8 +1,9 @@
-// Enveloppe React de la scène 3D (web/src/three/walkout.ts) : monte le canvas
+// Enveloppe React de la scène 3D (web/src/three/walkout.ts) : place le canvas
 // plein écran, attend les polices et les assets 3D (préchargés pendant
 // l'attente), relaie le clic d'ouverture, les feux d'artifice (clic ou
 // Espace), la passation à la carte HTML et la fin. Sans WebGL ou sans assets :
-// on passe directement au résultat.
+// on passe directement au résultat. Pendant l'attente, warmWalkout prépare le
+// moteur de rendu avec une scène d'échauffement.
 import { useEffect, useRef, useState } from "react";
 import type { MutableRefObject, RefObject } from "react";
 import { siGithub } from "simple-icons";
@@ -13,10 +14,55 @@ import { accentOf } from "../lib/util";
 import { preloadWalkoutAssets } from "../three/assets";
 import { loadCardTexture } from "../three/cardTexture";
 import { loadSceneFonts } from "../three/textures";
+import * as THREE from "three";
+import { STYLE_ACCENT } from "../lib/util";
 import { createWalkout, type WalkoutCue, type WalkoutHandle } from "../three/walkout";
 import type { Phase } from "./Reveal";
 
 export { preloadWalkoutAssets };
+
+/** Pendant l'attente du scoring : charge tout et construit une scène
+ * d'échauffement, jamais affichée, pour que la révélation démarre sans
+ * compiler ses shaders ni envoyer ses textures au GPU. Sans danger à rappeler. */
+export async function warmWalkout(lang: Lang): Promise<void> {
+  const [assets] = await Promise.all([preloadWalkoutAssets(), loadSceneFonts()]);
+  const blank = new THREE.DataTexture(new Uint8Array([0, 0, 0, 255]), 1, 1);
+  blank.colorSpace = THREE.SRGBColorSpace;
+  blank.needsUpdate = true;
+  const h = createWalkout({
+    warm: true,
+    lang,
+    double: false,
+    accent: STYLE_ACCENT.gold,
+    texts: {
+      langName: "·",
+      langLabel: "·",
+      leagueName: "·",
+      leagueLabel: "·",
+      position: "·",
+      positionName: "·",
+      positionLabel: "·",
+      club: "·",
+      clubLabel: "·",
+      statusLabel: "·",
+      statuses: [{ min: 0, label: "·" }],
+      idleTitle: "DEV PACK",
+      idleSubtitle: "·",
+      graphLabel: "·",
+    },
+    logoPath: CODE_PATH,
+    leaguePath: siGithub.path,
+    login: "dev",
+    overall: 1,
+    assets,
+    cardTexture: Promise.resolve(blank),
+    anchor: () => null,
+    onHandoff: () => undefined,
+    onDone: () => undefined,
+    muted: true,
+  });
+  await h.ready;
+}
 
 /** Document (CV) en 24 × 24, logo de la ligue CV. */
 const DOC_PATH = "M6 2h8l6 6v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm7 1.5V9h5.5L13 3.5zM8 12h8v2H8v-2zm0 4h8v2H8v-2z";
@@ -54,7 +100,7 @@ interface Props {
 
 export function Walkout3D({ card, lang, double, phase, anchorRef, controlRef, onHandoff, onDone }: Props) {
   const { t } = useT();
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const hostRef = useRef<HTMLDivElement>(null);
   const handle = useRef<WalkoutHandle | null>(null);
   const pendingOpen = useRef(false);
   const cb = useRef({ onHandoff, onDone });
@@ -73,8 +119,8 @@ export function Walkout3D({ card, lang, double, phase, anchorRef, controlRef, on
   };
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    const host = hostRef.current;
+    if (!host) return;
     let alive = true;
     const icon = langIcon(card.mainLanguage);
     const tells = t.reveal.tells;
@@ -107,7 +153,6 @@ export function Walkout3D({ card, lang, double, phase, anchorRef, controlRef, on
       if (!alive) return;
       try {
         const h = createWalkout({
-          canvas,
           lang,
           double,
           accent: accentOf(card),
@@ -126,6 +171,9 @@ export function Walkout3D({ card, lang, double, phase, anchorRef, controlRef, on
           muted: readMuted(),
         });
         handle.current = h;
+        h.canvas.className = "walkout-canvas";
+        h.canvas.setAttribute("aria-hidden", "true");
+        host.appendChild(h.canvas);
         controlRef.current = { interact: () => h.interact() };
         if (pendingOpen.current) h.open();
       } catch (e) {
@@ -137,12 +185,14 @@ export function Walkout3D({ card, lang, double, phase, anchorRef, controlRef, on
       alive = false;
       controlRef.current = null;
       handle.current?.dispose();
+      handle.current?.canvas.remove();
       handle.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
+    handle.current?.canvas.classList.toggle("is-fading", phase === "handoff");
     if (phase !== "playing") return;
     if (handle.current) handle.current.open();
     else pendingOpen.current = true;
@@ -161,7 +211,8 @@ export function Walkout3D({ card, lang, double, phase, anchorRef, controlRef, on
 
   return (
     <>
-      <canvas ref={canvasRef} className={`walkout-canvas${phase === "handoff" ? " is-fading" : ""}`} aria-hidden />
+      {/* le canvas du moteur de rendu partagé y est placé (walkout.ts) */}
+      <div ref={hostRef} style={{ display: "contents" }} />
       {phase === "playing" && (
         <button type="button" className="sound-btn" aria-pressed={!muted} aria-label={muted ? t.reveal.unmute : t.reveal.mute} title={muted ? t.reveal.unmute : t.reveal.mute} onClick={toggleSound}>
           <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden>

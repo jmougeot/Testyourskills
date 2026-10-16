@@ -134,6 +134,19 @@ function bakeLight(pl: BakePlane): THREE.DataTexture {
   return t;
 }
 
+/** Les lightmaps ne dépendent que de la cabine, pas de la carte : calculées une
+ * fois par page (pendant l'échauffement), gardées pour les scènes suivantes. */
+const lightmaps = new Map<string, THREE.DataTexture>();
+function cachedLight(pl: BakePlane): THREE.DataTexture {
+  const key = JSON.stringify(pl);
+  let t = lightmaps.get(key);
+  if (!t) {
+    t = bakeLight(pl);
+    lightmaps.set(key, t);
+  }
+  return t;
+}
+
 /* ---------- les reflets projetés sur la boîte ----------
  * Une carte d'environnement est photographiée depuis un seul point : sans
  * correction, une matière la reflète comme si la cabine était infiniment
@@ -302,7 +315,7 @@ export function createCabin(o: CabinOptions): Cabin {
   const lightmapped: THREE.Material[] = [];
   const baked = <M extends THREE.MeshStandardMaterial>(mat: M, plane: BakePlane): M => {
     const m = mat.clone() as M;
-    m.lightMap = keep(bakeLight(plane));
+    m.lightMap = cachedLight(plane);
     m.lightMapIntensity = LIGHTMAP_K;
     cabinMats.push(m);
     lightmapped.push(m);

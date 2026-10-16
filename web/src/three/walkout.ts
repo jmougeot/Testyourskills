@@ -20,7 +20,7 @@ import { BloomEffect, DepthOfFieldEffect, EffectComposer, EffectPass, NoiseEffec
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import { TextGeometry } from "three/examples/jsm/geometries/TextGeometry.js";
 import { SVGLoader } from "three/examples/jsm/loaders/SVGLoader.js";
-import type { WalkoutAssets } from "./assets";
+import { sharedResources, type WalkoutAssets } from "./assets";
 import { CAB_H, DOOR_W, createCabin } from "./cabin";
 import { createBakedLighting } from "./baked";
 import { createCardMesh } from "./cardMesh";
@@ -58,7 +58,9 @@ export interface WalkoutTexts {
 }
 
 export interface WalkoutOptions {
-  canvas: HTMLCanvasElement;
+  /** Échauffement : la scène est construite, ses shaders compilés et ses
+   * textures envoyées au GPU, sans jamais être jouée ni affichée. */
+  warm?: boolean;
   lang: "fr" | "en";
   /** Comparaison GitHub × CV : deux flèches au lieu d'une. */
   double: boolean;
@@ -84,6 +86,10 @@ export interface WalkoutOptions {
 }
 
 export interface WalkoutHandle {
+  /** Le canvas du moteur de rendu partagé, à placer dans la page. */
+  canvas: HTMLCanvasElement;
+  /** Résolue quand la scène est prête à jouer sans compilation (échauffement). */
+  ready: Promise<void>;
   open(): void;
   skip(): void;
   /** Clic ou Espace pendant la séquence : vrai si la scène l'a utilisé (feux d'artifice). */
@@ -163,8 +169,29 @@ interface Burst {
   gravity: number;
 }
 
+/* ---------- le moteur de rendu, partagé ----------
+ * Un seul WebGLRenderer pour la page : les shaders qu'il a compilés et les
+ * textures qu'il a envoyées au GPU resservent à la scène suivante. Pendant
+ * l'attente du scoring, une scène d'échauffement (warm) le prépare ; la
+ * révélation, construite ensuite avec la vraie carte, démarre sans compiler. */
+const isLow = () => window.matchMedia("(pointer: coarse)").matches || Math.min(window.innerWidth, window.innerHeight) < 560;
+let sharedRenderer: THREE.WebGLRenderer | null = null;
+function getRenderer(): THREE.WebGLRenderer {
+  if (!sharedRenderer) {
+    const r = new THREE.WebGLRenderer({ antialias: false, stencil: false, powerPreference: "high-performance" });
+    r.setPixelRatio(Math.min(window.devicePixelRatio, isLow() ? 1.25 : 1.5));
+    r.toneMapping = THREE.NoToneMapping;
+    r.shadowMap.enabled = !isLow();
+    r.shadowMap.type = THREE.PCFShadowMap;
+    sharedRenderer = r;
+  }
+  return sharedRenderer;
+}
+/** La scène d'échauffement en cours : libérée dès que la vraie a rendu sa première image. */
+let warming: WalkoutHandle | null = null;
+
 export function createWalkout(o: WalkoutOptions): WalkoutHandle {
-  const { canvas, accent, assets } = o;
+  const { accent, assets } = o;
   const plan = PLAN;
   const T_BURST = 0.5;
   const T_CARD = plan.card;
@@ -173,14 +200,11 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
   const T_HANDOFF = T_SETTLE + 1.15;
   const T_END = T_HANDOFF + 0.6;
   const T_TURN = T_CARD - 1.05;
-  const low = window.matchMedia("(pointer: coarse)").matches || Math.min(window.innerWidth, window.innerHeight) < 560;
+  const low = isLow();
 
   /* ---------- rendu ---------- */
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, stencil: false, powerPreference: "high-performance" });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, low ? 1.25 : 1.5));
-  renderer.toneMapping = THREE.NoToneMapping;
-  renderer.shadowMap.enabled = !low;
-  renderer.shadowMap.type = THREE.PCFShadowMap;
+  const renderer = getRenderer();
+  const canvas = renderer.domElement;
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x05070d);
   scene.fog = new THREE.FogExp2(0x05070d, 0.025);
@@ -1071,7 +1095,7 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
     }
   };
 
-  if (import.meta.env.DEV)
+  if (import.meta.env.DEV && !o.warm)
     (window as unknown as { __tys3d?: unknown }).__tys3d = {
       scene,
       camera,
@@ -1107,15 +1131,32 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
     resize();
     update(now, dt);
     composer.render(dt);
+    // la vraie scène a pris les shaders et les textures de l'échauffement : on le libère
+    if (warming && warming !== handle) {
+      warming.dispose();
+      warming = null;
+    }
   };
   // Préparer aussi les matières hors du champ de la cabine, avant que la
   // caméra ne découvre les bureaux (notamment leurs géométries instanciées).
-  void renderer.compileAsync(scene, camera).catch((error: unknown) => {
+  // Sans compilation parallèle, l'échauffement compile au premier rendu.
+  const compiled = renderer.compileAsync(scene, camera).catch((error: unknown) => {
     console.warn("[walkout] précompilation indisponible, compilation au rendu", error);
   });
-  raf = requestAnimationFrame(loop);
+  const ready = o.warm
+    ? compiled.then(() => {
+        if (disposed) return;
+        // une image hors de la page : textures envoyées au GPU, passes du post-traitement compilées
+        resize();
+        update(performance.now(), 0);
+        composer.render(0);
+      })
+    : compiled.then(() => undefined);
+  if (!o.warm) raf = requestAnimationFrame(loop);
 
-  return {
+  const handle: WalkoutHandle = {
+    canvas,
+    ready,
     open() {
       if (opened) return;
       opened = true;
@@ -1145,17 +1186,24 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
       window.removeEventListener("resize", resize);
       scene.traverse((obj) => {
         const m = obj as THREE.Mesh;
-        // les géométries et matières sont propres à cette scène ; les textures d'assets sont partagées
-        if (m.geometry) m.geometry.dispose();
+        // les géométries et matières sont propres à cette scène, sauf celles des
+        // modèles chargés, partagées ; les textures d'assets sont partagées aussi.
+        // Le moteur de rendu reste, pour la scène suivante.
+        if (m.geometry && !sharedResources.has(m.geometry)) m.geometry.dispose();
         const mat = m.material as THREE.Material | THREE.Material[] | undefined;
-        if (mat) for (const mm of Array.isArray(mat) ? mat : [mat]) mm.dispose();
+        if (mat) for (const mm of Array.isArray(mat) ? mat : [mat]) if (!sharedResources.has(mm)) mm.dispose();
       });
       for (const d of disposables) d.dispose();
       studio.dispose();
       composer.dispose();
-      renderer.dispose();
+      if (warming === handle) warming = null;
     },
   };
+  if (o.warm) {
+    warming?.dispose();
+    warming = handle;
+  }
+  return handle;
 }
 
 /** Code en veille sur les écrans de l'open space : lignes colorées, en tuile. */
