@@ -236,7 +236,7 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
   };
 
   const accentGlow = new THREE.MeshBasicMaterial({ color: hdr(accent.a, 2), toneMapped: false });
-  const cab = createCabin({ scene, renderer, accent: accent.a, model: assets.cabin, floor: Math.max(1, Math.min(99, o.overall)) });
+  const cab = createCabin({ scene, renderer, accent: accent.a, model: assets.cabin, wood: assets.wood, floor: Math.max(1, Math.min(99, o.overall)) });
   disposables.push(cab);
   const sound = createElevatorSound({ depart: plan.depart, arrive: plan.arrive, doors: plan.doors }, o.muted ?? false);
   disposables.push(sound);

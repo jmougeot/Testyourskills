@@ -1,14 +1,17 @@
 // La cabine d'ascenseur de la révélation : un vrai projet de cabine de bureaux
 // (« JNKM Design - Elevator Cab Interior », Sketchfab, CC BY 4.0), préparé par
-// tools/bake/prepare.py : verre blanc, inox brossé, plafond lumineux, mains
-// courantes, boîte à boutons, portes et seuil. La scène n'y ajoute que ce qui
-// bouge ou change par carte : l'ouverture des portes, l'afficheur, le bouton
-// de l'étage d'arrivée à la couleur du tier, les numéros des boutons, les
-// filets du tier et la lumière des paliers dans le jour entre les portes.
+// tools/bake/prepare.py : inox brossé, plafond lumineux, mains courantes,
+// boîte à boutons, portes et seuil. Ses parois de verre blanc sont habillées
+// du placage de noyer de la scène (Poly Haven, celui du bureau du dev), en
+// panneaux à livre ouvert. La scène n'y ajoute que ce qui bouge ou change par
+// carte : l'ouverture des portes, l'afficheur, le bouton de l'étage d'arrivée
+// à la couleur du tier, les numéros des boutons, les filets du tier et la
+// lumière des paliers dans le jour entre les portes.
 import * as THREE from "three";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import { RectAreaLightUniformsLib } from "three/examples/jsm/lights/RectAreaLightUniformsLib.js";
+import type { PbrSet } from "./assets";
 import { limitLights } from "./baked";
 import { createWallScreen, type WallScreen } from "./ledWall";
 
@@ -21,11 +24,11 @@ export const DOOR_W = 1.0;
 export const DOOR_H = 2.1;
 /** Les portes palières, dans le mur de l'open space (tools/bake/office.py, z = -0,25). */
 const LANDING_Z = -0.25;
-/** La laque derrière le verre des parois : un blanc froid, qui reste blanc sous le plafonnier chaud. */
-const GLASS_PAINT = 0xa4abb3;
-/** Le reflet du verre à incidence normale : plus que les 4 % du vernis de three.js,
- * pour que les spots, les mains courantes et les portes s'y lisent comme dans une vraie cabine. */
-const GLASS_F0 = 0.12;
+/** Le noyer huilé des parois : la teinte du scan (le même placage que le
+ * bureau du dev), foncée par un gris neutre. Sous le plafonnier, qui éclaire
+ * plus fort et plus uniformément que les six spots de l'ancienne cabine, la
+ * paroi sort à l'écran à la clarté de l'ancienne cabine (L* 54 mesuré sur capture, contre 59 avant). */
+const WALNUT_TINT = 0x7a7a7a;
 
 const hdr = (hex: THREE.ColorRepresentation, k: number) => new THREE.Color(hex).multiplyScalar(k);
 const V = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z);
@@ -75,6 +78,8 @@ export interface CabinOptions {
   accent: string;
   /** Le modèle de la cabine (cabin.glb, tools/bake/prepare.py). */
   model: GLTF;
+  /** Le placage de noyer des parois (Poly Haven, 1 m par tuile). */
+  wood: PbrSet;
   /** L'étage d'arrivée (la note) : numéros de la boîte à boutons. */
   floor: number;
 }
@@ -151,19 +156,28 @@ export function createCabin(o: CabinOptions): Cabin {
   doorSteel.color.setScalar(0.72);
   doorSteel.envMapIntensity = 0.7;
   cabinMats.push(doorSteel);
-  // le verre blanc laqué des parois : une laque blanche froide vue sous une
-  // vitre, soit une couche brillante (vernis, Fresnel) qui reflète la cabine
-  // par-dessus une peinture satinée ; les panneaux sont séparés par des joints
+  // les parois : le verre blanc du modèle est habillé de noyer, en panneaux
+  // à livre ouvert séparés par des joints (woodPanels) ; la couleur, le
+  // relief et la rugosité viennent du scan, posés en mètres sur la paroi
   const glassSrc = matNamed("M_White_Glass");
-  let glass: THREE.MeshPhysicalMaterial | null = null;
+  let walnut: THREE.MeshStandardMaterial | null = null;
   if (glassSrc) {
-    glass = keep(
-      new THREE.MeshPhysicalMaterial({ name: glassSrc.name, color: GLASS_PAINT, metalness: 0, roughness: 0.5, specularIntensity: 0.3, clearcoat: 1, clearcoatRoughness: 0.03, envMapIntensity: 1 }),
+    walnut = keep(
+      new THREE.MeshStandardMaterial({
+        name: glassSrc.name,
+        map: o.wood.map,
+        normalMap: o.wood.normalMap,
+        normalScale: new THREE.Vector2(0.25, 0.25),
+        roughnessMap: o.wood.roughnessMap,
+        color: WALNUT_TINT,
+        roughness: 0.55,
+        envMapIntensity: 0.6,
+      }),
     );
-    cabinMats.splice(cabinMats.indexOf(glassSrc), 1, glass);
+    cabinMats.splice(cabinMats.indexOf(glassSrc), 1, walnut);
     cabin.traverse((m) => {
       const mesh = m as THREE.Mesh;
-      if (mesh.isMesh && mesh.material === glassSrc) mesh.material = glass!;
+      if (mesh.isMesh && mesh.material === glassSrc) mesh.material = walnut!;
     });
   }
   // les mains courantes : inox satiné, pas le gris mat de l'export
@@ -263,8 +277,8 @@ export function createCabin(o: CabinOptions): Cabin {
   // vraie place et se décale quand la caméra avance
   const probe = V(0, 1.45, 1.4);
   for (const m of cabinMats) boxProjection(m, probe, V(-CAB_W / 2, 0, -0.02), V(CAB_W / 2, CAB_H, CAB_D));
-  // le verre des côtés en trois panneaux, celui du fond en deux (le modèle n'a qu'une vitre par paroi)
-  if (glass) glassJoints(glass, [CAB_D / 3, (2 * CAB_D) / 3], [0]);
+  // les côtés en trois panneaux de noyer, le fond en deux (le modèle n'a qu'une vitre par paroi)
+  if (walnut) woodPanels(walnut, [CAB_D / 3, (2 * CAB_D) / 3], [0]);
   // seules la dalle du plafond et l'éclat du pack éclairent la cabine : les
   // projecteurs de l'open space n'y entrent pas, inutile de les évaluer
   for (const m of cabinMats) limitLights(m, ["NUM_RECT_AREA", "NUM_POINT_LIGHTS"], "cabin");
@@ -299,29 +313,44 @@ export function createCabin(o: CabinOptions): Cabin {
   };
 }
 
-/** Le verre des parois : son reflet renforcé (GLASS_F0), et les joints de 3 mm
- * entre ses panneaux, la tôle sombre derrière, sans vernis. `alongZ` : joints
- * des parois latérales (z) ; `alongX` : du fond (x). */
-function glassJoints(mat: THREE.Material, alongZ: number[], alongX: number[]) {
+/** Le noyer des parois, posé en mètres sur la paroi d'après la position dans
+ * la cabine (vBoxPos, déclaré par boxProjection) : le modèle n'a qu'une vitre
+ * par paroi, aux uv quelconques. Chaque panneau prend un autre morceau de la
+ * feuille de placage, un sur deux en miroir, comme les feuilles « à livre
+ * ouvert » des vraies cabines, le fil à la verticale ; entre les panneaux, un
+ * joint de 3 mm, la tôle sombre derrière. `alongZ` : joints des parois
+ * latérales (z) ; `alongX` : du fond (x). */
+function woodPanels(mat: THREE.Material, alongZ: number[], alongX: number[]) {
   const previous = mat.onBeforeCompile;
-  const list = (v: number[]) => v.map((x) => `abs( glassC - ${x.toFixed(3)} )`).reduce((a, b) => `min( ${a}, ${b} )`);
+  const f = (x: number) => x.toFixed(3);
+  const nearest = (v: number[]) => v.map((x) => `abs( woodC - ${f(x)} )`).reduce((a, b) => `min( ${a}, ${b} )`);
+  const count = (v: number[]) => v.map((x) => `step( ${f(x)}, woodC )`).join(" + ");
+  const chunk = (name: keyof typeof THREE.ShaderChunk, uv: string) => THREE.ShaderChunk[name].replace(new RegExp(uv, "g"), "woodUv");
   mat.onBeforeCompile = (shader, renderer) => {
     previous.call(mat, shader, renderer);
     shader.fragmentShader = shader.fragmentShader
       .replace(
-        "#include <color_fragment>",
-        `#include <color_fragment>
-        float glassC = abs( vBoxPos.x ) > ${(CAB_W / 2 - 0.1).toFixed(3)} ? vBoxPos.z : vBoxPos.x;
-        float glassD = abs( vBoxPos.x ) > ${(CAB_W / 2 - 0.1).toFixed(3)} ? ${list(alongZ)} : ${list(alongX)};
-        float glassJoint = 1.0 - smoothstep( 0.0015, 0.0015 + 1.5 * fwidth( glassC ), glassD );
-        diffuseColor.rgb *= 1.0 - 0.85 * glassJoint;`,
+        "#include <clipping_planes_fragment>",
+        `#include <clipping_planes_fragment>
+        // paroi latérale : le long de z ; fond : le long de x
+        bool woodSide = abs( vBoxPos.x ) > ${f(CAB_W / 2 - 0.1)};
+        float woodC = woodSide ? vBoxPos.z : vBoxPos.x;
+        float woodD = woodSide ? ${nearest(alongZ)} : ${nearest(alongX)};
+        float woodJoint = 1.0 - smoothstep( 0.0015, 0.0015 + 1.5 * fwidth( woodC ), woodD );
+        // le numéro du panneau, propre à chaque paroi
+        float woodN = woodSide ? ${count(alongZ)} + ( vBoxPos.x > 0.0 ? ${f(alongZ.length + 1)} : 0.0 ) : ${count(alongX)} + ${f(2 * alongZ.length + 2)};
+        float woodMirror = mod( woodN, 2.0 );
+        // le fil à la verticale : la feuille tournée d'un quart de tour (u le long de la hauteur)
+        vec2 woodUv = vec2( vBoxPos.y + fract( woodN * 0.382 ) * 3.0, mix( woodC, -woodC, woodMirror ) + fract( woodN * 0.618 ) * 3.0 );`,
       )
-      .replace("#include <lights_physical_fragment>", `#include <lights_physical_fragment>
-        material.clearcoat *= 1.0 - glassJoint;
-        material.clearcoatF0 = vec3( ${GLASS_F0.toFixed(3)} );`);
+      .replace("#include <map_fragment>", chunk("map_fragment", "vMapUv"))
+      .replace("#include <color_fragment>", "#include <color_fragment>\n        diffuseColor.rgb *= 1.0 - 0.85 * woodJoint;")
+      .replace("#include <roughnessmap_fragment>", `${chunk("roughnessmap_fragment", "vRoughnessMapUv")}\n        roughnessFactor = mix( roughnessFactor, 0.8, woodJoint );`)
+      .replace("#include <normal_fragment_begin>", chunk("normal_fragment_begin", "vNormalMapUv"))
+      .replace("#include <normal_fragment_maps>", chunk("normal_fragment_maps", "vNormalMapUv"));
   };
   const key = mat.customProgramCacheKey.bind(mat);
-  mat.customProgramCacheKey = () => `glass-joints|${key()}`;
+  mat.customProgramCacheKey = () => `wood-panels|${key()}`;
 }
 
 /** La lumière de la gaine vue par les fentes : deux paliers éclairés par tuile, bords doux. */
