@@ -122,7 +122,7 @@ def material(name, rgb, rough=0.6, metal=0.0, coat=0.0):
 # dalles de pierre dessinées en code), pour que la lumière renvoyée ait la bonne teinte.
 WALNUT_TEX = (0.3409, 0.2021, 0.1201)
 MATS = {
-    "walnut": material("walnut", lin(0x857D76, WALNUT_TEX), 0.55),
+    "walnut": material("walnut", lin(0xB3B3B3, WALNUT_TEX), 0.55),
     "stone": material("stone", lin(0xC9C6C0, (0.2, 0.196, 0.19)), 0.42, coat=0.35),
     "ceiling": material("ceiling", lin(0x6B6259), 0.5, metal=0.3),
     "steel": material("steel", lin(0xC4C9CF), 0.2, metal=1.0),

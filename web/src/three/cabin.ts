@@ -35,8 +35,8 @@ const V = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z);
 /** Les six spots du plafond (x, z), comme `DOWNLIGHTS` dans cabin.py. */
 const DOWNLIGHTS = [-0.5, 0.5].flatMap((x) => [0.5, 1.3, 2.1].map((z) => [x, z] as const));
 type Surface = keyof typeof atlas.rects;
-/** Exposition de la lumière précalculée : les parois au même niveau moyen
- * qu'avant le précalcul dans Blender, quand elle était calculée en code. */
+/** Exposition de la lumière précalculée : l'éclairement moyen des parois au
+ * niveau de l'ancien calcul en code, qui avait été réglé à l'œil. */
 const CABIN_EXPOSURE = 6;
 
 interface BakePlane {
@@ -186,7 +186,9 @@ export function createCabin(o: CabinOptions): Cabin {
     map: veneer(o.wood.map),
     normalMap: veneer(o.wood.normalMap),
     roughnessMap: veneer(o.wood.roughnessMap),
-    color: 0x857d76,
+    // le noyer huilé du poste du dev (workstation.ts) : la teinte du scan,
+    // foncée par un gris neutre (L* 38, a* 7, b* 15) ; il sortait à L* 26
+    color: 0xb3b3b3,
     roughness: 0.55,
     normalScale: new THREE.Vector2(0.25, 0.25),
     envMapIntensity: 0.6,

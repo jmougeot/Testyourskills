@@ -285,7 +285,7 @@ Walkout calqué sur FC 27, **en vraie 3D** (Three.js, WebGL), transposé dans un
    - portes en inox brossé avec le joint au milieu, en retrait dans une façade en inox, seuil en alu rainuré ; les portes palières s'ouvrent avec elles ;
    - afficheur d'étage en verre noir dans l'imposte, au-dessus des portes ;
    - boîte à boutons en verre noir à droite : mini-afficheur, deux colonnes de boutons inox cerclés de lumière ;
-   - parois en panneaux de noyer à fil vertical, joints fins, plinthe inox, mains courantes inox sur platines ; chaque panneau prend un autre morceau de la feuille de placage, un sur deux en miroir ;
+   - parois en panneaux de noyer huilé à fil vertical (le même que le bureau du dev, L* 38), joints fins, plinthe inox, mains courantes inox sur platines ; chaque panneau prend un autre morceau de la feuille de placage, un sur deux en miroir ;
    - plafond bronze sombre à six spots ronds, sol en grandes dalles de pierre grise ;
    - lumière chaude, précalculée dans Blender (voir plus bas) : les spots dessinent sur les parois les arcs de lumière des vraies cabines, bien nets, la lumière rebondit (la pierre éclaire le plafond, l'inox renvoie les spots), les angles s'assombrissent, les mains courantes et leurs platines portent leur ombre ; deux spots et la dalle du plafond, en direct, font briller l'inox de la façade ;
    - toutes ses matières, bois, pierre, plafond et métaux, reflètent la cabine elle-même, photographiée de l'intérieur, reflets projetés sur ses parois (ils se décalent quand la caméra avance), jamais le studio des objets chromés ;
