@@ -21,6 +21,11 @@ export const DOOR_W = 1.0;
 export const DOOR_H = 2.1;
 /** Les portes palières, dans le mur de l'open space (tools/bake/office.py, z = -0,25). */
 const LANDING_Z = -0.25;
+/** La laque derrière le verre des parois : un blanc froid, qui reste blanc sous le plafonnier chaud. */
+const GLASS_PAINT = 0xa4abb3;
+/** Le reflet du verre à incidence normale : plus que les 4 % du vernis de three.js,
+ * pour que les spots, les mains courantes et les portes s'y lisent comme dans une vraie cabine. */
+const GLASS_F0 = 0.12;
 
 const hdr = (hex: THREE.ColorRepresentation, k: number) => new THREE.Color(hex).multiplyScalar(k);
 const V = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z);
@@ -146,13 +151,20 @@ export function createCabin(o: CabinOptions): Cabin {
   doorSteel.color.setScalar(0.72);
   doorSteel.envMapIntensity = 0.7;
   cabinMats.push(doorSteel);
-  // le verre blanc laqué des parois : diélectrique, très lisse
-  const glass = matNamed("M_White_Glass");
-  if (glass) {
-    glass.metalness = 0;
-    glass.roughness = 0.22;
-    glass.color.set(0xa9a59d);
-    glass.envMapIntensity = 0.6;
+  // le verre blanc laqué des parois : une laque blanche froide vue sous une
+  // vitre, soit une couche brillante (vernis, Fresnel) qui reflète la cabine
+  // par-dessus une peinture satinée ; les panneaux sont séparés par des joints
+  const glassSrc = matNamed("M_White_Glass");
+  let glass: THREE.MeshPhysicalMaterial | null = null;
+  if (glassSrc) {
+    glass = keep(
+      new THREE.MeshPhysicalMaterial({ name: glassSrc.name, color: GLASS_PAINT, metalness: 0, roughness: 0.5, specularIntensity: 0.3, clearcoat: 1, clearcoatRoughness: 0.03, envMapIntensity: 1 }),
+    );
+    cabinMats.splice(cabinMats.indexOf(glassSrc), 1, glass);
+    cabin.traverse((m) => {
+      const mesh = m as THREE.Mesh;
+      if (mesh.isMesh && mesh.material === glassSrc) mesh.material = glass!;
+    });
   }
   // les mains courantes : inox satiné, pas le gris mat de l'export
   const handle = matNamed("M_Handle");
@@ -251,13 +263,15 @@ export function createCabin(o: CabinOptions): Cabin {
   // vraie place et se décale quand la caméra avance
   const probe = V(0, 1.45, 1.4);
   for (const m of cabinMats) boxProjection(m, probe, V(-CAB_W / 2, 0, -0.02), V(CAB_W / 2, CAB_H, CAB_D));
+  // le verre des côtés en trois panneaux, celui du fond en deux (le modèle n'a qu'une vitre par paroi)
+  if (glass) glassJoints(glass, [CAB_D / 3, (2 * CAB_D) / 3], [0]);
   // seules la dalle du plafond et l'éclat du pack éclairent la cabine : les
   // projecteurs de l'open space n'y entrent pas, inutile de les évaluer
   for (const m of cabinMats) limitLights(m, ["NUM_RECT_AREA", "NUM_POINT_LIGHTS"], "cabin");
   const pmrem = new THREE.PMREMGenerator(renderer);
   let cabinEnv: THREE.Texture | null = null;
   for (let pass = 0; pass < 2; pass++) {
-    const next = pmrem.fromScene(scene, 0.02, 0.02, 20, { position: probe }).texture;
+    const next = pmrem.fromScene(scene, 0.008, 0.02, 20, { position: probe, size: 512 }).texture;
     for (const m of cabinMats) m.envMap = next;
     cabinEnv?.dispose();
     cabinEnv = next;
@@ -283,6 +297,31 @@ export function createCabin(o: CabinOptions): Cabin {
       for (const d of disposables) d.dispose();
     },
   };
+}
+
+/** Le verre des parois : son reflet renforcé (GLASS_F0), et les joints de 3 mm
+ * entre ses panneaux, la tôle sombre derrière, sans vernis. `alongZ` : joints
+ * des parois latérales (z) ; `alongX` : du fond (x). */
+function glassJoints(mat: THREE.Material, alongZ: number[], alongX: number[]) {
+  const previous = mat.onBeforeCompile;
+  const list = (v: number[]) => v.map((x) => `abs( glassC - ${x.toFixed(3)} )`).reduce((a, b) => `min( ${a}, ${b} )`);
+  mat.onBeforeCompile = (shader, renderer) => {
+    previous.call(mat, shader, renderer);
+    shader.fragmentShader = shader.fragmentShader
+      .replace(
+        "#include <color_fragment>",
+        `#include <color_fragment>
+        float glassC = abs( vBoxPos.x ) > ${(CAB_W / 2 - 0.1).toFixed(3)} ? vBoxPos.z : vBoxPos.x;
+        float glassD = abs( vBoxPos.x ) > ${(CAB_W / 2 - 0.1).toFixed(3)} ? ${list(alongZ)} : ${list(alongX)};
+        float glassJoint = 1.0 - smoothstep( 0.0015, 0.0015 + 1.5 * fwidth( glassC ), glassD );
+        diffuseColor.rgb *= 1.0 - 0.85 * glassJoint;`,
+      )
+      .replace("#include <lights_physical_fragment>", `#include <lights_physical_fragment>
+        material.clearcoat *= 1.0 - glassJoint;
+        material.clearcoatF0 = vec3( ${GLASS_F0.toFixed(3)} );`);
+  };
+  const key = mat.customProgramCacheKey.bind(mat);
+  mat.customProgramCacheKey = () => `glass-joints|${key()}`;
 }
 
 /** La lumière de la gaine vue par les fentes : deux paliers éclairés par tuile, bords doux. */
