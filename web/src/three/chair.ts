@@ -11,12 +11,19 @@ export function chairMaterial(src: THREE.Material, leather: THREE.ColorRepresent
   const uLeather = { value: new THREE.Color(leather) };
   m.onBeforeCompile = (shader) => {
     shader.uniforms.uLeather = uLeather;
-    // le cuir prend la teinte ; la coque et le piètement (métal dans le modèle) passent en graphite satiné
+    // La carte métal/rugosité du modèle sépare trois matières : l'alu poli
+    // (métal ≥ 0,8), le cuir des coussins (≈ 0,55, que le seuil de 0,5
+    // rangeait à tort dans le métal) et quelques pièces de plastique noir
+    // (< 0,5). Le cuir prend l'albédo `leather`, modulé par son grain (sa
+    // luminance, ramenée à la moyenne des coussins, 0,148) ; il redevient un
+    // diélectrique. La coque et le piètement passent en graphite satiné.
     shader.fragmentShader = shader.fragmentShader.replace("#include <common>", "#include <common>\nuniform vec3 uLeather;").replace(
       "#include <metalnessmap_fragment>",
       `#include <metalnessmap_fragment>
-      float chairMetal = step( 0.5, metalnessFactor );
-      diffuseColor.rgb = mix( uLeather * dot( diffuseColor.rgb, vec3( 0.2126, 0.7152, 0.0722 ) ), diffuseColor.rgb * 0.42, chairMetal );
+      float chairMetal = step( 0.75, metalnessFactor );
+      float grain = clamp( dot( diffuseColor.rgb, vec3( 0.2126, 0.7152, 0.0722 ) ) / 0.148, 0.5, 1.6 );
+      diffuseColor.rgb = mix( uLeather * grain, diffuseColor.rgb * 0.42, chairMetal );
+      metalnessFactor *= chairMetal;
       roughnessFactor = mix( roughnessFactor, max( roughnessFactor, 0.32 ), chairMetal );`,
     );
   };

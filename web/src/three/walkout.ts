@@ -22,6 +22,7 @@ import { TextGeometry } from "three/examples/jsm/geometries/TextGeometry.js";
 import { SVGLoader } from "three/examples/jsm/loaders/SVGLoader.js";
 import { sharedResources, type WalkoutAssets } from "./assets";
 import { CAB_H, DOOR_W, createCabin } from "./cabin";
+import { MEAN_LUMA, grainAlbedo } from "./albedo";
 import { createBakedLighting } from "./baked";
 import { createCardMesh } from "./cardMesh";
 import { chairMaterial, createChair } from "./chair";
@@ -288,21 +289,25 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
     if ((o as THREE.Mesh).isMesh) chairSource = (o as THREE.Mesh).material as THREE.Material;
   });
   const std = (color: number, roughness: number, metalness = 0, envMapIntensity = 0.3) => new THREE.MeshStandardMaterial({ color, roughness, metalness, envMapIntensity });
-  // mêmes couleurs que les albédos du précalcul (tools/bake/office.py, COLORS)
+  // Albédos d'après des mesures (SPEC §6.3, « Étalonnage ») ; le précalcul
+  // (tools/bake/office.py, COLORS) en garde d'autres pour la lumière renvoyée.
+  // Peintures, plastiques et poudrages sont des diélectriques : métal 0.
   const officeMats: Record<string, THREE.Material> = {
     floor: baked.apply(carpet),
-    ceiling: baked.apply(std(0xc9c5be, 0.95, 0, 0.05)),
-    wall: baked.apply(std(0x8c877f, 0.9, 0, 0.1)),
-    fixture: baked.apply(std(0x23262a, 0.45, 0.6, 0.5)),
-    mullion: baked.apply(std(0x2a2e33, 0.4, 0.6, 0.6)),
-    deskTop: baked.apply(new THREE.MeshStandardMaterial({ map: tiled(assets.wood.map!, 1.6), color: 0xd9c4ae, roughness: 0.6, envMapIntensity: 0.35 })),
-    metal: baked.apply(std(0x1c1f23, 0.5, 0.5, 0.4)),
+    ceiling: baked.apply(std(0xdddcd7, 0.95, 0, 0.05)),
+    wall: baked.apply(std(0xacaaa4, 0.9, 0, 0.1)),
+    fixture: baked.apply(std(0x1e2023, 0.4, 0, 0.5)),
+    mullion: baked.apply(std(0x383e42, 0.45, 0, 0.6)),
+    deskTop: baked.apply(grainAlbedo(new THREE.MeshStandardMaterial({ map: tiled(assets.wood.map!, 1.6), roughness: 0.6, envMapIntensity: 0.35 }), 0xb89a78, MEAN_LUMA.walnut)),
+    metal: baked.apply(std(0x202224, 0.55, 0, 0.4)),
     fabric: baked.apply(std(0x2e3436, 0.95, 0, 0.05)),
     panel: baked.apply(std(0x51625e, 1, 0, 0.02)),
-    screen: baked.apply(std(0x15181c, 0.35, 0.2, 0.5)),
-    paper: baked.apply(std(0xd9d6cf, 0.8, 0, 0.1)),
-    oak: baked.apply(new THREE.MeshStandardMaterial({ map: tiled(assets.wood.map!, 1), color: 0xb0866a, roughness: 0.75, envMapIntensity: 0.3 })),
-    rug: baked.apply(new THREE.MeshStandardMaterial({ map: tiled(assets.carpet.map!, 0.6), normalMap: tiled(assets.carpet.normalMap, 0.6), color: 0xa7a097, roughness: 1, normalScale: new THREE.Vector2(0.5, 0.5), envMapIntensity: 0.05 })),
+    screen: baked.apply(std(0x26282b, 0.45, 0, 0.5)),
+    paper: baked.apply(std(0xe5e6e6, 0.8, 0, 0.1)),
+    oak: baked.apply(grainAlbedo(new THREE.MeshStandardMaterial({ map: tiled(assets.wood.map!, 1), roughness: 0.75, envMapIntensity: 0.3 }), 0x725941, MEAN_LUMA.walnut)),
+    rug: baked.apply(
+      grainAlbedo(new THREE.MeshStandardMaterial({ map: tiled(assets.carpet.map!, 0.6), normalMap: tiled(assets.carpet.normalMap, 0.6), roughness: 1, normalScale: new THREE.Vector2(0.5, 0.5), envMapIntensity: 0.05 }), 0x3d3f42, MEAN_LUMA.carpet, 0.45),
+    ),
     // les fauteuils du fond : lumière par sommet, cuir noir
     chairs: baked.applyVertex(chairMaterial(chairSource, 0x1d2023)),
     // l'inox des tableaux de porte est un métal : rien à lire dans la lumière diffuse

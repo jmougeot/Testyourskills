@@ -137,10 +137,13 @@ export function createWorkstation(o: { accent: string; lang?: string; login: str
     return x;
   };
   const accent = new THREE.Color(o.accent);
-  const dark = new THREE.MeshStandardMaterial({ color: 0x242a30, roughness: 0.48, metalness: 0.35, envMapIntensity: 0.6 });
+  // piètement en acier poudré noir : une peinture, donc un diélectrique
+  const dark = new THREE.MeshStandardMaterial({ color: 0x202224, roughness: 0.55, metalness: 0, envMapIntensity: 0.5 });
   const fabric = new THREE.MeshStandardMaterial({ color: 0x303a3b, roughness: 0.96 });
   const glow = new THREE.MeshBasicMaterial({ color: accent, toneMapped: false });
-  // plateau en noyer (Poly Haven, black_walnut_veneer_02), le fil dans la longueur
+  // Plateau en noyer (Poly Haven, black_walnut_veneer_02), le fil dans la
+  // longueur. Le scan est un placage brut (L* 55) ; huilé, le noyer fonce
+  // sans changer de teinte : un gris neutre l'amène à L* 38, a* 7, b* 15.
   const veneer = (t: THREE.Texture | undefined) => {
     const c = keep(t!.clone());
     c.repeat.set(1.2, 0.5);
@@ -151,10 +154,12 @@ export function createWorkstation(o: { accent: string; lang?: string; login: str
     map: veneer(o.wood.map),
     normalMap: veneer(o.wood.normalMap),
     roughnessMap: veneer(o.wood.roughnessMap),
-    color: 0x9a8a7c,
+    color: 0xb3b3b3,
     roughness: 0.7,
     normalScale: new THREE.Vector2(0.15, 0.15),
-    envMapIntensity: 0.45,
+    // vu en incidence rasante, le plateau refléterait la bande bleue « baies »
+    // de l'environnement studio, bien plus claire que la ville de nuit : il virait au mauve
+    envMapIntensity: 0.2,
   });
   const box = (w: number, h: number, d: number, mat: THREE.Material, x: number, y: number, z: number) => {
     const m = new THREE.Mesh(new RoundedBoxGeometry(w, h, d, 2, Math.min(w, h, d, 0.06) * 0.25), mat);
@@ -220,7 +225,7 @@ export function createWorkstation(o: { accent: string; lang?: string; login: str
       if (!mesh.isMesh) return;
       // coque et pied noirs ; la dalle affiche le canvas
       if (mesh.name === "screen") mesh.material = new THREE.MeshBasicMaterial({ map: tex, toneMapped: false, color: new THREE.Color(1.1, 1.1, 1.1) });
-      else (mesh.material as THREE.MeshStandardMaterial).color.set(0x1c1e21);
+      else (mesh.material as THREE.MeshStandardMaterial).color.set(0x26282b); // ABS noir, albédo ≈ 0,02
     });
     group.add(m);
     screens.push({ canvas, tex, kind });
