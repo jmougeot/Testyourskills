@@ -365,7 +365,7 @@ La cabine garde sa lumière précalculée en code (`cabin.ts`) ; ses parois n'é
 - personnage : `mixamo/Characters/rpm.glb` de Babylon.js Assets ;
 - la police : Barlow Condensed 800 convertie en typeface (SIL OFL), pour les textes 3D.
 
-Sources, licences et modifications dans `web/public/3d/CREDITS.txt`, accessible depuis le pied de page. Les modèles tiers sont choisis sous licence CC0 ou CC BY : le site est public et leurs fichiers téléchargeables. Mise au point en démo : `window.__tys3d.hold(s)` fige la séquence à l'instant `s`, `seek(s)` y saute. Pendant un `hold`, la scène ne dessine pas d'image entre deux appels : un changement d'écran y reste figé en plein parasite.
+Sources, licences et modifications dans `web/public/3d/CREDITS.txt`, accessible depuis le pied de page. Les modèles tiers sont choisis sous licence CC0 ou CC BY : le site est public et leurs fichiers téléchargeables. Mise au point en démo : `?wait=3` ramène l'attente simulée à trois secondes (deux au moins, le temps que la scène se prépare), pour voir vite l'ouverture du pack ; `window.__tys3d.hold(s)` fige la séquence à l'instant `s`, `seek(s)` y saute. Pendant un `hold`, la scène ne dessine pas d'image entre deux appels : un changement d'écran y reste figé en plein parasite.
 
 ### 6.4 Après la carte
 

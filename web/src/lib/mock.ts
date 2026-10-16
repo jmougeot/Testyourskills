@@ -74,7 +74,21 @@ const CV_TIMELINE: [string, number, number?][] = [
   ["scoring", 6000],
 ];
 
+/** ?wait=<secondes> : l'attente simulée ramenée à cette durée, pour voir vite
+ * l'ouverture du pack. Jamais à zéro : la scène 3D a besoin de quelques
+ * secondes pour se télécharger et se préparer, comme en vrai. */
+function waitScale(doneAt: number): number {
+  const s = Number(new URLSearchParams(window.location.search).get("wait"));
+  return s > 0 ? Math.max(2, s) * 1000 / doneAt : 1;
+}
+
 function timelineFor(kind: Kind): { timeline: ProgressEvent[]; doneAt: number } {
+  const { timeline, doneAt } = baseTimeline(kind);
+  const k = kind === "slow" ? 1 : waitScale(doneAt);
+  return { timeline: timeline.map((e) => ({ ...e, at: e.at * k })), doneAt: doneAt * k };
+}
+
+function baseTimeline(kind: Kind): { timeline: ProgressEvent[]; doneAt: number } {
   const mk = (t: [string, number, number?][], offset = 0) => t.map(([key, at, n]) => ({ key, at: at + offset, n }));
   if (kind === "cmp") {
     const tl = [...mk(CV_TIMELINE.slice(0, 4)), ...mk(GH_TIMELINE.slice(1), 2800)].sort((a, b) => a.at - b.at);
