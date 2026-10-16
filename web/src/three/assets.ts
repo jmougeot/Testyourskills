@@ -1,12 +1,14 @@
-// Assets de la scène 3D (web/public/3d) : la ville de nuit derrière les baies
-// (Poly Haven, shanghai_bund, CC0, recadrée), le grain du béton (Poly Haven, garage_floor, CC0),
-// le dev (personnage habillé, posé assis par code ; sources : public/3d/CREDITS.txt)
-// et la police Barlow Condensed 800 en typeface (SIL OFL). Préchargés pendant
-// l'attente du scoring, une seule fois par page.
+// Assets de la scène 3D (web/public/3d) : la ville de nuit derrière les baies,
+// le décor de l'open space et sa lumière précalculés dans Blender
+// (tools/bake/office.py), matières PBR de bois et de moquette, plante,
+// fauteuil, personnage habillé et police Barlow Condensed. Sources et
+// licences : public/3d/CREDITS.txt. Modèles compressés meshopt, textures
+// WebP, préchargés pendant le scoring, une seule fois par page.
 import * as THREE from "three";
 import { GLTFLoader, type GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { FontLoader, type Font } from "three/examples/jsm/loaders/FontLoader.js";
 import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";
+import { LIGHT_GROUPS, packLightmaps, type BakedOffice, type LightGroup } from "./baked";
 
 export interface PbrSet {
   map?: THREE.Texture;
@@ -18,8 +20,11 @@ export interface WalkoutAssets {
   city: THREE.Texture;
   player: GLTF;
   font: Font;
-  floor: PbrSet;
   wood: PbrSet;
+  carpet: PbrSet;
+  plant: GLTF;
+  chair: GLTF;
+  office: BakedOffice;
 }
 
 const BASE = "/3d/";
@@ -34,11 +39,6 @@ function texture(loader: THREE.TextureLoader, file: string, color = false): Prom
   });
 }
 
-async function pbr(loader: THREE.TextureLoader, name: string): Promise<PbrSet> {
-  const [normalMap, roughnessMap] = await Promise.all([texture(loader, `${name}_nor.jpg`), texture(loader, `${name}_rough.jpg`)]);
-  return { normalMap, roughnessMap };
-}
-
 async function surface(loader: THREE.TextureLoader, name: string): Promise<PbrSet> {
   const [map, normalMap, roughnessMap] = await Promise.all([
     texture(loader, `${name}-color.webp`, true),
@@ -46,6 +46,16 @@ async function surface(loader: THREE.TextureLoader, name: string): Promise<PbrSe
     texture(loader, `${name}-roughness.webp`),
   ]);
   return { map, normalMap, roughnessMap };
+}
+
+/** Le décor de l'open space et sa lumière précalculée dans Blender (tools/bake/office.py). */
+async function bakedOffice(gltf: GLTFLoader): Promise<BakedOffice> {
+  const image = (g: LightGroup) => new THREE.ImageLoader().loadAsync(`${BASE}office-lm-${g}.webp`);
+  const [model, ...images] = await Promise.all([gltf.loadAsync(BASE + "office.glb"), ...LIGHT_GROUPS.map(image)]);
+  const meta = JSON.parse(String(model.scene.userData.lightmap ?? "{}")) as { groups?: Record<LightGroup, { scale: number }> };
+  const [lightA, lightB] = packLightmaps(Object.fromEntries(LIGHT_GROUPS.map((g, i) => [g, images[i]!])) as Record<LightGroup, HTMLImageElement>);
+  const scale = Object.fromEntries(LIGHT_GROUPS.map((g) => [g, meta.groups?.[g]?.scale ?? 1])) as Record<LightGroup, number>;
+  return { scene: model.scene, lightA, lightB, scale };
 }
 
 /** Lance (une fois) le chargement des assets ; sans risque à appeler souvent. */
@@ -60,9 +70,21 @@ export function preloadWalkoutAssets(): Promise<WalkoutAssets> {
       }),
       gltf.loadAsync(BASE + "developer-v2.glb"),
       new FontLoader().loadAsync(BASE + "barlow-800.typeface.json"),
-      pbr(tex, "garage_floor"),
       surface(tex, "walnut"),
-    ]).then(([city, player, font, floor, wood]) => ({ city, player, font, floor, wood }));
+      bakedOffice(gltf),
+      surface(tex, "carpet"),
+      gltf.loadAsync(BASE + "plant-v2.glb"),
+      gltf.loadAsync(BASE + "chair.glb"),
+    ]).then(([city, player, font, wood, office, carpet, plant, chair]) => ({
+      city,
+      player,
+      font,
+      wood,
+      office,
+      carpet,
+      plant,
+      chair,
+    }));
     // un échec ne doit pas rester en cache : on retentera à la prochaine révélation
     pending.catch(() => {
       pending = null;

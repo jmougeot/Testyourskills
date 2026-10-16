@@ -5,6 +5,7 @@
 // face. Les écrans se redessinent au fil de la frappe.
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
+import type { PbrSet } from "./assets";
 
 export interface Workstation {
   group: THREE.Group;
@@ -103,7 +104,7 @@ function snippet(lang: string | undefined, login: string): Tok[][] {
   ];
 }
 
-export function createWorkstation(o: { accent: string; lang?: string; login: string; seed: number; graphLabel: string }): Workstation {
+export function createWorkstation(o: { accent: string; lang?: string; login: string; seed: number; graphLabel: string; wood: PbrSet; chair: THREE.Object3D }): Workstation {
   const group = new THREE.Group();
   const disposables: { dispose(): void }[] = [];
   const keep = <X extends { dispose(): void }>(x: X): X => {
@@ -115,28 +116,22 @@ export function createWorkstation(o: { accent: string; lang?: string; login: str
   const metal = new THREE.MeshStandardMaterial({ color: 0x677079, roughness: 0.36, metalness: 0.85, envMapIntensity: 0.9 });
   const fabric = new THREE.MeshStandardMaterial({ color: 0x303a3b, roughness: 0.96 });
   const glow = new THREE.MeshBasicMaterial({ color: accent, toneMapped: false });
-  // Veinage discret, déterministe ; aucun asset supplémentaire à charger.
-  const woodCanvas = document.createElement("canvas");
-  woodCanvas.width = 512;
-  woodCanvas.height = 256;
-  const woodContext = woodCanvas.getContext("2d")!;
-  woodContext.fillStyle = "#765039";
-  woodContext.fillRect(0, 0, 512, 256);
-  for (let i = 0; i < 180; i++) {
-    woodContext.strokeStyle = i % 3 ? "rgba(37,19,12,0.12)" : "rgba(222,177,120,0.16)";
-    woodContext.lineWidth = 0.5 + (i % 4) * 0.3;
-    woodContext.beginPath();
-    for (let x = 0; x <= 512; x += 8) {
-      const y = i * 1.45 + Math.sin(x * 0.015 + i * 0.31) * 1.8;
-      if (x === 0) woodContext.moveTo(x, y);
-      else woodContext.lineTo(x, y);
-    }
-    woodContext.stroke();
-  }
-  const woodMap = keep(new THREE.CanvasTexture(woodCanvas));
-  woodMap.colorSpace = THREE.SRGBColorSpace;
-  woodMap.anisotropy = 4;
-  const wood = new THREE.MeshStandardMaterial({ map: woodMap, roughness: 0.62, envMapIntensity: 0.5 });
+  // plateau en noyer (Poly Haven, black_walnut_veneer_02), le fil dans la longueur
+  const veneer = (t: THREE.Texture | undefined) => {
+    const c = keep(t!.clone());
+    c.repeat.set(1.2, 0.5);
+    c.needsUpdate = true;
+    return c;
+  };
+  const wood = new THREE.MeshStandardMaterial({
+    map: veneer(o.wood.map),
+    normalMap: veneer(o.wood.normalMap),
+    roughnessMap: veneer(o.wood.roughnessMap),
+    color: 0x9a8a7c,
+    roughness: 0.7,
+    normalScale: new THREE.Vector2(0.15, 0.15),
+    envMapIntensity: 0.45,
+  });
   const box = (w: number, h: number, d: number, mat: THREE.Material, x: number, y: number, z: number) => {
     const m = new THREE.Mesh(new RoundedBoxGeometry(w, h, d, 2, Math.min(w, h, d, 0.06) * 0.25), mat);
     m.position.set(x, y, z);
@@ -146,9 +141,7 @@ export function createWorkstation(o: { accent: string; lang?: string; login: str
     return m;
   };
 
-  // Le tapis ancre le poste au sol et adoucit ses reflets.
-  const rug = new THREE.MeshStandardMaterial({ color: 0x293333, roughness: 1 });
-  box(3.5, 0.018, 2.65, rug, 0, 0.012, 0.24);
+  // le tapis est dans le décor précalculé (tools/bake/office.py), 2 cm d'épaisseur
   const Y0 = 0.02;
 
   // le bureau
@@ -222,39 +215,12 @@ export function createWorkstation(o: { accent: string; lang?: string; login: str
   addMonitor(-0.71, 0.88, -0.28, "term");
   addMonitor(0.71, 0.88, 0.28, "graph");
 
-  // Fauteuil de travail : dossier arrondi, coutures discrètes et roulettes.
+  // le fauteuil (Sketchfab, CC BY), tourné vers les écrans ; il pivote avec le dev
   const swivel = new THREE.Group();
   group.add(swivel);
-  const chair = (w: number, h: number, d: number, mat: THREE.Material, x: number, y: number, z: number, rx = 0) => {
-    const m = new THREE.Mesh(new RoundedBoxGeometry(w, h, d, 3, Math.min(w, h, d) * 0.35), mat);
-    m.position.set(x, y, z);
-    m.rotation.x = rx;
-    m.castShadow = true;
-    swivel.add(m);
-    return m;
-  };
-  chair(0.52, 0.08, 0.5, fabric, 0, Y0 + 0.47, -0.02);
-  chair(0.48, 0.62, 0.09, fabric, 0, Y0 + 0.85, -0.3, -0.12);
-  chair(0.36, 0.12, 0.08, fabric, 0, Y0 + 1.22, -0.34, -0.12);
-  chair(0.012, 0.44, 0.014, metal, -0.2, Y0 + 0.85, -0.352, -0.12);
-  chair(0.012, 0.44, 0.014, metal, 0.2, Y0 + 0.85, -0.352, -0.12);
-  chair(0.12, 0.014, 0.012, glow, 0, Y0 + 1.01, -0.367, -0.12);
-  chair(0.06, 0.03, 0.3, dark, -0.3, Y0 + 0.66, 0.02);
-  chair(0.06, 0.03, 0.3, dark, 0.3, Y0 + 0.66, 0.02);
-  const column = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.03, 0.36, 12), metal);
-  column.position.set(0, Y0 + 0.25, -0.02);
-  swivel.add(column);
-  for (let k = 0; k < 5; k++) {
-    const leg = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.03, 0.3), metal);
-    const a = (k / 5) * Math.PI * 2;
-    leg.position.set(Math.sin(a) * 0.15, Y0 + 0.07, -0.02 + Math.cos(a) * 0.15);
-    leg.rotation.y = a;
-    swivel.add(leg);
-    const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.045, 12), dark);
-    wheel.rotation.z = Math.PI / 2;
-    wheel.position.set(Math.sin(a) * 0.29, Y0 + 0.035, -0.02 + Math.cos(a) * 0.29);
-    swivel.add(wheel);
-  }
+  o.chair.rotation.y = Math.PI;
+  o.chair.position.set(0, Y0, -0.02);
+  swivel.add(o.chair);
 
   // la lumière des écrans sur le dev
   const screenLight = new THREE.SpotLight(0x9cc4ff, 0, 4, 0.9, 0.8, 1.5);

@@ -6,3 +6,4 @@ dist
 var/
 .DS_Store
 tsconfig.tsbuildinfo
+tools/bake/.cache/

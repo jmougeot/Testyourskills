@@ -21,12 +21,14 @@ import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeom
 import { TextGeometry } from "three/examples/jsm/geometries/TextGeometry.js";
 import { SVGLoader } from "three/examples/jsm/loaders/SVGLoader.js";
 import type { WalkoutAssets } from "./assets";
-import { CAB_H, DOOR_H, DOOR_W, createCabin } from "./cabin";
+import { CAB_H, DOOR_W, createCabin } from "./cabin";
+import { createBakedLighting } from "./baked";
 import { createCardMesh } from "./cardMesh";
+import { chairMaterial, createChair } from "./chair";
 import { createElevatorSound } from "./elevatorSound";
 import { createPlayer } from "./player";
 import { createWorkstation } from "./workstation";
-import { createCityBackdrop, createFloorReflection, createStudioEnvironment } from "./stage";
+import { createCityBackdrop, createStudioEnvironment } from "./stage";
 import * as T from "./textures";
 
 export type WalkoutCue = "fireworks" | null;
@@ -122,6 +124,11 @@ const CARD_POS = V(0, 1.45, -6.3);
 const CARD_W3 = 1.2;
 const CARD_H3 = (CARD_W3 * 520) / 360;
 const TELL_POS = V(0, 1.24, 0.5);
+/** Les plantes : x, z, hauteur, rotation (à reporter dans tools/bake/office.py, PLANTS). */
+const PLANTS: [number, number, number, number][] = [
+  [-2.25, DESK_Z - 1.3, 1.65, 0.35],
+  [3.1, DESK_Z - 3.0, 1.3, 2.4],
+];
 
 /* ---------- chronologie ---------- */
 type Win = [number, number];
@@ -202,21 +209,6 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
     return m;
   };
 
-  const floor = assets.floor;
-  floor.normalMap.repeat.set(6, 4);
-  floor.roughnessMap.repeat.set(6, 4);
-  const concrete = new THREE.MeshPhysicalMaterial({
-    color: 0x0b0d11,
-    roughness: 0.5,
-    roughnessMap: floor.roughnessMap,
-    normalMap: floor.normalMap,
-    normalScale: new THREE.Vector2(0.3, 0.3),
-    metalness: 0.2,
-    clearcoat: 0.5,
-    clearcoatRoughness: 0.3,
-    envMapIntensity: 0.15,
-  });
-  const darkPanel = new THREE.MeshStandardMaterial({ color: 0x0c0f14, roughness: 0.55, metalness: 0.3 });
   const accentGlow = new THREE.MeshBasicMaterial({ color: hdr(accent.a, 2), toneMapped: false });
   const cab = createCabin({ scene, renderer, accent: accent.a, wood: assets.wood, floor: Math.max(1, Math.min(99, o.overall)), lang: o.lang });
   disposables.push(cab);
@@ -224,41 +216,88 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
   disposables.push(sound);
   const { doors, screen, brushedSteel, shaftTex, shaftMat, shaftGap, btnOn, seam, seamMat } = cab;
 
-  /* ---------- l'open space ---------- */
+  /* ---------- l'open space ----------
+   * Le décor fixe (sol, plafond, murs, baies, luminaires, îlots, lattes, tapis)
+   * est modélisé et éclairé dans Blender (tools/bake/office.py) : ses matières
+   * lisent la lumière précalculée et n'évaluent aucune lumière en direct.
+   * Restent en code ce qui s'allume ou bouge : barres des néons, écrans, allée,
+   * verre et ville, plantes, poste du dev. */
   const office = new THREE.Group();
   scene.add(office);
-  const ground = new THREE.Mesh(new THREE.PlaneGeometry(ROOM_W, -WIN_Z), concrete);
-  ground.rotation.x = -Math.PI / 2;
-  ground.position.set(0, 0, WIN_Z / 2);
-  ground.receiveShadow = true;
-  office.add(ground);
-  if (!low) {
-    const r = createFloorReflection(10, -WIN_Z - 0.4, floor.normalMap, new THREE.Vector2(3, 4), new THREE.Vector2(1024, 1024));
-    r.mesh.rotation.x = -Math.PI / 2;
-    r.mesh.position.set(0, 0.004, WIN_Z / 2 - 0.2);
-    r.strength.value = 0.12;
-    scene.add(r.mesh);
-    disposables.push({ dispose: () => r.mesh.dispose() });
-  }
-  const ceiling = new THREE.Mesh(new THREE.PlaneGeometry(ROOM_W, -WIN_Z), new THREE.MeshStandardMaterial({ color: 0x0a0c10, roughness: 0.9 }));
-  ceiling.rotation.x = Math.PI / 2;
-  ceiling.position.set(0, CEIL, WIN_Z / 2);
-  office.add(ceiling);
-  // murs : les côtés, avec un liseré de LED au pied à la couleur du tier, et
-  // le mur de l'ascenseur, percé à la taille des portes, avec ses tableaux en inox
-  for (const sx of [-1, 1]) {
-    box(0.1, CEIL, -WIN_Z, darkPanel, (sx * ROOM_W) / 2, CEIL / 2, WIN_Z / 2, office);
-    box(0.02, 0.025, -WIN_Z, accentGlow, sx * (ROOM_W / 2 - 0.06), 0.06, WIN_Z / 2, office);
-  }
-  box((ROOM_W - DOOR_W) / 2, CEIL, 0.1, darkPanel, -(ROOM_W + DOOR_W) / 4, CEIL / 2, -0.25, office);
-  box((ROOM_W - DOOR_W) / 2, CEIL, 0.1, darkPanel, (ROOM_W + DOOR_W) / 4, CEIL / 2, -0.25, office);
-  box(DOOR_W, CEIL - DOOR_H, 0.1, darkPanel, 0, (CEIL + DOOR_H) / 2, -0.25, office);
-  for (const sx of [-1, 1]) box(0.03, DOOR_H, 0.2, brushedSteel, sx * (DOOR_W / 2 + 0.015), DOOR_H / 2, -0.2, office);
-  box(DOOR_W + 0.06, 0.03, 0.2, brushedSteel, 0, DOOR_H + 0.015, -0.2, office);
-  // les baies : montants, allège, verre fumé
-  const mullion = new THREE.MeshStandardMaterial({ color: 0x14181e, roughness: 0.4, metalness: 0.7 });
-  for (let x = -ROOM_W / 2; x <= ROOM_W / 2 + 0.01; x += 2.2) box(0.08, CEIL, 0.12, mullion, x, CEIL / 2, WIN_Z, office);
-  box(ROOM_W, 0.35, 0.14, mullion, 0, 0.175, WIN_Z, office);
+  const baked = createBakedLighting(assets.office);
+  /** Une texture d'asset partagée, en tuile de `metres` (le décor de Blender a ses uv0 en mètres). */
+  const tiled = (t: THREE.Texture, metres: number) => {
+    const c = keep(t.clone());
+    c.repeat.set(1 / metres, 1 / metres);
+    c.needsUpdate = true;
+    return c;
+  };
+  // Moquette en dalles de 50 cm (relief et grain : Poly Haven, dirty_carpet),
+  // mate : aucun reflet au sol. La texture, brune, ne garde que sa luminance ;
+  // les dalles sont posées en damier, le velours tourné d'un quart (deux nuances).
+  const CARPET_TILE = 1.2;
+  const carpet = new THREE.MeshStandardMaterial({
+    map: tiled(assets.carpet.map!, CARPET_TILE),
+    normalMap: tiled(assets.carpet.normalMap, CARPET_TILE),
+    roughnessMap: tiled(assets.carpet.roughnessMap, CARPET_TILE),
+    roughness: 1,
+    normalScale: new THREE.Vector2(0.35, 0.35),
+    envMapIntensity: 0.05,
+  });
+  const uCarpet = { value: new THREE.Color(0x56606b) };
+  carpet.onBeforeCompile = (shader) => {
+    shader.uniforms.uCarpet = uCarpet;
+    shader.fragmentShader = shader.fragmentShader.replace("#include <common>", "#include <common>\nuniform vec3 uCarpet;").replace(
+      "#include <map_fragment>",
+      `#include <map_fragment>
+      vec2 tileUv = vMapUv * ${(CARPET_TILE / 0.5).toFixed(3)};
+      vec2 tileId = floor( tileUv );
+      vec2 tileF = fract( tileUv );
+      float pile = mod( tileId.x + tileId.y, 2.0 );
+      float seam = smoothstep( 0.0, 0.012, tileF.x ) * smoothstep( 0.0, 0.012, 1.0 - tileF.x ) * smoothstep( 0.0, 0.012, tileF.y ) * smoothstep( 0.0, 0.012, 1.0 - tileF.y );
+      float grain = dot( diffuseColor.rgb, vec3( 0.2126, 0.7152, 0.0722 ) );
+      diffuseColor.rgb = uCarpet * ( 0.45 + 2.2 * grain ) * ( 0.975 + 0.05 * pile ) * ( 0.9 + 0.1 * seam );`,
+    );
+  };
+  let chairSource: THREE.Material = new THREE.MeshStandardMaterial();
+  assets.chair.scene.traverse((o) => {
+    if ((o as THREE.Mesh).isMesh) chairSource = (o as THREE.Mesh).material as THREE.Material;
+  });
+  const std = (color: number, roughness: number, metalness = 0, envMapIntensity = 0.3) => new THREE.MeshStandardMaterial({ color, roughness, metalness, envMapIntensity });
+  // mêmes couleurs que les albédos du précalcul (tools/bake/office.py, COLORS)
+  const officeMats: Record<string, THREE.Material> = {
+    floor: baked.apply(carpet),
+    ceiling: baked.apply(std(0xc9c5be, 0.95, 0, 0.05)),
+    wall: baked.apply(std(0x8c877f, 0.9, 0, 0.1)),
+    fixture: baked.apply(std(0x23262a, 0.45, 0.6, 0.5)),
+    mullion: baked.apply(std(0x2a2e33, 0.4, 0.6, 0.6)),
+    deskTop: baked.apply(new THREE.MeshStandardMaterial({ map: tiled(assets.wood.map!, 1.6), color: 0xd9c4ae, roughness: 0.6, envMapIntensity: 0.35 })),
+    metal: baked.apply(std(0x1c1f23, 0.5, 0.5, 0.4)),
+    fabric: baked.apply(std(0x2e3436, 0.95, 0, 0.05)),
+    panel: baked.apply(std(0x51625e, 1, 0, 0.02)),
+    screen: baked.apply(std(0x15181c, 0.35, 0.2, 0.5)),
+    paper: baked.apply(std(0xd9d6cf, 0.8, 0, 0.1)),
+    oak: baked.apply(new THREE.MeshStandardMaterial({ map: tiled(assets.wood.map!, 1), color: 0xb0866a, roughness: 0.75, envMapIntensity: 0.3 })),
+    rug: baked.apply(new THREE.MeshStandardMaterial({ map: tiled(assets.carpet.map!, 0.6), normalMap: tiled(assets.carpet.normalMap, 0.6), color: 0xa7a097, roughness: 1, normalScale: new THREE.Vector2(0.5, 0.5), envMapIntensity: 0.05 })),
+    // les fauteuils du fond : lumière par sommet, cuir noir
+    chairs: baked.applyVertex(chairMaterial(chairSource, 0x1d2023)),
+    // l'inox des tableaux de porte est un métal : rien à lire dans la lumière diffuse
+    steel: brushedSteel,
+  };
+  assets.office.scene.updateMatrixWorld(true);
+  assets.office.scene.traverse((src) => {
+    const m = src as THREE.Mesh;
+    // gltfpack porte le nom sur le nœud parent (le maillage, nommé mesh_N, garde sa déquantification)
+    const mat = officeMats[m.name] ?? officeMats[m.parent?.name ?? ""];
+    if (!m.isMesh || !mat) return;
+    const mesh = new THREE.Mesh(m.geometry, mat);
+    mesh.matrix.copy(m.matrixWorld);
+    mesh.matrixAutoUpdate = false;
+    office.add(mesh);
+  });
+  // le liseré de LED au pied des murs, à la couleur du tier
+  for (const sx of [-1, 1]) box(0.02, 0.025, -WIN_Z, accentGlow, sx * (ROOM_W / 2 - 0.06), 0.06, WIN_Z / 2, office);
+  // les baies : le verre fumé
   const glass = new THREE.Mesh(
     new THREE.PlaneGeometry(ROOM_W, CEIL),
     new THREE.MeshPhysicalMaterial({ color: 0x0b1424, roughness: 0.04, metalness: 0, transparent: true, opacity: 0.16, envMapIntensity: 0.8, depthWrite: false }),
@@ -270,27 +309,21 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
   city.mesh.position.set(0, 0, DESK_Z);
   scene.add(city.mesh);
 
-  // Luminaires suspendus : lumière chaude, boîtiers sombres et câbles fins.
+  // Les barres lumineuses des luminaires suspendus (leurs boîtiers sont dans le décor).
   const ROWS = 8;
   const rowMats: THREE.MeshBasicMaterial[] = [];
   for (let r = 0; r < ROWS; r++) {
     const mat = new THREE.MeshBasicMaterial({ color: hdr("#eef3ff", 0.05), toneMapped: false });
     rowMats.push(mat);
-    const z = -1.2 - r * 1.6;
     for (const x of [-5.2, 5.2]) {
-      box(2.6, 0.055, 0.16, darkPanel, x, CEIL - 0.31, z, office);
-      for (const dx of [-0.95, 0.95]) box(0.008, 0.28, 0.008, mullion, x + dx, CEIL - 0.14, z, office);
-      const bar = new THREE.Mesh(new THREE.BoxGeometry(2.45, 0.009, 0.12), mat);
-      bar.position.set(x, CEIL - 0.343, z);
+      const bar = new THREE.Mesh(new THREE.BoxGeometry(2.42, 0.006, 0.05), mat);
+      bar.position.set(x, CEIL - 0.348, -1.2 - r * 1.6);
       office.add(bar);
     }
   }
-  const officeLights = [-2.5, -6.5, -10.5].map((z) => {
-    const l = new THREE.PointLight(0xffdfb8, 0, 14, 1.6);
-    l.position.set(0, CEIL - 0.25, z);
-    office.add(l);
-    return l;
-  });
+  /** Les trois zones de néons précalculées : rangées 0-2, 3-5, 6-7. */
+  const ZONES = [[0, 1, 2], [3, 4, 5], [6, 7]];
+  // l'éclairage d'ensemble des objets en direct (le dev, son poste, les plantes)
   const hemi = new THREE.HemisphereLight(0xa1b8ce, 0x403026, 0.18);
   scene.add(hemi);
 
@@ -308,92 +341,45 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
     }
   scene.add(path);
 
-  // les autres postes : îlots de bureaux face à face, écrans en veille
-  const deskSpots: { x: number; z: number; face: 1 | -1; row: number }[] = [];
+  // les écrans en veille des autres postes (les îlots sont dans le décor)
+  const deskSpots: { x: number; z: number; row: number }[] = [];
   for (const [zc, row] of [
     [-4.4, 1],
     [-11.2, 5],
   ] as const)
-    for (const x of [-7.2, -5.3, -3.4, 3.4, 5.3, 7.2]) {
-      deskSpots.push({ x, z: zc + 0.42, face: 1, row });
-      deskSpots.push({ x, z: zc - 0.42, face: -1, row: row + 1 });
-    }
-  const nDesks = deskSpots.length;
-  const deskTopMat = new THREE.MeshStandardMaterial({ color: 0x665245, roughness: 0.8 });
-  const tops = new THREE.InstancedMesh(new THREE.BoxGeometry(1.5, 0.035, 0.8), deskTopMat, nDesks);
-  const legs = new THREE.InstancedMesh(new THREE.BoxGeometry(1.4, 0.72, 0.04), darkPanel, nDesks);
-  const bezels = new THREE.InstancedMesh(new THREE.BoxGeometry(0.62, 0.37, 0.03), darkPanel, nDesks);
-  const seats = new THREE.InstancedMesh(new THREE.BoxGeometry(0.5, 0.08, 0.48), darkPanel, nDesks);
-  const backs = new THREE.InstancedMesh(new THREE.BoxGeometry(0.48, 0.6, 0.06), darkPanel, nDesks);
+    for (const x of [-7.2, -5.3, -3.4, 3.4, 5.3, 7.2]) deskSpots.push({ x, z: zc + 0.42, row });
   const codeTex = keep(makeCodeTexture(accent.a));
   const screenMat = new THREE.MeshBasicMaterial({ map: codeTex, toneMapped: false });
-  const facing = deskSpots.filter((d) => d.face === 1);
-  const otherScreens = new THREE.InstancedMesh(new THREE.PlaneGeometry(0.58, 0.33), screenMat, facing.length);
-  const place = (mesh: THREE.InstancedMesh, i: number, x: number, y: number, z: number, ry = 0) => {
-    dummy.position.set(x, y, z);
-    dummy.rotation.set(0, ry, 0);
-    dummy.updateMatrix();
-    mesh.setMatrixAt(i, dummy.matrix);
-  };
-  let si = 0;
+  const otherScreens = new THREE.InstancedMesh(new THREE.PlaneGeometry(0.58, 0.33), screenMat, deskSpots.length);
   deskSpots.forEach((d, i) => {
-    place(tops, i, d.x, 0.74, d.z);
-    place(legs, i, d.x, 0.37, d.z - d.face * 0.36);
-    place(bezels, i, d.x, 1.12, d.z - d.face * 0.25);
-    place(seats, i, d.x + (rnd(i, 3) - 0.5) * 0.2, 0.48, d.z + d.face * 0.62, (rnd(i, 4) - 0.5) * 0.5);
-    place(backs, i, d.x + (rnd(i, 3) - 0.5) * 0.2, 0.85, d.z + d.face * 0.86, (rnd(i, 4) - 0.5) * 0.5);
-    if (d.face === 1) {
-      // la texture de code est partagée : chaque écran en montre un morceau différent
-      place(otherScreens, si, d.x, 1.12, d.z - 0.25 + 0.017);
-      otherScreens.setColorAt(si, new THREE.Color(0, 0, 0));
-      si++;
-    }
+    dummy.position.set(d.x, 1.12, d.z - 0.25 + 0.017);
+    dummy.updateMatrix();
+    otherScreens.setMatrixAt(i, dummy.matrix);
+    otherScreens.setColorAt(i, new THREE.Color(0, 0, 0));
   });
-  for (const m of [tops, legs, bezels, seats, backs]) {
-    m.castShadow = !low;
-    m.receiveShadow = true;
-    office.add(m);
-  }
   office.add(otherScreens);
 
-  // Une alcôve en bois et deux plantes encadrent le poste devant les baies.
-  const oak = new THREE.MeshStandardMaterial({ color: 0x79563c, roughness: 0.85 });
-  const planter = new THREE.MeshStandardMaterial({ color: 0x343e3d, roughness: 0.9 });
-  const foliage = new THREE.MeshStandardMaterial({ color: 0x345b45, roughness: 0.85, side: THREE.DoubleSide });
-  for (const sx of [-1, 1]) {
-    for (let i = 0; i < 12; i++) {
-      box(0.045, CEIL, 0.1, oak, sx * (2.75 + i * 0.1), CEIL / 2, WIN_Z + 0.18, office);
-    }
-    const plant = new THREE.Group();
-    const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.18, 0.48, 24), planter);
-    pot.position.y = 0.24;
-    pot.castShadow = true;
-    plant.add(pot);
-    const soil = new THREE.Mesh(new THREE.CircleGeometry(0.22, 24), darkPanel);
-    soil.rotation.x = -Math.PI / 2;
-    soil.position.y = 0.481;
-    plant.add(soil);
-    for (let i = 0; i < 9; i++) {
-      const angle = i * 2.4;
-      const height = 0.65 + rnd(i, 81) * 0.65;
-      const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.012, height, 5), foliage);
-      stem.position.set(Math.sin(angle) * 0.07, 0.43 + height / 2, Math.cos(angle) * 0.07);
-      plant.add(stem);
-      const leaf = new THREE.Mesh(new THREE.SphereGeometry(1, 12, 8), foliage);
-      leaf.scale.set(0.12, 0.035, 0.38);
-      leaf.position.set(Math.sin(angle) * 0.25, 0.43 + height, Math.cos(angle) * 0.25);
-      leaf.rotation.set(0.35, angle, -0.2);
-      leaf.castShadow = !low;
-      plant.add(leaf);
-    }
-    plant.position.set(sx * 2.15, 0, DESK_Z - 1.05);
+  // Deux plantes en pot (Poly Haven), de tailles et de places différentes,
+  // encadrent le poste ; leurs ombres sont dans la lumière précalculée.
+  for (const [x, z, height, rot] of PLANTS) {
+    const plant = assets.plant.scene.clone(true);
+    const bounds = new THREE.Box3().setFromObject(plant);
+    const scale = height / bounds.getSize(new THREE.Vector3()).y;
+    plant.scale.multiplyScalar(scale);
+    plant.position.set(x, -bounds.min.y * scale, z);
+    plant.rotation.y = rot;
+    plant.traverse((object) => {
+      const mesh = object as THREE.Mesh;
+      if (!mesh.isMesh) return;
+      mesh.castShadow = !low;
+      mesh.receiveShadow = true;
+    });
     office.add(plant);
   }
 
+  // la barre lumineuse du luminaire au-dessus du poste
   const pendantMat = new THREE.MeshBasicMaterial({ color: hdr(0xffdfb8, 0.1), toneMapped: false });
-  box(2.8, 0.06, 0.19, darkPanel, 0, 2.75, DESK_Z - 0.5, office);
-  box(2.68, 0.008, 0.13, pendantMat, 0, 2.716, DESK_Z - 0.5, office);
-  for (const x of [-1.05, 1.05]) box(0.008, CEIL - 2.78, 0.008, mullion, x, (CEIL + 2.78) / 2, DESK_Z - 0.5, office);
+  box(2.72, 0.006, 0.09, pendantMat, 0, 2.722, DESK_Z - 0.5, office);
 
   /* ---------- lumières de la carte ---------- */
   const key = new THREE.SpotLight(0xffffff, 0, 12, 0.5, 0.6, 1.4);
@@ -551,11 +537,12 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
 
   /* ---------- le dev à son poste ---------- */
   // De dos, face à ses écrans et aux baies ; la chaise pivote vers la caméra juste avant la carte.
-  const desk = createWorkstation({ accent: accent.a, lang: o.langKey, login: o.login, seed: o.overall, graphLabel: o.texts.graphLabel });
+  const desk = createWorkstation({ accent: accent.a, lang: o.langKey, login: o.login, seed: o.overall, graphLabel: o.texts.graphLabel, wood: assets.wood, chair: createChair(assets.chair, 0x1d2023) });
   const player = createPlayer(assets.player);
   desk.group.rotation.y = Math.PI;
   desk.group.position.set(0, 0, DESK_Z);
-  player.root.position.set(0, 0.03, 0);
+  // un peu en avant sur l'assise : le dos ne traverse pas le dossier du fauteuil
+  player.root.position.set(0, 0.03, 0.06);
   desk.swivel.add(player.root);
   scene.add(desk.group);
   disposables.push(desk);
@@ -668,6 +655,12 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
   const camLook = new THREE.Vector3();
   const black = new THREE.Color(0, 0, 0);
   const tmpColor = new THREE.Color();
+  /** Couleurs et intensités des groupes de lumière précalculée (réglées à l'œil, d'après les captures). */
+  const NEON = new THREE.Color(0xffdfb8);
+  const WARM = new THREE.Color(0xffe0b9);
+  const NIGHT = new THREE.Color(0x9ab8e6);
+  const tierColor = new THREE.Color(accent.a);
+  const LIGHT = { neon: 1, hero: 1, city: 1, accent: 1 };
 
   const resize = () => {
     const nw = Math.max(1, canvas.clientWidth || window.innerWidth);
@@ -888,22 +881,24 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
 
     /* l'open space : les néons rangée par rangée, les écrans, l'allée */
     let lit = 0;
-    rowMats.forEach((m, r) => {
+    const pops = rowMats.map((m, r) => {
       const at = plan.lights + r * 0.16;
-      const on = t >= at ? 1 : 0;
       const pop = seg(t, at, 0.65);
       m.color.copy(hdr("#ffe1bc", (0.03 + 1.35 * pop) * dim));
-      lit += on / ROWS;
+      lit += (t >= at ? 1 : 0) / ROWS;
+      return pop;
     });
-    officeLights.forEach((l, i) => (l.intensity = 9 * seg(t, plan.lights + i * 0.4, 0.65) * dim));
+    // la lumière précalculée suit les barres : chaque zone à la moyenne de ses rangées
+    ZONES.forEach((rows, z) => baked.set(`z${z}` as "z0", NEON, (rows.reduce((a, r) => a + pops[r]!, 0) / rows.length) * dim * LIGHT.neon));
+    baked.set("hero", WARM, seg(t, plan.doors + 0.2, 1.0) * dim * LIGHT.hero);
+    baked.set("city", NIGHT, dim * LIGHT.city);
+    baked.set("accent", tierColor, seg(t, plan.doors + 0.3, 0.9) * dim * LIGHT.accent);
     hemi.intensity = (0.12 + 0.6 * lit) * dim;
     city.uBright.value = 0.7 * dim;
     pendantMat.color.copy(hdr(0xffdfb8, (0.05 + 1.5 * seg(t, plan.doors + 0.6, 0.8)) * dim));
-    let k = 0;
-    deskSpots.forEach((d) => {
-      if (d.face !== 1) return;
+    deskSpots.forEach((d, k) => {
       const on = 0.25 + 0.75 * seg(t, plan.lights + d.row * 0.16, 0.3);
-      otherScreens.setColorAt(k++, tmpColor.setScalar(on * 0.35 * dim));
+      otherScreens.setColorAt(k, tmpColor.setScalar(on * 0.35 * dim));
     });
     otherScreens.instanceColor!.needsUpdate = true;
     for (let i = 0; i < PATH_N; i++) {
@@ -1069,6 +1064,8 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
       camera,
       bloom,
       dof,
+      /** Intensités de la lumière précalculée, réglables en direct. */
+      light: LIGHT,
       get t() {
         return tNow;
       },

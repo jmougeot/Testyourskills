@@ -13,14 +13,34 @@ Changes: removed animation clips; resized and compressed textures to WebP;
 meshopt compression; seated procedural pose; neutral clothing tint in the renderer.
 This sample is a generic scene character, not a portrait of the scored user.
 
+chair.glb
+"Ergonomic office chair with armrests" by Giimann, CC BY 4.0.
+https://sketchfab.com/3d-models/ergonomic-office-chair-with-armrests-b78e87f34bbc45f297175dd66ece69eb
+https://creativecommons.org/licenses/by/4.0/
+Changes: rescaled to 1.02 m and reoriented (tools/bake/prepare.py); textures
+converted to WebP, meshopt compression; leather tinted black and frame
+darkened in the renderer. Background chairs are a decimated copy with baked
+lighting, inside office.glb.
+
+office.glb, office-lm-*.webp
+Original work for Testyourskills: open-space set modelled and lit in Blender
+(tools/bake/office.py), lighting baked with Cycles. Contains the chair above
+and casts shadows from the plant below.
+
+plant-v2.glb
+Source: Poly Haven, potted_plant_02, CC0.
+https://polyhaven.com/a/potted_plant_02
+Changes: 1K textures converted to WebP, meshopt compression.
+
 walnut-*.webp
 Source: Poly Haven, black_walnut_veneer_02, CC0.
 https://polyhaven.com/a/black_walnut_veneer_02
 Changes: 1K JPEG color, OpenGL normal and roughness maps converted to WebP.
 
-garage_floor_nor.jpg, garage_floor_rough.jpg
-Source: Poly Haven, garage_floor, CC0.
-https://polyhaven.com/a/garage_floor
+carpet-*.webp
+Source: Poly Haven, dirty_carpet, CC0.
+https://polyhaven.com/a/dirty_carpet
+Changes: 1K JPEG color, OpenGL normal and roughness maps converted to WebP.
 
 city.jpg
 Source: Poly Haven, shanghai_bund, CC0; cropped panorama.
