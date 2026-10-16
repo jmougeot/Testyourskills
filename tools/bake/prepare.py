@@ -56,6 +56,18 @@ MODELS = [
     {"uid": "be1d82499209475c8cd1d009df9aaa00", "out": "mouse.glb", "size": ("depth", 0.125), "face": 0, "decimate": 0.15},
     # Sous-main de bureau. mfk, CC BY 4.0.
     {"uid": "7690f727d87847aaa737c8110c8e6531", "out": "deskmat.glb", "size": ("width", 0.9), "face": 0, "decimate": 0.15},
+    # Casque Sony MDR-7506, posé à plat. AndreiVNK, CC BY 4.0.
+    {"uid": "05735b74d3524f00b648231138122a28", "out": "desk-headphones.glb", "size": ("width", 0.19), "face": 0, "tilt": 90, "tex": 512, "decimate": 0.5},
+    # Téléphone (iPhone 13 Pro Max) posé écran contre le bureau : sans sa face
+    # avant ni son logo. DatSketch, CC BY 4.0.
+    {"uid": "4328dea00e47497dbeac73c556121bc9", "out": "phone.glb", "size": ("depth", 0.161), "face": 0, "tilt": -90, "tex": 512, "decimate": 0.5, "drop": r"Wallpaper|Screen Glass|Mic_0|Logo|^Body_(Lens|Camera Glass|Material)_0$"},
+    # Gourde inox, sans la sphère d'environnement. Igrium, CC BY 4.0.
+    {"uid": "885543a7679c4026abbd6499185caf08", "out": "desk-bottle.glb", "size": ("height", 0.24), "face": 0, "drop": r"^Icosphere$", "tex": 512},
+    # Poly Haven (CC0) : carnet fermé en cuir, bloc de post-it, stylo plume, petite plante grasse.
+    {"polyhaven": "binder_notebook", "out": "notebook.glb", "size": ("depth", 0.2), "face": 0, "keep": r"_closed$", "tex": 512, "decimate": 0.5},
+    {"polyhaven": "office_notepads", "out": "postit.glb", "size": ("width", 0.072), "face": 0, "keep": r"_sticky_stack$", "tex": 512},
+    {"polyhaven": "stationery_supplies", "out": "pen.glb", "size": ("width", 0.131), "face": 0, "keep": r"_pen_fancy$", "tex": 512},
+    {"polyhaven": "potted_plant_04", "out": "desk-plant.glb", "size": ("height", 0.22), "face": 0, "tex": 512, "decimate": 0.6},
     # Le dev : un humain scanné, riggé (squelette complet, doigts, yeux), sans son animation de marche.
     # Renderpeople, CC BY 4.0. Il regarde vers +z three.js ; la scène le pose assis (web/src/three/player.ts).
     {"uid": "143a2b1ea5eb4385ae90a73657aca3bc", "out": "developer-v3.glb", "size": ("height", 1.78), "rigged": True},

@@ -59,6 +59,21 @@ deskmat.glb
 https://sketchfab.com/3d-models/mouse-pad-keyboard-pad-7690f727d87847aaa737c8110c8e6531
 Changes: rescaled to 90 cm; felt and red edge recoloured grey in the renderer.
 
+desk-headphones.glb
+"Sony MDR-7506 Headphones" by AndreiVNK, CC BY 4.0.
+https://sketchfab.com/3d-models/sony-mdr-7506-headphones-05735b74d3524f00b648231138122a28
+Changes: laid flat, textures reduced to 512 px.
+
+phone.glb
+"Apple iPhone 13 Pro Max" by DatSketch, CC BY 4.0.
+https://sketchfab.com/3d-models/apple-iphone-13-pro-max-4328dea00e47497dbeac73c556121bc9
+Changes: laid face down; screen side and logo removed; rescaled to 16.1 cm.
+
+desk-bottle.glb
+"Water Bottle" by Igrium, CC BY 4.0.
+https://sketchfab.com/3d-models/water-bottle-885543a7679c4026abbd6499185caf08
+Changes: environment sphere removed; rescaled to 24 cm, textures 512 px.
+
 All models above: textures converted to WebP, meshopt compression
 (tools/bake/prepare.py). CC BY 4.0: https://creativecommons.org/licenses/by/4.0/
 
@@ -86,6 +101,29 @@ plant-v2.glb
 Source: Poly Haven, potted_plant_02, CC0.
 https://polyhaven.com/a/potted_plant_02
 Changes: 1K textures converted to WebP, meshopt compression.
+
+notebook.glb
+Source: Poly Haven, binder_notebook by DaDrood, CC0.
+https://polyhaven.com/a/binder_notebook
+Changes: closed notebook only.
+
+postit.glb
+Source: Poly Haven, office_notepads by Ulan Cabanilla, CC0.
+https://polyhaven.com/a/office_notepads
+Changes: sticky-note stack only, textures 512 px.
+
+pen.glb
+Source: Poly Haven, stationery_supplies by Mateusz Sadek, CC0.
+https://polyhaven.com/a/stationery_supplies
+Changes: fountain pen only, textures 512 px.
+
+desk-plant.glb
+Source: Poly Haven, potted_plant_04 by James Ray Cock, CC0.
+https://polyhaven.com/a/potted_plant_04
+Changes: rescaled to 22 cm.
+
+Poly Haven models above: 1K glTF, textures converted to WebP, meshopt
+compression (tools/bake/prepare.py).
 
 walnut-*.webp
 Source: Poly Haven, black_walnut_veneer_02, CC0.

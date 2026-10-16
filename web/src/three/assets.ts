@@ -34,7 +34,7 @@ export interface WalkoutAssets {
 const BASE = "/3d/";
 
 /** Les modèles du poste du dev, chacun dans web/public/3d/{nom}.glb. */
-export const DESK_MODELS = ["desk", "monitor", "keyboard", "mouse", "deskmat", "mug", "lamp"] as const;
+export const DESK_MODELS = ["desk", "monitor", "keyboard", "mouse", "deskmat", "mug", "lamp", "desk-headphones", "phone", "notebook", "pen", "postit", "desk-bottle", "desk-plant"] as const;
 export type DeskModel = (typeof DESK_MODELS)[number];
 
 /** Géométries et matières des modèles chargés : partagées par toutes les scènes

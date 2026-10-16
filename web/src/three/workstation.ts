@@ -1,7 +1,7 @@
 // Le poste du dev : bureau assis-debout en noyer, tapis et fauteuil de travail,
 // trois écrans (le code dans son langage, un terminal où les
-// tests passent, le graphe de contributions), clavier rétroéclairé. Tous les
-// objets sont de vrais modèles. Repère
+// tests passent, le graphe de contributions), clavier rétroéclairé, et ce qui
+// traîne sur un vrai bureau. Tous les objets sont de vrais modèles. Repère
 // local : le dev est assis à l'origine et regarde vers +z ; les écrans lui font
 // face. Les écrans se redessinent au fil de la frappe.
 import * as THREE from "three";
@@ -105,8 +105,8 @@ function snippet(lang: string | undefined, login: string): Tok[][] {
   ];
 }
 
-/** Le bureau et les objets du poste (Sketchfab, CC BY ; tools/bake/prepare.py) :
- * origine au sol, l'utilisateur côté -z. */
+/** Le bureau et les objets du poste (Sketchfab, CC BY ; Poly Haven, CC0 ;
+ * tools/bake/prepare.py) : origine au sol, l'utilisateur côté -z. */
 export type DeskProps = Record<DeskModel, GLTF>;
 
 /** Une copie d'un modèle, ses matières propres (on les retouche par copie). */
@@ -201,6 +201,16 @@ export function createWorkstation(o: { accent: string; lang?: string; login: str
   group.add(keyboard);
   group.add(place(o.props.mouse, -0.37, TOP + 0.006, 0.5, -0.12));
   group.add(place(o.props.mug, -0.76, TOP, 0.5, 2.3));
+  // ce qui traîne sur un vrai poste : téléphone retourné, gourde inox et
+  // plante grasse à droite ; casque, carnet et stylo, post-it à gauche
+  group.add(place(o.props.phone, -0.56, TOP, 0.66, -0.25));
+  group.add(place(o.props["desk-bottle"], -0.95, TOP, 0.62, 0.6));
+  group.add(place(o.props["desk-plant"], -0.97, TOP, 1.04, 0.4));
+  group.add(place(o.props["desk-headphones"], 0.8, TOP, 0.52, 0.5));
+  group.add(place(o.props.notebook, 0.5, TOP, 0.44, 0.18));
+  group.add(place(o.props.pen, 0.52, TOP + 0.025, 0.42, 0.9));
+  // le liseré rouge (la colle) du bloc de post-it tourné vers les écrans
+  group.add(place(o.props.postit, 0.56, TOP, 0.68, 0.3 + Math.PI));
   // Petite lampe orientée vers le plateau : contraste chaud / écrans froids.
   const lamp = place(o.props.lamp, 0.99, TOP, 0.9, 1.22);
   lamp.traverse((c) => {
