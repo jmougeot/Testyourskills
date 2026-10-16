@@ -646,7 +646,8 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
     const mats = (obj as THREE.Mesh).material;
     for (const m of Array.isArray(mats) ? mats : mats ? [mats] : []) {
       const std = m as THREE.MeshStandardMaterial;
-      if (std.isMeshStandardMaterial && std.envMapIntensity !== 1) std.envMap = studio;
+      // la cabine a déjà la sienne : ses propres reflets, photographiés de l'intérieur
+      if (std.isMeshStandardMaterial && std.envMapIntensity !== 1 && !std.envMap) std.envMap = studio;
     }
   });
 
