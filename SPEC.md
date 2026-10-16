@@ -356,7 +356,7 @@ Pour refaire le décor : `blender -b -P tools/bake/office.py` (environ une heure
 La cabine garde sa lumière précalculée en code (`cabin.ts`) ; ses parois n'évaluent en direct que la dalle du plafond et les lumières ponctuelles.
 
 **Assets** (`web/public/3d`, environ 6 Mo, préchargés pendant l'attente du §6.2, qui dure une dizaine de secondes) :
-- le décor de l'open space et sa lumière : `office.glb` et `office-lm-*.webp` (atlas 2048², un par groupe) ;
+- le décor de l'open space et sa lumière : `office.glb` et `office-lm-*.webp` (atlas 2048², un par groupe, WebP qualité 75 : l'éclairement est assez lisse pour ne montrer ni bandes ni blocs) ;
 - la ville de nuit : Poly Haven `shanghai_bund`, CC0, recadrée sur la ligne d'horizon et posée sur un cylindre derrière les baies ;
 - bois et moquette : Poly Haven `black_walnut_veneer_02` et `dirty_carpet`, CC0, couleur/normales/rugosité en WebP 1K ; la moquette ne garde que la luminance de sa texture, en dalles de 50 cm posées en damier ;
 - plantes : Poly Haven `potted_plant_02`, CC0 ;

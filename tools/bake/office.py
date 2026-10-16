@@ -612,7 +612,8 @@ for g in GROUPS:
     rgba[..., 0] = rgba[..., 1] = rgba[..., 2] = enc
     out.pixels.foreach_set(rgba.ravel())
     out.file_format = "WEBP"
-    out.save(filepath=os.path.join(OUT, f"office-lm-{g}.webp"), quality=90)
+    # l'éclairement est très lisse : 75 suffit sans bandes ni blocs (4 fois plus léger que 90)
+    out.save(filepath=os.path.join(OUT, f"office-lm-{g}.webp"), quality=75)
     # three.js : lumière diffuse = irradiance × albédo / π, et on stocke E / π
     meta["groups"][g] = {"scale": scale * math.pi}
     # les objets éclairés par sommet, à la même échelle
