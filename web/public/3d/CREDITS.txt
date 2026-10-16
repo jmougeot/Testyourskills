@@ -49,6 +49,10 @@ Original work for Testyourskills: open-space set modelled and lit in Blender
 (tools/bake/office.py), lighting baked with Cycles. Contains the chair above
 and casts shadows from the plant below.
 
+cabin-lm.webp
+Original work for Testyourskills: lighting of the elevator cabin, baked with
+Cycles in Blender (tools/bake/cabin.py) on a copy of the cabin built in code.
+
 plant-v2.glb
 Source: Poly Haven, potted_plant_02, CC0.
 https://polyhaven.com/a/potted_plant_02

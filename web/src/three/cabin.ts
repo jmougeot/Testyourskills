@@ -1,12 +1,15 @@
 // La cabine d'ascenseur de la révélation, d'après de vraies cabines de bureaux
 // (KONE, Otis) : mesures, matières et lumière. Construite une fois ; la
 // séquence (walkout.ts) anime les portes, l'afficheur et la lumière de la gaine.
+// Sa lumière est précalculée dans Blender (tools/bake/cabin.py) : toute cote
+// ou matière changée ici se reporte dans cabin.py, puis on recalcule.
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import { RectAreaLightUniformsLib } from "three/examples/jsm/lights/RectAreaLightUniformsLib.js";
 import type { PbrSet } from "./assets";
 import { limitLights } from "./baked";
 import { createWallScreen, type WallScreen } from "./ledWall";
+import atlas from "./cabinLight.json";
 
 /* ---------- géométrie (mètres) : sol à y = 0, les portes en z = 0, la cabine vers +z ---------- */
 export const CAB_W = 2.1; // x de -1,05 à 1,05, z de 0 (portes) à 2,6
@@ -23,129 +26,32 @@ const hdr = (hex: THREE.ColorRepresentation, k: number) => new THREE.Color(hex).
 const V = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z);
 
 /* ---------- la lumière précalculée ----------
- * Ce qu'un moteur de rendu « cuit » dans une lightmap, calculé ici à la
- * construction, texel par texel : chaque spot du plafond est un faisceau de
- * 70° environ, sa lumière dessine sur les parois les arcs (« festons ») des
- * vraies cabines, plus une lumière renvoyée diffuse ; les angles et les
- * jonctions s'assombrissent (occlusion ambiante), les mains courantes portent
- * une ombre douce. */
-const DOWNLIGHTS = [-0.5, 0.5].flatMap((x) => [0.5, 1.3, 2.1].map((z) => V(x, CAB_H - 0.02, z)));
-const BEAM_IN = Math.cos((30 * Math.PI) / 180);
-const BEAM_OUT = Math.cos((40 * Math.PI) / 180);
-const RAIL = { y: 0.92, inset: 0.065, r: 0.019, z0: 0.45, z1: CAB_D - 0.25 };
-/** Intensité des lightmaps (lumière diffuse = texel × intensité × albédo / π). */
-const LIGHTMAP_K = 9;
+ * Calculée dans Blender (tools/bake/cabin.py, Cycles) sur une copie de la
+ * cabine aux mêmes cotes et aux mêmes matières : la lumière des six spots,
+ * leurs arcs (« festons ») sur les parois, ses vrais rebonds (la pierre éclaire
+ * le plafond, l'inox renvoie les spots), les ombres de contact des mains
+ * courantes, des platines, de la plinthe et de la façade. Une texture pour
+ * cinq surfaces : les deux parois, le fond, le sol et le plafond. */
+/** Les six spots du plafond (x, z), comme `DOWNLIGHTS` dans cabin.py. */
+const DOWNLIGHTS = [-0.5, 0.5].flatMap((x) => [0.5, 1.3, 2.1].map((z) => [x, z] as const));
+type Surface = keyof typeof atlas.rects;
+/** Exposition de la lumière précalculée : les parois au même niveau moyen
+ * qu'avant le précalcul dans Blender, quand elle était calculée en code. */
+const CABIN_EXPOSURE = 6;
 
 interface BakePlane {
-  /** Coin (u = 0, v = 0), axes unitaires, dimensions (mètres), normale vers l'intérieur. */
+  /** La surface dans l'atlas. Coin (u = 0, v = 0), axes unitaires, dimensions (mètres) : comme `PLANES` dans cabin.py. */
+  name: Surface;
   origin: THREE.Vector3;
   u: THREE.Vector3;
   v: THREE.Vector3;
   w: number;
   h: number;
-  n: THREE.Vector3;
-  res: [number, number];
 }
-const sideWall = (sx: number): BakePlane => ({ origin: V((sx * CAB_W) / 2, 0, 0), u: V(0, 0, 1), v: V(0, 1, 0), w: CAB_D, h: CAB_H, n: V(-sx, 0, 0), res: [192, 192] });
-const BACK: BakePlane = { origin: V(-CAB_W / 2, 0, CAB_D), u: V(1, 0, 0), v: V(0, 1, 0), w: CAB_W, h: CAB_H, n: V(0, 0, -1), res: [128, 128] };
-const FLOOR: BakePlane = { origin: V(-CAB_W / 2, 0, 0), u: V(1, 0, 0), v: V(0, 0, 1), w: CAB_W, h: CAB_D, n: V(0, 1, 0), res: [128, 160] };
-const CEILING: BakePlane = { origin: V(-CAB_W / 2, CAB_H, 0), u: V(1, 0, 0), v: V(0, 0, 1), w: CAB_W, h: CAB_D, n: V(0, -1, 0), res: [64, 80] };
-
-const smooth = (a: number, b: number, x: number) => {
-  const t = Math.min(1, Math.max(0, (x - a) / (b - a)));
-  return t * t * (3 - 2 * t);
-};
-
-/** Ombre d'une main courante (cylindre le long de z) sur le trajet p → l : 0 dans l'ombre, 1 en pleine lumière. */
-function railVisibility(p: THREE.Vector3, l: THREE.Vector3): number {
-  let vis = 1;
-  for (const sx of [-1, 1]) {
-    const rx = sx * (CAB_W / 2 - RAIL.inset);
-    // point du trajet le plus proche de l'axe de la main courante, dans le plan x-y
-    const dx = l.x - p.x;
-    const dy = l.y - p.y;
-    const len2 = dx * dx + dy * dy;
-    if (len2 < 1e-6) continue;
-    const t = Math.min(1, Math.max(0, ((rx - p.x) * dx + (RAIL.y - p.y) * dy) / len2));
-    const z = p.z + (l.z - p.z) * t;
-    if (z < RAIL.z0 || z > RAIL.z1) continue;
-    const d = Math.hypot(p.x + dx * t - rx, p.y + dy * t - RAIL.y);
-    // pénombre : plus large quand la main courante est loin de la surface
-    const reach = Math.hypot(dx * t, dy * t);
-    vis *= smooth(RAIL.r * 0.5, RAIL.r + 0.06 * reach + 0.004, d);
-  }
-  return vis;
-}
-
-/** Occlusion ambiante : les angles de la cabine retiennent la lumière. */
-function occlusion(p: THREE.Vector3, n: THREE.Vector3): number {
-  const dists = [p.x + CAB_W / 2, CAB_W / 2 - p.x, p.y, CAB_H - p.y, p.z, CAB_D - p.z];
-  const normals = [V(1, 0, 0), V(-1, 0, 0), V(0, 1, 0), V(0, -1, 0), V(0, 0, 1), V(0, 0, -1)];
-  let ao = 1;
-  dists.forEach((d, i) => {
-    if (normals[i]!.dot(n) > 0.9) return; // la surface elle-même
-    ao *= 1 - 0.42 * Math.exp(-Math.max(0, d) / 0.09) - 0.12 * Math.exp(-Math.max(0, d) / 0.45);
-  });
-  // la main courante, de près
-  for (const sx of [-1, 1]) {
-    const d = Math.hypot(p.x - sx * (CAB_W / 2 - RAIL.inset), p.y - RAIL.y);
-    if (p.z > RAIL.z0 && p.z < RAIL.z1) ao *= 1 - 0.35 * Math.exp(-Math.max(0, d - RAIL.r) / 0.025);
-  }
-  return ao;
-}
-
-/** Calcule la lightmap d'une surface (demi-flottants, linéaire). */
-function bakeLight(pl: BakePlane): THREE.DataTexture {
-  const [W, H] = pl.res;
-  const data = new Uint16Array(W * H * 4);
-  const p = new THREE.Vector3();
-  const w = new THREE.Vector3();
-  const warm = [1, 0.93, 0.85];
-  for (let j = 0; j < H; j++)
-    for (let i = 0; i < W; i++) {
-      p.copy(pl.origin)
-        .addScaledVector(pl.u, ((i + 0.5) / W) * pl.w)
-        .addScaledVector(pl.v, ((j + 0.5) / H) * pl.h)
-        .addScaledVector(pl.n, 0.002);
-      let e = 0;
-      for (const l of DOWNLIGHTS) {
-        w.subVectors(p, l);
-        const d2 = w.lengthSq();
-        w.normalize();
-        const emit = -w.y; // cosinus avec l'axe du spot (vers le bas)
-        if (emit <= 0) continue;
-        const incid = -w.dot(pl.n);
-        if (incid <= 0) continue;
-        const beam = smooth(BEAM_OUT, BEAM_IN, emit) * emit * emit + 0.06 * emit;
-        e += (beam * incid * railVisibility(p, l)) / d2;
-      }
-      // la lumière renvoyée par le sol et les parois, à peu près uniforme
-      const bounce = 0.075 + 0.2 * Math.max(0, -pl.n.y);
-      e = (e * 0.55 + bounce) * occlusion(p, pl.n);
-      const k = (j * W + i) * 4;
-      for (let c = 0; c < 3; c++) data[k + c] = THREE.DataUtils.toHalfFloat(e * warm[c]!);
-      data[k + 3] = THREE.DataUtils.toHalfFloat(1);
-    }
-  const t = new THREE.DataTexture(data, W, H, THREE.RGBAFormat, THREE.HalfFloatType);
-  t.magFilter = THREE.LinearFilter;
-  t.minFilter = THREE.LinearFilter;
-  t.channel = 1;
-  t.needsUpdate = true;
-  return t;
-}
-
-/** Les lightmaps ne dépendent que de la cabine, pas de la carte : calculées une
- * fois par page (pendant l'échauffement), gardées pour les scènes suivantes. */
-const lightmaps = new Map<string, THREE.DataTexture>();
-function cachedLight(pl: BakePlane): THREE.DataTexture {
-  const key = JSON.stringify(pl);
-  let t = lightmaps.get(key);
-  if (!t) {
-    t = bakeLight(pl);
-    lightmaps.set(key, t);
-  }
-  return t;
-}
+const sideWall = (sx: number): BakePlane => ({ name: sx < 0 ? "left" : "right", origin: V((sx * CAB_W) / 2, 0, 0), u: V(0, 0, 1), v: V(0, 1, 0), w: CAB_D, h: CAB_H });
+const BACK: BakePlane = { name: "back", origin: V(-CAB_W / 2, 0, CAB_D), u: V(1, 0, 0), v: V(0, 1, 0), w: CAB_W, h: CAB_H };
+const FLOOR: BakePlane = { name: "floor", origin: V(-CAB_W / 2, 0, 0), u: V(1, 0, 0), v: V(0, 0, 1), w: CAB_W, h: CAB_D };
+const CEILING: BakePlane = { name: "ceiling", origin: V(-CAB_W / 2, CAB_H, 0), u: V(1, 0, 0), v: V(0, 0, 1), w: CAB_W, h: CAB_D };
 
 /* ---------- les reflets projetés sur la boîte ----------
  * Une carte d'environnement est photographiée depuis un seul point : sans
@@ -185,16 +91,18 @@ function boxProjection(mat: THREE.Material, probe: THREE.Vector3, min: THREE.Vec
   mat.customProgramCacheKey = () => "cabin-box-projection";
 }
 
-/** Les coordonnées de lightmap (uv1) d'un maillage posé sur une surface précalculée. */
+/** Les coordonnées de lightmap (uv1) d'un maillage posé sur une surface précalculée : sa place dans l'atlas. */
 function lightUv(mesh: THREE.Mesh, pl: BakePlane) {
   mesh.updateMatrixWorld(true);
   const pos = mesh.geometry.attributes.position!;
   const uv1 = new Float32Array(pos.count * 2);
   const w = new THREE.Vector3();
+  const [x0, y0, rw, rh] = atlas.rects[pl.name];
+  const [W, H] = atlas.size;
   for (let i = 0; i < pos.count; i++) {
     w.fromBufferAttribute(pos, i).applyMatrix4(mesh.matrixWorld).sub(pl.origin);
-    uv1[i * 2] = w.dot(pl.u) / pl.w;
-    uv1[i * 2 + 1] = w.dot(pl.v) / pl.h;
+    uv1[i * 2] = (x0! + (w.dot(pl.u) / pl.w) * rw!) / W!;
+    uv1[i * 2 + 1] = (y0! + (w.dot(pl.v) / pl.h) * rh!) / H!;
   }
   mesh.geometry.setAttribute("uv1", new THREE.BufferAttribute(uv1, 2));
 }
@@ -205,6 +113,8 @@ export interface CabinOptions {
   /** Couleur du tier (filets de LED, bouton de l'étage). */
   accent: string;
   wood: PbrSet;
+  /** L'atlas de lumière précalculée (tools/bake/cabin.py). */
+  light: THREE.Texture;
   /** L'étage d'arrivée (la note) : numéros de la boîte à boutons. */
   floor: number;
   lang: "fr" | "en";
@@ -311,23 +221,22 @@ export function createCabin(o: CabinOptions): Cabin {
 
   const cabin = new THREE.Group();
   scene.add(cabin);
-  // la lumière des spots, précalculée par surface : une matière par surface, qui partage les textures
+  // la lumière des spots, précalculée : un seul atlas pour les cinq surfaces
   const lightmapped: THREE.Material[] = [];
-  const baked = <M extends THREE.MeshStandardMaterial>(mat: M, plane: BakePlane): M => {
-    const m = mat.clone() as M;
-    m.lightMap = cachedLight(plane);
-    m.lightMapIntensity = LIGHTMAP_K;
-    cabinMats.push(m);
+  const baked = <M extends THREE.MeshStandardMaterial>(m: M): M => {
+    m.lightMap = o.light;
+    m.lightMapIntensity = atlas.scale * CABIN_EXPOSURE;
     lightmapped.push(m);
     return m;
   };
-  // sol et plafond : leur lumière est précalculée (lightBake)
-  const floorMesh = new THREE.Mesh(new THREE.PlaneGeometry(CAB_W, CAB_D), baked(stoneMat, FLOOR));
+  baked(walnut);
+  // sol et plafond
+  const floorMesh = new THREE.Mesh(new THREE.PlaneGeometry(CAB_W, CAB_D), baked(stoneMat));
   floorMesh.rotation.x = -Math.PI / 2;
   floorMesh.position.set(0, 0, CAB_D / 2);
   cabin.add(floorMesh);
   lightUv(floorMesh, FLOOR);
-  const ceilMesh = new THREE.Mesh(new THREE.PlaneGeometry(CAB_W, CAB_D), baked(ceilMat, CEILING));
+  const ceilMesh = new THREE.Mesh(new THREE.PlaneGeometry(CAB_W, CAB_D), baked(ceilMat));
   ceilMesh.rotation.x = Math.PI / 2;
   ceilMesh.position.set(0, CAB_H, CAB_D / 2);
   cabin.add(ceilMesh);
@@ -341,12 +250,11 @@ export function createCabin(o: CabinOptions): Cabin {
   for (const sx of [-1, 1]) {
     const x = (sx * CAB_W) / 2;
     const wall = sideWall(sx);
-    const wood = baked(walnut, wall);
     box(0.02, CAB_H, CAB_D, reveal, x + sx * 0.01, CAB_H / 2, CAB_D / 2, cabin);
     for (let i = 0; i < panelsZ.length - 1; i++) {
       const z0 = panelsZ[i]! + JOINT / 2;
       const z1 = panelsZ[i + 1]! - JOINT / 2;
-      lightUv(panel(z1 - z0, CAB_H - KICK - 0.03, wood, x - sx * 0.002, KICK + (CAB_H - KICK - 0.03) / 2 + 0.005, (z0 + z1) / 2, (-sx * Math.PI) / 2, cabin), wall);
+      lightUv(panel(z1 - z0, CAB_H - KICK - 0.03, walnut, x - sx * 0.002, KICK + (CAB_H - KICK - 0.03) / 2 + 0.005, (z0 + z1) / 2, (-sx * Math.PI) / 2, cabin), wall);
     }
     // plinthe inox
     box(0.006, KICK, CAB_D, brushedSteel, x - sx * 0.003, KICK / 2, CAB_D / 2, cabin);
@@ -374,25 +282,24 @@ export function createCabin(o: CabinOptions): Cabin {
     box(0.007, CAB_H - KICK - 0.04, 0.007, ledStrip, x - sx * 0.006, KICK + (CAB_H - KICK) / 2, 0.01, cabin);
     box(0.007, 0.007, CAB_D, ledStrip, x - sx * 0.006, CAB_H - 0.01, CAB_D / 2, cabin);
   }
-  lightUv(panel(CAB_W, CAB_H - KICK, baked(walnut, BACK), 0, KICK + (CAB_H - KICK) / 2, CAB_D - 0.002, Math.PI, cabin), BACK);
+  lightUv(panel(CAB_W, CAB_H - KICK, walnut, 0, KICK + (CAB_H - KICK) / 2, CAB_D - 0.002, Math.PI, cabin), BACK);
   box(CAB_W, KICK, 0.006, brushedSteel, 0, KICK / 2, CAB_D - 0.003, cabin);
   // plafond : six spots ronds, très lumineux, dans un cerclage inox
   const spotGeo = new THREE.CircleGeometry(0.045, 24);
   const ringGeo = new THREE.RingGeometry(0.045, 0.062, 32);
   const downMat = new THREE.MeshBasicMaterial({ color: hdr("#fff1de", 6), toneMapped: false });
-  for (const x of [-0.5, 0.5])
-    for (const z of [0.5, 1.3, 2.1]) {
-      const d = new THREE.Mesh(spotGeo, downMat);
-      d.rotation.x = Math.PI / 2;
-      d.position.set(x, CAB_H - 0.002, z);
-      const r = new THREE.Mesh(ringGeo, steel);
-      r.rotation.x = Math.PI / 2;
-      r.position.set(x, CAB_H - 0.003, z);
-      cabin.add(d, r);
-    }
-  // la lumière en direct : un éclairage d'ensemble faible (les reflets du bois
-  // et de la pierre ; le reste est précalculé), et les deux spots de devant qui
-  // lèchent la façade en inox
+  for (const [x, z] of DOWNLIGHTS) {
+    const d = new THREE.Mesh(spotGeo, downMat);
+    d.rotation.x = Math.PI / 2;
+    d.position.set(x, CAB_H - 0.002, z);
+    const r = new THREE.Mesh(ringGeo, steel);
+    r.rotation.x = Math.PI / 2;
+    r.position.set(x, CAB_H - 0.003, z);
+    cabin.add(d, r);
+  }
+  // la lumière en direct, pour l'inox seulement (les surfaces précalculées ne
+  // l'évaluent pas) : la dalle du plafond, qui fait briller la façade, et les
+  // deux spots de devant qui la lèchent
   RectAreaLightUniformsLib.init();
   const cabinLight = new THREE.RectAreaLight(0xffe7cf, 1.6, 1.4, 2.0);
   cabinLight.position.set(0, CAB_H - 0.01, 1.3);
@@ -498,10 +405,11 @@ export function createCabin(o: CabinOptions): Cabin {
   // vraie place et se décale quand la caméra avance
   const probe = V(0, 1.45, 1.4);
   for (const m of cabinMats) boxProjection(m, probe, V(-CAB_W / 2, 0, -0.02), V(CAB_W / 2, CAB_H, CAB_D));
-  // Parois, sol et plafond ont leur lumière précalculée : ils ne gardent en
-  // direct que la dalle du plafond (les reflets) et les lumières ponctuelles
-  // (l'éclat du pack), pas les projecteurs du bureau ni leurs ombres.
-  for (const m of lightmapped) limitLights(m, ["NUM_RECT_AREA", "NUM_POINT_LIGHTS"], "cabin-lightmapped");
+  // Parois, sol et plafond ont leur lumière précalculée et leurs reflets dans
+  // la cabine photographiée : ils ne gardent en direct que les lumières
+  // ponctuelles (l'éclat du pack), ni la dalle du plafond (elle doublerait la
+  // lumière des spots et noierait les festons), ni les projecteurs du bureau.
+  for (const m of lightmapped) limitLights(m, ["NUM_POINT_LIGHTS"], "cabin-lightmapped");
   const pmrem = new THREE.PMREMGenerator(renderer);
   let cabinEnv: THREE.Texture | null = null;
   for (let pass = 0; pass < 2; pass++) {
