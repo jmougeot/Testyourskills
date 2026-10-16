@@ -1,18 +1,5 @@
 Testyourskills — 3D scene asset credits
 
-developer-v2.glb
-Source: Babylon.js Assets, mixamo/Characters/rpm.glb
-https://github.com/BabylonJS/Assets/blob/master/mixamo/Characters/rpm.glb
-The source directory identifies its files as originating from Mixamo:
-https://github.com/BabylonJS/Assets/blob/master/mixamo/license.txt
-Character model: Ready Player Me / Wolf3D; sample supplied by Babylon.js contributors.
-Repository license: CC BY 4.0, except asset-specific terms.
-https://github.com/BabylonJS/Assets/blob/master/LICENSE
-https://helpx.adobe.com/creative-cloud/faq/mixamo-faq.html
-Changes: removed animation clips; resized and compressed textures to WebP;
-meshopt compression; seated procedural pose; neutral clothing tint in the renderer.
-This sample is a generic scene character, not a portrait of the scored user.
-
 developer-v3.glb
 "Nathan Animated 003 - Walking 3D Man" by Renderpeople, CC BY 4.0.
 https://sketchfab.com/3d-models/nathan-animated-003-walking-3d-man-143a2b1ea5eb4385ae90a73657aca3bc

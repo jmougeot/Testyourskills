@@ -82,7 +82,7 @@ export function preloadWalkoutAssets(): Promise<WalkoutAssets> {
         t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping;
         return t;
       }),
-      gltf.loadAsync(BASE + "developer-v2.glb"),
+      gltf.loadAsync(BASE + "developer-v3.glb"),
       new FontLoader().loadAsync(BASE + "barlow-800.typeface.json"),
       surface(tex, "walnut"),
       bakedOffice(gltf),

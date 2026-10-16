@@ -1028,7 +1028,7 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
       const turn = inOut(seg(t, T_TURN, 0.75));
       desk.swivel.rotation.y = turn * Math.PI;
       const typing = 1 - seg(t, T_TURN - 0.15, 0.3);
-      player.pose(t, typing, turn);
+      player.pose(t, typing, turn, camera.position);
       desk.update(Math.max(0, t - plan.doors), seg(t, plan.doors - 0.2, 0.6) * dim);
     }
 
