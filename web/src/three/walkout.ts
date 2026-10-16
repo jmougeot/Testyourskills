@@ -337,7 +337,7 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
     disposables.push({ dispose: () => glassReflection?.mesh.dispose() });
   }
   // la ville de nuit
-  const city = createCityBackdrop(assets.city, 120, 70, -18, scene.background);
+  const city = createCityBackdrop(assets.city, 120, 1.5, scene.background);
   city.mesh.position.set(0, 0, DESK_Z);
   scene.add(city.mesh);
 
@@ -926,7 +926,7 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
     baked.set("city", NIGHT, dim * LIGHT.city);
     baked.set("accent", tierColor, seg(t, plan.doors + 0.3, 0.9) * dim * LIGHT.accent);
     hemi.intensity = (0.12 + 0.6 * lit) * dim;
-    city.uBright.value = 0.7 * dim;
+    city.uBright.value = 0.85 * dim;
     if (glassReflection) {
       // le miroir redessine la scène : seulement une fois les portes ouvertes
       glassReflection.mesh.visible = t >= plan.doors;

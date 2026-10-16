@@ -67,10 +67,6 @@ Source: Poly Haven, dirty_carpet, CC0.
 https://polyhaven.com/a/dirty_carpet
 Changes: 1K JPEG color, OpenGL normal and roughness maps converted to WebP.
 
-city.jpg
-Source: Poly Haven, shanghai_bund, CC0; cropped panorama.
-https://polyhaven.com/a/shanghai_bund
-
 Poly Haven asset license: https://polyhaven.com/license
 
 barlow-800.typeface.json

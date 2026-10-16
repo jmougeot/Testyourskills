@@ -40,28 +40,28 @@ const CITY_FRAG = `
 uniform sampler2D uMap; uniform float uBright; uniform vec3 uBg; varying vec2 vUv;
 void main(){
   vec2 uv = vec2(1.0 - vUv.x, vUv.y);
-  vec3 c = texture2D(uMap, uv).rgb;
-  // nuit plus profonde : ciel assombri, lumières de la ville gardées
-  float luma = dot(c, vec3(0.299, 0.587, 0.114));
-  float sky = smoothstep(0.45, 0.85, uv.y);
-  vec3 night = mix(vec3(luma), c, 0.85) * mix(1.0, 0.35, sky);
-  night += pow(max(c - 0.55, 0.0), vec3(2.0)) * 2.5; // les néons percent
-  // bords fondus dans la nuit
-  float edge = max(max(smoothstep(0.86, 1.0, uv.y), 1.0 - smoothstep(0.0, 0.1, uv.y)), max(1.0 - smoothstep(0.0, 0.08, uv.x), smoothstep(0.92, 1.0, uv.x)));
-  gl_FragColor = vec4(mix(night * uBright, uBg, edge), 1.0);
+  vec3 c = texture2D(uMap, uv).rgb * uBright;
+  // bords gauche et droit fondus dans la nuit
+  float edge = max(1.0 - smoothstep(0.0, 0.06, uv.x), smoothstep(0.94, 1.0, uv.x));
+  gl_FragColor = vec4(mix(c, uBg, edge), 1.0);
 }`;
 
+/** Le cadrage du rendu de la ville (tools/bake/city.py) : largeur en degrés, hauteur sous et sur l'horizon. */
+export const CITY_VIEW = { arc: 100, below: 14, above: 16 };
+
 /**
- * La ville de nuit derrière les baies : panorama (Poly Haven, shanghai_bund,
- * CC0, recadré sur la ligne d'horizon) posé sur un morceau de cylindre centré
- * sur le bureau, de `bottom` à `bottom + hauteur` (proportions de l'image).
+ * La ville de nuit derrière les baies, générée et rendue dans Blender
+ * (tools/bake/city.py) en projection cylindrique centrale : posée sur le même
+ * morceau de cylindre, centré sur le bureau, elle tombe juste, l'horizon à
+ * `horizon` (la hauteur de l'œil).
  */
-export function createCityBackdrop(map: THREE.Texture, radius: number, arcDeg: number, bottom: number, bg: THREE.Color) {
-  const arc = (arcDeg * Math.PI) / 180;
-  const img = map.image as { width: number; height: number };
-  const height = (radius * arc * img.height) / img.width;
-  const geo = new THREE.CylinderGeometry(radius, radius, height, 96, 1, true, Math.PI - arc / 2, arc);
-  geo.translate(0, bottom + height / 2, 0);
+export function createCityBackdrop(map: THREE.Texture, radius: number, horizon: number, bg: THREE.Color) {
+  const rad = Math.PI / 180;
+  const arc = CITY_VIEW.arc * rad;
+  const lo = Math.tan(CITY_VIEW.below * rad) * radius;
+  const height = lo + Math.tan(CITY_VIEW.above * rad) * radius;
+  const geo = new THREE.CylinderGeometry(radius, radius, height, 128, 1, true, Math.PI - arc / 2, arc);
+  geo.translate(0, horizon - lo + height / 2, 0);
   const uBright = { value: 1 };
   const mat = new THREE.ShaderMaterial({
     vertexShader: CITY_VERT,

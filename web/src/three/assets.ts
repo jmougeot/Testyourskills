@@ -78,7 +78,7 @@ export function preloadWalkoutAssets(): Promise<WalkoutAssets> {
     const tex = new THREE.TextureLoader();
     const gltf = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
     pending = Promise.all([
-      texture(tex, "city.jpg", true).then((t) => {
+      texture(tex, "city.webp", true).then((t) => {
         t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping;
         return t;
       }),
