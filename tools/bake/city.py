@@ -1,13 +1,24 @@
-# La ville de nuit derrière les baies, générée et rendue dans Blender (Cycles).
+# La ville de nuit derrière les baies, construite d'après OpenStreetMap et
+# rendue dans Blender (Cycles).
 #
 #   blender -b -P tools/bake/city.py -- [--width 5120] [--samples 96] [--preview] [--out dir]
 #
-# Une ville vue d'un 20e étage (75 m) : tours de bureaux aux fenêtres
-# allumées au hasard, quartier d'affaires et grandes tours au loin, toits et
-# feux d'obstacle, rues orangées, phares et feux arrière sur les avenues, un
-# fleuve qui la reflète, la brume et le halo de la ville qui avalent
-# l'horizon. Rien n'éclaire rien : tout ce qui brille est vu directement,
-# ce qui garde le calcul court sur le processeur.
+# La Défense vue de Neuilly-sur-Seine, d'un 20e étage (75 m), dans l'axe
+# historique : l'avenue Charles-de-Gaulle file droit vers la Grande Arche,
+# la Seine et le pont de Neuilly au premier plan, les tours du quartier
+# d'affaires au centre de l'image, juste derrière le poste du dev. Vraies
+# emprises de bâtiments et leurs hauteurs (height, building:levels, leurs
+# parties building:part), vraies rues, vraie eau (tools/bake/osm.py, cache
+# hors ligne dans tools/bake/.cache). Données © OpenStreetMap contributors,
+# sous licence ODbL (https://www.openstreetmap.org/copyright).
+#
+# Le reste est inventé, mais plausible : fenêtres allumées au hasard, murs-
+# rideaux vitrés, bandeaux ou fenêtres percées selon le bâtiment, quelques
+# enseignes génériques (aucune vraie marque), feux d'obstacle et couronnes
+# éclairées sur les tours, réverbères, phares et feux arrière selon le sens
+# de circulation, la brume et le halo de la ville qui avalent l'horizon.
+# Rien n'éclaire rien : tout ce qui brille est vu directement, ce qui garde
+# le calcul court sur le processeur.
 #
 # Rendu en projection cylindrique centrale, exactement celle du morceau de
 # cylindre qui la porte dans la scène (createCityBackdrop, stage.ts) : la
@@ -42,7 +53,14 @@ V_MIN, V_MAX = -14.0, 16.0  # degrés sous et sur l'horizon
 EYE = 75.0  # hauteur de l'œil au-dessus des rues (m)
 FAR = 6000.0
 
-rng = random.Random(27)
+# ---------- le lieu ----------
+# Neuilly-sur-Seine, un immeuble en bord de l'avenue Charles-de-Gaulle, à
+# 130 m au nord de l'axe historique : Tour First à 0,9 km, l'Arche à 2,4 km
+EYE_LAT, EYE_LON = 48.88525, 2.26298
+TARGET = (48.8905, 2.2450)  # le cœur des tours de La Défense, au centre de l'image
+# l'emprise des données OSM, fixe : le cache sert tant qu'elle ne change pas
+AREA = (48.851416513212286, 2.1803728284534243, 48.938367621994196, 2.2622)
+
 scene = bpy.context.scene
 for ob in list(bpy.data.objects):
     bpy.data.objects.remove(ob)
@@ -96,6 +114,8 @@ def fogged(nt, out, shader, k=1.0):
     nt.links.new(fog, mix.inputs[0])
     nt.links.new(shader, mix.inputs[1])
     nt.links.new(em.outputs[0], mix.inputs[2])
+    if out is None:
+        return mix.outputs[0]
     nt.links.new(mix.outputs[0], out.inputs["Surface"])
 
 
@@ -109,8 +129,13 @@ def facade_material():
     nt.links.new(uv.outputs[0], sep.inputs[0])
     u, v = sep.outputs["X"], sep.outputs["Y"]
     bld, roof, style = attr(nt, "bld"), attr(nt, "roof"), attr(nt, "style")
-    # largeur de travée 1,4 à 3,2 m, étage 3,4 à 4,1 m, selon la tour
+    # style : 0 fenêtres percées, 0,5 fenêtres en bandeau, 1 mur-rideau vitré
+    cw = math_node(nt, "GREATER_THAN", style, 0.75)
+    # largeur de travée 1,4 à 3,2 m, étage 3,4 à 4,1 m, selon la tour ;
+    # trame de mur-rideau de 1,35 à 1,65 m
     w = math_node(nt, "ADD", 1.4, math_node(nt, "MULTIPLY", math_node(nt, "FRACT", math_node(nt, "MULTIPLY", bld, 7.31)), 1.8))
+    w_cw = math_node(nt, "ADD", 1.35, math_node(nt, "MULTIPLY", math_node(nt, "FRACT", math_node(nt, "MULTIPLY", bld, 7.31)), 0.3))
+    w = math_node(nt, "ADD", w, math_node(nt, "MULTIPLY", cw, math_node(nt, "SUBTRACT", w_cw, w)))
     fh = math_node(nt, "ADD", 3.4, math_node(nt, "MULTIPLY", math_node(nt, "FRACT", math_node(nt, "MULTIPLY", bld, 3.17)), 0.7))
     cu, cv = math_node(nt, "DIVIDE", u, w), math_node(nt, "DIVIDE", v, fh)
     cx, cy = math_node(nt, "FLOOR", cu), math_node(nt, "FLOOR", cv)
@@ -122,21 +147,31 @@ def facade_material():
     wn = nt.nodes.new("ShaderNodeTexWhiteNoise")
     wn.noise_dimensions = "3D"
     nt.links.new(comb.outputs[0], wn.inputs["Vector"])
-    # les étages entiers allumés ou éteints, en plus des fenêtres seules
+    # les étages entiers allumés ou éteints, en plus des fenêtres seules ;
+    # en plateaux plus larges derrière les murs-rideaux (bureaux paysagers)
     comb2 = nt.nodes.new("ShaderNodeCombineXYZ")
-    nt.links.new(math_node(nt, "FLOOR", math_node(nt, "DIVIDE", cx, 6.0)), comb2.inputs[0])
+    nt.links.new(math_node(nt, "FLOOR", math_node(nt, "DIVIDE", cx, math_node(nt, "ADD", 6.0, math_node(nt, "MULTIPLY", cw, 12.0)))), comb2.inputs[0])
     nt.links.new(cy, comb2.inputs[1])
     nt.links.new(math_node(nt, "MULTIPLY", bld, 577.0), comb2.inputs[2])
     wn2 = nt.nodes.new("ShaderNodeTexWhiteNoise")
     wn2.noise_dimensions = "3D"
     nt.links.new(comb2.outputs[0], wn2.inputs["Vector"])
     occ = math_node(nt, "ADD", 0.04, math_node(nt, "MULTIPLY", math_node(nt, "POWER", math_node(nt, "FRACT", math_node(nt, "MULTIPLY", bld, 13.7)), 1.6), 0.4))
+    # les tours de bureaux restent bien plus allumées la nuit (ménage, veilleuses,
+    # étages entiers) : c'est ce qui dessine leur silhouette sur le ciel
+    occ_cw = math_node(nt, "ADD", 0.06, math_node(nt, "MULTIPLY", math_node(nt, "FRACT", math_node(nt, "MULTIPLY", bld, 13.7)), 0.22))
+    occ = math_node(nt, "ADD", occ, math_node(nt, "MULTIPLY", cw, math_node(nt, "SUBTRACT", occ_cw, occ)))
     chance = math_node(nt, "MULTIPLY", wn.outputs["Value"], math_node(nt, "ADD", 0.45, wn2.outputs["Value"]))
     lit = math_node(nt, "LESS_THAN", chance, occ)
-    # fenêtre seule, ou bandeau continu (style > 0.5)
+    # fenêtre seule, bandeau continu (style > 0.25), ou mur-rideau : vitrage
+    # du sol au plafond, seulement coupé par les meneaux et les nez de dalle
     mx = math_node(nt, "MULTIPLY", math_node(nt, "GREATER_THAN", fx, 0.14), math_node(nt, "LESS_THAN", fx, 0.86))
-    mx = math_node(nt, "MAXIMUM", mx, math_node(nt, "GREATER_THAN", style, 0.5))
+    mx = math_node(nt, "MAXIMUM", mx, math_node(nt, "GREATER_THAN", style, 0.25))
+    mull = math_node(nt, "MULTIPLY", math_node(nt, "GREATER_THAN", fx, 0.05), math_node(nt, "LESS_THAN", fx, 0.95))
+    mx = math_node(nt, "MULTIPLY", mx, math_node(nt, "SUBTRACT", 1.0, math_node(nt, "MULTIPLY", cw, math_node(nt, "SUBTRACT", 1.0, mull))))
     my = math_node(nt, "MULTIPLY", math_node(nt, "GREATER_THAN", fy, 0.28), math_node(nt, "LESS_THAN", fy, 0.86))
+    my_cw = math_node(nt, "MULTIPLY", math_node(nt, "GREATER_THAN", fy, 0.1), math_node(nt, "LESS_THAN", fy, 0.97))
+    my = math_node(nt, "ADD", my, math_node(nt, "MULTIPLY", cw, math_node(nt, "SUBTRACT", my_cw, my)))
     glass = math_node(nt, "MULTIPLY", math_node(nt, "MULTIPLY", mx, my), math_node(nt, "SUBTRACT", 1.0, roof))
     # teinte : bureaux en néon froid, logements en chaud, quelques écrans bleutés
     ramp = nt.nodes.new("ShaderNodeValToRGB")
@@ -149,9 +184,14 @@ def facade_material():
     e = cr.elements.new(0.94)
     e.color = (0.55, 0.7, 1.0, 1)
     tint = math_node(nt, "FRACT", math_node(nt, "ADD", math_node(nt, "MULTIPLY", wn.outputs["Color"], 0.35), math_node(nt, "MULTIPLY", bld, 0.65)))
+    # derrière un mur-rideau, des plafonniers de bureau : blanc neutre à froid
+    tint_cw = math_node(nt, "ADD", 0.5, math_node(nt, "MULTIPLY", math_node(nt, "FRACT", math_node(nt, "ADD", math_node(nt, "MULTIPLY", wn.outputs["Color"], 0.3), math_node(nt, "MULTIPLY", bld, 5.3))), 0.43))
+    tint = math_node(nt, "ADD", tint, math_node(nt, "MULTIPLY", cw, math_node(nt, "SUBTRACT", tint_cw, tint)))
     nt.links.new(tint, ramp.inputs[0])
     # éclat très variable : stores baissés, lampes de bureau, plafonniers
     gain = math_node(nt, "ADD", 0.12, math_node(nt, "POWER", math_node(nt, "MULTIPLY", wn.outputs["Color"], wn2.outputs["Value"]), 2.2))
+    # un mur-rideau est vitré presque partout : chaque travée éclaire moins
+    gain = math_node(nt, "MULTIPLY", gain, math_node(nt, "SUBTRACT", 1.0, math_node(nt, "MULTIPLY", cw, 0.4)))
     strength = math_node(nt, "MULTIPLY", math_node(nt, "MULTIPLY", lit, glass), math_node(nt, "MULTIPLY", gain, 7.0))
     bsdf = nt.nodes.new("ShaderNodeBsdfPrincipled")
     base = nt.nodes.new("ShaderNodeMix")
@@ -174,12 +214,15 @@ def facade_material():
     up = math_node(nt, "MULTIPLY", math_node(nt, "EXPONENT", math_node(nt, "DIVIDE", pz.outputs["Z"], -10.0)), math_node(nt, "SUBTRACT", 1.0, roof))
     em = nt.nodes.new("ShaderNodeMix")
     em.data_type = "RGBA"
-    nt.links.new(math_node(nt, "MULTIPLY", math_node(nt, "SUBTRACT", 1.0, lit), 1.0, clamp=True), em.inputs["Factor"])
+    # vitrage d'un mur-rideau éteint : la veilleuse des circulations, à peine
+    dim = math_node(nt, "MULTIPLY", math_node(nt, "MULTIPLY", cw, glass), math_node(nt, "SUBTRACT", 1.0, lit))
+    nt.links.new(math_node(nt, "MULTIPLY", math_node(nt, "SUBTRACT", 1.0, math_node(nt, "MAXIMUM", lit, dim)), 1.0, clamp=True), em.inputs["Factor"])
     nt.links.new(ramp.outputs["Color"], em.inputs["A"])
     em.inputs["B"].default_value = (1.0, 0.5, 0.22, 1)
     nt.links.new(em.outputs["Result"], bsdf.inputs["Emission Color"])
-    up = math_node(nt, "MULTIPLY", math_node(nt, "MULTIPLY", up, math_node(nt, "SUBTRACT", 1.0, math_node(nt, "MULTIPLY", lit, glass))), 0.12)
-    nt.links.new(math_node(nt, "ADD", strength, up), bsdf.inputs["Emission Strength"])
+    up = math_node(nt, "MULTIPLY", math_node(nt, "MULTIPLY", up, math_node(nt, "SUBTRACT", 1.0, math_node(nt, "MAXIMUM", math_node(nt, "MULTIPLY", lit, glass), dim))), 0.12)
+    glow = math_node(nt, "MULTIPLY", dim, math_node(nt, "ADD", 0.02, math_node(nt, "MULTIPLY", wn2.outputs["Value"], 0.08)))
+    nt.links.new(math_node(nt, "ADD", math_node(nt, "ADD", strength, up), glow), bsdf.inputs["Emission Strength"])
     fogged(nt, out, bsdf.outputs[0])
     return mat
 
@@ -200,6 +243,57 @@ def emissive_material(name, colors, strength, k=1.0):
     nt.links.new(ramp.outputs[0], em.inputs["Color"])
     nt.links.new(math_node(nt, "MULTIPLY", attr(nt, "s"), strength), em.inputs["Strength"])
     fogged(nt, out, em.outputs[0], k)
+    return mat
+
+
+def sign_material():
+    """Enseignes génériques en haut des tours : un logo rond et un mot en
+    capitales lumineuses, sans aucune vraie marque. uv : u en hauteurs
+    d'enseigne depuis la gauche, v de 0 à 1 ; « k » varie le dessin."""
+    mat = bpy.data.materials.new("signs")
+    mat.cycles.emission_sampling = "NONE"
+    nt, out = nodes(mat)
+    uv = nt.nodes.new("ShaderNodeUVMap")
+    sep = nt.nodes.new("ShaderNodeSeparateXYZ")
+    nt.links.new(uv.outputs[0], sep.inputs[0])
+    u, v = sep.outputs["X"], sep.outputs["Y"]
+    k = attr(nt, "k")
+    # le logo : un disque, ou un anneau (k > 0,5)
+    r = math_node(nt, "SQRT", math_node(nt, "ADD", math_node(nt, "POWER", math_node(nt, "SUBTRACT", u, 0.5), 2.0), math_node(nt, "POWER", math_node(nt, "SUBTRACT", v, 0.5), 2.0)))
+    disc = math_node(nt, "LESS_THAN", r, 0.42)
+    hole = math_node(nt, "MULTIPLY", math_node(nt, "LESS_THAN", r, 0.24), math_node(nt, "GREATER_THAN", k, 0.5))
+    logo = math_node(nt, "SUBTRACT", disc, hole)
+    # les lettres : des pavés aux creux tirés au hasard
+    lu = math_node(nt, "DIVIDE", math_node(nt, "SUBTRACT", u, 1.2), 0.62)
+    cell, fu = math_node(nt, "FLOOR", lu), math_node(nt, "FRACT", lu)
+    comb = nt.nodes.new("ShaderNodeCombineXYZ")
+    nt.links.new(cell, comb.inputs[0])
+    nt.links.new(math_node(nt, "FLOOR", math_node(nt, "MULTIPLY", v, 3.0)), comb.inputs[1])
+    nt.links.new(math_node(nt, "MULTIPLY", k, 113.0), comb.inputs[2])
+    wn = nt.nodes.new("ShaderNodeTexWhiteNoise")
+    wn.noise_dimensions = "3D"
+    nt.links.new(comb.outputs[0], wn.inputs["Vector"])
+    stroke = math_node(nt, "MULTIPLY", math_node(nt, "LESS_THAN", fu, 0.76), math_node(nt, "MULTIPLY", math_node(nt, "GREATER_THAN", v, 0.2), math_node(nt, "LESS_THAN", v, 0.8)))
+    gap = math_node(nt, "MULTIPLY", math_node(nt, "GREATER_THAN", wn.outputs["Value"], 0.55), math_node(nt, "MULTIPLY", math_node(nt, "GREATER_THAN", fu, 0.24), math_node(nt, "LESS_THAN", fu, 0.52)))
+    letters = math_node(nt, "MULTIPLY", math_node(nt, "MULTIPLY", stroke, math_node(nt, "SUBTRACT", 1.0, gap)), math_node(nt, "GREATER_THAN", lu, 0.0))
+    mask = math_node(nt, "MAXIMUM", logo, letters, clamp=True)
+    ramp = nt.nodes.new("ShaderNodeValToRGB")
+    cr = ramp.color_ramp
+    cr.interpolation = "CONSTANT"
+    for i, (pos, col) in enumerate(((0.0, (0.92, 0.95, 1.0)), (0.35, (0.3, 0.62, 1.0)), (0.6, (1.0, 0.18, 0.12)), (0.8, (0.2, 0.95, 0.75)))):
+        e = cr.elements[i] if i < 2 else cr.elements.new(pos)
+        e.position, e.color = pos, (*col, 1)
+    nt.links.new(attr(nt, "c"), ramp.inputs[0])
+    em = nt.nodes.new("ShaderNodeEmission")
+    nt.links.new(ramp.outputs[0], em.inputs["Color"])
+    nt.links.new(math_node(nt, "MULTIPLY", mask, math_node(nt, "MULTIPLY", attr(nt, "s"), 9.0)), em.inputs["Strength"])
+    # hors des lettres, l'enseigne est transparente : on voit la façade derrière
+    tr = nt.nodes.new("ShaderNodeBsdfTransparent")
+    mix = nt.nodes.new("ShaderNodeMixShader")
+    nt.links.new(mask, mix.inputs[0])
+    nt.links.new(tr.outputs[0], mix.inputs[1])
+    nt.links.new(fogged(nt, None, em.outputs[0], 0.9), mix.inputs[2])
+    nt.links.new(mix.outputs[0], out.inputs["Surface"])
     return mat
 
 
@@ -312,112 +406,145 @@ class Mesh:
         return ob
 
 
-GRID = math.radians(17)  # la trame des rues, de biais par rapport aux baies
-CG, SG = math.cos(GRID), math.sin(GRID)
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.dont_write_bytecode = True
+import osm  # noqa: E402  (à côté de ce fichier)
+from mathutils import Vector  # noqa: E402
+from mathutils.geometry import tessellate_polygon  # noqa: E402
 
-
-def to_world(a, b):
-    return (a * CG - b * SG, a * SG + b * CG)
+FRAME = osm.Frame(EYE_LAT, EYE_LON, 0.0)
+HEADING = math.degrees(math.atan2(*FRAME.xy(*TARGET)))  # le cap qui met la cible au centre
+FRAME = osm.Frame(EYE_LAT, EYE_LON, HEADING)
+print(f"[city] œil {EYE_LAT}, {EYE_LON}, cap {HEADING:.1f}°")
 
 
 def in_view(x, y, margin=8.0):
     """Dans le champ des baies, devant, et avant l'horizon de brume."""
-    if y < 60:
+    if y < 30:
         return False
     return abs(math.degrees(math.atan2(x, y))) < ARC / 2 + margin and math.hypot(x, y) < FAR
 
 
-# le fleuve, de biais, à 1,4 km au plus près
-def river_dist(x, y):
-    return abs(y - (1650 + 0.32 * x)) * math.cos(math.atan(0.32))
+def hrand(i, salt=0):
+    """Un tirage propre à un objet OSM : le même à chaque calcul."""
+    return random.Random(i * 7919 + salt)
 
 
-RIVER_W = 140.0
+def ring_area(ring):
+    return 0.5 * sum(x1 * y2 - x2 * y1 for (x1, y1), (x2, y2) in zip(ring, ring[1:] + ring[:1]))
 
 
-def height_for(x, y, r):
-    d1 = math.hypot(x + 120, y - 1300)  # quartier d'affaires, derrière le poste du dev
-    d2 = math.hypot(x - 1100, y - 2500)  # un second, plus loin à droite
-    d3 = math.hypot(x + 1900, y - 3300)
-    tall = 230 * math.exp(-((d1 / 520) ** 2)) + 170 * math.exp(-((d2 / 480) ** 2)) + 120 * math.exp(-((d3 / 600) ** 2))
-    h = 14 + 34 * r.random() ** 2 + tall * r.random() ** 1.4
-    if tall > 120 and r.random() < 0.06:
-        h = 260 + 120 * r.random()  # quelques très grandes tours
-    return h
+HOUSES = {"house", "detached", "semidetached_house", "terrace", "bungalow", "villa"}
+SHEDS = {"garage", "garages", "shed", "hut", "kiosk", "cabin", "service", "toilets", "transformer_tower"}
+LOW = {"industrial", "warehouse", "retail", "supermarket", "commercial", "train_station", "sports_hall", "church", "school"}
+OFFICE = {"office", "tower", "skyscraper", "government", "commercial", "hotel", "civic"}
+HOMES = {"apartments", "residential", "dormitory"}
 
 
-def block_lots(r, a0, b0, size):
-    """Découpe un îlot en 1 à 4 parcelles."""
-    lots = [(a0, b0, size, size)]
-    for _ in range(r.choice((0, 1, 1, 2))):
-        a, b, w, d = lots.pop(r.randrange(len(lots)))
-        if w >= d:
-            k = w * r.uniform(0.35, 0.65)
-            lots += [(a, b, k, d), (a + k, b, w - k, d)]
-        else:
-            k = d * r.uniform(0.35, 0.65)
-            lots += [(a, b, w, k), (a, b + k, w, d - k)]
-    return lots
+def massing(tags, r, area):
+    """Hauteur, bas, style de façade d'un bâtiment, d'après ses tags OSM
+    (height, min_height, building:levels…), sinon des valeurs plausibles
+    pour la banlieue ouest de Paris."""
+    kind = tags.get("building", "yes")
+    if kind == "yes":
+        kind = tags.get("building:part", "yes")
+    officeish = kind in OFFICE or "office" in tags
+    lh = 3.7 if officeish else 3.1  # hauteur d'un étage
+    h = osm.num(tags.get("height"))
+    lv = osm.num(tags.get("building:levels"))
+    if h is None and lv is not None:
+        h = lv * lh + 1.0 + (osm.num(tags.get("roof:levels")) or 0) * 2.6
+    if h is None:
+        if kind in SHEDS or area < 40:
+            h = r.uniform(3, 5)
+        elif kind in HOUSES or area < 110:
+            h = r.uniform(6.5, 10)
+        elif kind in LOW:
+            h = r.uniform(8, 14)
+        elif officeish:
+            h = r.uniform(16, 30)
+        else:  # immeubles de rapport, R+4 à R+7
+            h = r.uniform(14, 24)
+    minh = osm.num(tags.get("min_height"))
+    if minh is None:
+        minh = (osm.num(tags.get("building:min_level")) or 0) * lh
+    # façade : murs-rideaux pour les tours de bureaux, bandeaux, fenêtres percées
+    mat = (tags.get("building:material", "") + tags.get("building:facade:material", "")).lower()
+    x = r.random()
+    if "glass" in mat:
+        style = 1.0
+    elif kind in HOMES or kind in HOUSES:
+        style = 0.5 if (h > 40 and x < 0.4) or x < 0.08 else 0.0
+    elif h >= 60:
+        style = 1.0 if x < 0.75 else 0.5 if x < 0.95 else 0.0
+    elif officeish:
+        style = 1.0 if x < 0.4 else 0.5 if x < 0.85 else 0.0
+    elif kind in LOW:
+        style = 0.5 if x < 0.3 else 0.0
+    else:
+        style = 0.5 if h > 12 and x < 0.15 else 0.0
+    return h, minh, style, officeish
 
 
-def tower(m, beacons, crowns, a, b, w, d, h, r):
-    """Une tour sur la parcelle (a, b, w, d) de la trame, en 1 à 3 gradins."""
-    bld = r.random()
-    style = 1.0 if r.random() < (0.55 if h > 100 else 0.2) else 0.0
-    shape = "round" if h > 120 and r.random() < 0.18 else "cut" if h > 80 and r.random() < 0.25 else "box"
-    tiers = 1 if h < 70 or r.random() < 0.45 else r.choice((2, 2, 3))
-    z0, cx, cy = 0.0, a + w / 2, b + d / 2
-    for t in range(tiers):
-        z1 = h if t == tiers - 1 else z0 + (h - z0) * r.uniform(0.45, 0.7)
-        hw, hd = w / 2, d / 2
-        if shape == "round":
-            rad = min(hw, hd)
-            corners = [to_world(cx + rad * math.cos(k * math.pi / 10), cy + rad * math.sin(k * math.pi / 10)) for k in range(20)]
-        elif shape == "cut":
-            c = min(hw, hd) * 0.3
-            ring = [(-hw + c, -hd), (hw - c, -hd), (hw, -hd + c), (hw, hd - c), (hw - c, hd), (-hw + c, hd), (-hw, hd - c), (-hw, -hd + c)]
-            corners = [to_world(cx + px, cy + py) for px, py in ring]
-        else:
-            corners = [to_world(cx - hw, cy - hd), to_world(cx + hw, cy - hd), to_world(cx + hw, cy + hd), to_world(cx - hw, cy + hd)]
-        u = r.uniform(0, 50)
-        for i in range(len(corners)):
-            p, q = corners[i], corners[(i + 1) % len(corners)]
+def extrude(m, ring, holes, z0, z1, bld, style):
+    """Murs (uv en mètres, pour la trame des fenêtres) et toit d'une emprise."""
+    for rg in [ring] + holes:
+        u = (bld * 997) % 40
+        for i in range(len(rg)):
+            p, q = rg[i], rg[(i + 1) % len(rg)]
             L = math.hypot(q[0] - p[0], q[1] - p[1])
+            if L < 0.2:
+                continue
             m.face([(p[0], p[1], z0), (q[0], q[1], z0), (q[0], q[1], z1), (p[0], p[1], z1)], [(u, z0), (u + L, z0), (u + L, z1), (u, z1)], bld=bld, style=style)
             u += L
-        m.face([(c[0], c[1], z1) for c in corners], roof=1.0, bld=bld)
-        z0 = z1
-        w, d = w * r.uniform(0.6, 0.85), d * r.uniform(0.6, 0.85)
-    top = [to_world(cx - w / 2, cy - d / 2), to_world(cx + w / 2, cy + d / 2)]
-    if shape == "box" and h < 160:
-        # locaux techniques et machineries sur le toit
-        for _ in range(r.choice((0, 1, 1, 2))):
-            bw, bd, bh = w * r.uniform(0.15, 0.4), d * r.uniform(0.15, 0.4), r.uniform(2.5, 6)
-            ox, oy = r.uniform(-0.3, 0.3) * w, r.uniform(-0.3, 0.3) * d
-            q = [to_world(cx + ox - bw / 2, cy + oy - bd / 2), to_world(cx + ox + bw / 2, cy + oy - bd / 2), to_world(cx + ox + bw / 2, cy + oy + bd / 2), to_world(cx + ox - bw / 2, cy + oy + bd / 2)]
-            for i in range(4):
-                p0, p1 = q[i], q[(i + 1) % 4]
-                m.face([(p0[0], p0[1], h), (p1[0], p1[1], h), (p1[0], p1[1], h + bh), (p0[0], p0[1], h + bh)], roof=1.0, bld=bld)
-            m.face([(c[0], c[1], h + bh) for c in q], roof=1.0, bld=bld)
-    if h > 90:
-        # feux d'obstacle rouges aux angles du toit
-        for c in corners[:: max(1, len(corners) // (2 if h < 180 else 4))]:
-            billboard(beacons, c[0], c[1], h + 1.5, 1.6, c=0.0, s=r.uniform(0.6, 1.0))
-    if h > 110 and r.random() < 0.4:
-        # couronne éclairée
-        hw, hd = w / 2 / 0.72 + 0.4, d / 2 / 0.72 + 0.4
-        ring = [to_world(cx - hw, cy - hd), to_world(cx + hw, cy - hd), to_world(cx + hw, cy + hd), to_world(cx - hw, cy + hd)]
-        col = r.choice((0.0, 0.0, 0.5, 0.9, 0.97))
-        for i in range(4):
-            p, q = ring[i], ring[(i + 1) % 4]
-            crowns.face([(p[0], p[1], h - 6), (q[0], q[1], h - 6), (q[0], q[1], h - 1), (p[0], p[1], h - 1)], c=col, s=r.uniform(0.5, 1.0))
-    if h > 250:
-        # flèche avec son feu
-        sx, sy = (top[0][0] + top[1][0]) / 2, (top[0][1] + top[1][1]) / 2
-        spire = 25 + 40 * r.random()
-        for dx, dy in ((1, 0), (0, 1)):
-            m.face([(sx - dx, sy - dy, h), (sx + dx, sy + dy, h), (sx + dx * 0.2, sy + dy * 0.2, h + spire), (sx - dx * 0.2, sy - dy * 0.2, h + spire)], roof=1.0, bld=bld)
-        billboard(beacons, sx, sy, h + spire + 1, 2.2, c=0.0, s=1.0)
+    for z in ((z1, z0) if z0 > 2.5 else (z1,)):  # le dessous d'un volume suspendu se voit
+        if not holes:
+            m.face([(x, y, z) for x, y in ring], roof=1.0, bld=bld)
+            continue
+        loops = [[Vector((x, y, z)) for x, y in rg] for rg in [ring] + holes]
+        flat = [p for lp in loops for p in lp]
+        for tri in tessellate_polygon(loops):
+            m.face([tuple(flat[k]) for k in tri], roof=1.0, bld=bld)
+
+
+def corners(ring, n):
+    """Les n points les plus en saillie d'un contour (pour les feux d'obstacle)."""
+    cx, cy = sum(x for x, _ in ring) / len(ring), sum(y for _, y in ring) / len(ring)
+    dirs = [(1, 1), (-1, -1), (1, -1), (-1, 1)][:n]
+    return [max(ring, key=lambda p: (p[0] - cx) * dx + (p[1] - cy) * dy) for dx, dy in dirs]
+
+
+def sign(signs, ring, h, r):
+    """Une enseigne générique sur la façade la plus tournée vers l'œil, en haut."""
+    ccw = ring_area(ring) > 0
+    best, score = None, 0.0
+    for i in range(len(ring)):
+        p, q = ring[i], ring[(i + 1) % len(ring)]
+        L = math.hypot(q[0] - p[0], q[1] - p[1])
+        if L < 12:
+            continue
+        tx, ty = (q[0] - p[0]) / L, (q[1] - p[1]) / L
+        nx, ny = (ty, -tx) if ccw else (-ty, tx)  # normale sortante
+        mx, my = (p[0] + q[0]) / 2, (p[1] + q[1]) / 2
+        d = math.hypot(mx, my)
+        facing = -(nx * mx + ny * my) / d
+        if facing > 0.45 and facing * min(L, 45) > score:
+            best, score = (mx, my, nx, ny, L), facing * min(L, 45)
+    if not best:
+        return False
+    mx, my, nx, ny, L = best
+    letters = r.randint(3, 7)
+    sh = min(max(L * 0.1, 2.2), 5.5)
+    W = sh * (1.2 + 0.62 * letters - 0.15)
+    if W > 0.85 * L:
+        sh *= 0.85 * L / W
+        W = 0.85 * L
+    rx, ry = -ny, nx  # la droite de qui regarde l'enseigne
+    ox, oy = mx + nx * 0.5, my + ny * 0.5
+    a, b = (ox - rx * W / 2, oy - ry * W / 2), (ox + rx * W / 2, oy + ry * W / 2)
+    zt = h - r.uniform(1.5, 3.5)
+    signs.face([(a[0], a[1], zt - sh), (b[0], b[1], zt - sh), (b[0], b[1], zt), (a[0], a[1], zt)], [(0, 0), (W / sh, 0), (W / sh, 1), (0, 1)], c=r.choice((0.0, 0.0, 0.4, 0.4, 0.7, 0.9)), s=r.uniform(0.6, 1.0), k=r.random())
+    return True
 
 
 def billboard(m, x, y, z, size, **vals):
@@ -429,7 +556,73 @@ def billboard(m, x, y, z, size, **vals):
     m.face([(x - ux, y - uy, z - h), (x + ux, y + uy, z - h), (x + ux, y + uy, z + h), (x - ux, y - uy, z + h)], **vals)
 
 
+# demi-largeur (m), lueur au sol, pas des réverbères (m), voitures par 100 m et par sens
+ROAD = {
+    "motorway": (11.0, 0.75, 42, 3.0),
+    "trunk": (9.0, 1.0, 30, 2.4),
+    "primary": (8.0, 1.0, 30, 1.8),
+    "secondary": (6.5, 0.85, 30, 1.1),
+    "tertiary": (5.5, 0.7, 32, 0.5),
+    "link": (4.0, 0.75, 34, 0.7),
+    "residential": (4.0, 0.5, 34, 0.1),
+    "unclassified": (4.0, 0.5, 36, 0.1),
+    "living_street": (3.0, 0.4, 36, 0.0),
+    "pedestrian": (3.5, 0.45, 26, 0.0),
+}
+
+
+def street(ground, lamps, traffic, rd):
+    t = rd["tags"]
+    kind = t["highway"]
+    half, glow, step, cars = ROAD["link" if kind.endswith("_link") else kind]
+    r = hrand(rd["id"], 1)
+    led = 0.6 if r.random() < 0.5 else 0.0  # LED blanches ou vieux sodium, rue par rue
+    oneway = {"yes": 1, "true": 1, "1": 1, "-1": -1}.get(t.get("oneway"), 1 if kind in ("motorway", "motorway_link") else 0)
+    major = cars >= 1.0
+    pts = rd["pts"]
+    acc = r.uniform(0, step)
+    side = 1
+    for (ax, ay), (bx, by) in zip(pts, pts[1:]):
+        L = math.hypot(bx - ax, by - ay)
+        if L < 0.1:
+            continue
+        tx, ty = (bx - ax) / L, (by - ay) / L
+        nx, ny = -ty, tx
+        n = max(1, math.ceil(L / 25))
+        for k in range(n):
+            f0, f1 = k / n, (k + 1) / n
+            p0 = (ax + (bx - ax) * f0, ay + (by - ay) * f0)
+            p1 = (ax + (bx - ax) * f1, ay + (by - ay) * f1)
+            mx, my = (p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2
+            seg = L / n
+            if not in_view(mx, my, 15) or math.hypot(mx, my) < 200:
+                acc = (acc + seg) % step
+                continue
+            ground.face([(p0[0] - nx * half, p0[1] - ny * half, 0.05), (p1[0] - nx * half, p1[1] - ny * half, 0.05), (p1[0] + nx * half, p1[1] + ny * half, 0.05), (p0[0] + nx * half, p0[1] + ny * half, 0.05)], c=glow * r.uniform(0.8, 1.1))
+            # réverbères, des deux côtés sur les grands axes, en quinconce ailleurs
+            acc += seg
+            while acc >= step:
+                acc -= step
+                f = 1 - acc / seg
+                lx, ly = p0[0] + (p1[0] - p0[0]) * f, p0[1] + (p1[1] - p0[1]) * f
+                for s in (-1, 1) if major or kind == "pedestrian" else (side,):
+                    billboard(lamps, lx + nx * s * (half - 0.8), ly + ny * s * (half - 0.8), 9.0 if major else 6.5, 1.8 if major else 1.4, c=led, s=r.uniform(0.7, 1.0))
+                side = -side
+            # la circulation : phares quand elle vient vers l'œil, feux arrière sinon
+            for d in (oneway,) if oneway else (1, -1):
+                expect = cars * seg / 100
+                for _ in range(int(expect + r.random())):
+                    f = r.random()
+                    cx, cy = p0[0] + (p1[0] - p0[0]) * f, p0[1] + (p1[1] - p0[1]) * f
+                    dx, dy = tx * d, ty * d
+                    lane = r.uniform(-half + 1.5, half - 1.5) if oneway else r.uniform(1.2, half - 1.2)
+                    cx, cy = cx + dy * lane, cy - dx * lane  # à droite du sens de marche
+                    col = 0.6 if dx * cx + dy * cy < 0 else 0.0
+                    billboard(traffic, cx, cy, 0.8, 1.1, c=col, s=r.uniform(0.5, 1.0))
+
+
 def build_city():
+    data = osm.load(FRAME, AREA)
     facade = facade_material()
     lights = emissive_material("lamps", [(0.0, (1.0, 0.5, 0.18)), (0.5, (1.0, 0.86, 0.66))], 26.0)
     cars = emissive_material("cars", [(0.0, (1.0, 0.05, 0.02)), (0.5, (1.0, 0.9, 0.75))], 40.0)
@@ -438,83 +631,68 @@ def build_city():
     m = Mesh("towers", facade, ("bld", "roof", "style"))
     beacons = Mesh("beacons", beacon_mat, ("c", "s"))
     crowns = Mesh("crowns", crown_mat, ("c", "s"))
+    signs = Mesh("signs", sign_material(), ("c", "s", "k"))
     lamps = Mesh("lamps", lights, ("c", "s"))
     traffic = Mesh("traffic", cars, ("c", "s"))
     ground = Mesh("ground", ground_material(), ("c",))
 
-    P, STREET = 105.0, 22.0  # pas de la trame, largeur des rues
-    N = int(FAR / P) + 2
-    count = 0
-    for i in range(-N, N):
-        for j in range(-N, N):
-            a0, b0 = i * P + STREET / 2, j * P + STREET / 2
-            x, y = to_world(a0 + P / 2, b0 + P / 2)
-            if not in_view(x, y, 20) or river_dist(x, y) < RIVER_W / 2 + P * 0.5:
-                continue
-            r = random.Random(i * 7919 + j)
-            if r.random() < 0.05:
-                continue  # un parc, une place
-            for a, b, w, d in block_lots(r, a0, b0, P - STREET):
-                inset = r.uniform(1.0, 5.0)
-                if w - 2 * inset < 8 or d - 2 * inset < 8:
-                    continue
-                bx, by = to_world(a + w / 2, b + d / 2)
-                h = height_for(bx, by, r)
-                tower(m, beacons, crowns, a + inset, b + inset, w - 2 * inset, d - 2 * inset, h, r)
-                count += 1
-    print(f"[city] {count} tours")
+    count = tall = 0
+    for b in data["buildings"]:
+        ring = b["outer"][:-1]
+        holes = [h[:-1] for h in b["holes"] if len(h) >= 4]
+        if len(ring) < 3:
+            continue
+        cx, cy = sum(x for x, _ in ring) / len(ring), sum(y for _, y in ring) / len(ring)
+        if not in_view(cx, cy, 10) or osm.inside((0.0, 0.0), b["outer"]):
+            continue
+        tags = b["tags"]
+        if tags.get("building") in ("roof", "carport", "no") or tags.get("building:part") == "roof" or tags.get("location") == "underground" or (osm.num(tags.get("layer")) or 0) < 0:
+            continue
+        r = hrand(b["id"])
+        area = abs(ring_area(ring))
+        h, minh, style, officeish = massing(tags, r, area)
+        if h - minh < 1.0:
+            continue
+        bld = r.random()
+        extrude(m, ring, holes, minh, h, bld, style)
+        count += 1
+        if h < 120 and minh == 0 and area > 250 and r.random() < 0.35 and osm.inside((cx, cy), b["outer"]):
+            # locaux techniques et machineries sur le toit
+            s = math.sqrt(area) * r.uniform(0.12, 0.25)
+            q = [(cx - s, cy - s * 0.7), (cx + s, cy - s * 0.7), (cx + s, cy + s * 0.7), (cx - s, cy + s * 0.7)]
+            extrude(m, q, [], h, h + r.uniform(2.5, 5), bld, 0.0)
+        if h > 90 and minh < h - 20:
+            tall += 1
+            for c in corners(ring, 2 if h < 160 else 4):  # feux d'obstacle rouges aux angles du toit
+                billboard(beacons, c[0], c[1], h + 1.5, 1.6, c=0.0, s=r.uniform(0.6, 1.0))
+            if r.random() < 0.4:  # couronne éclairée
+                col, st = r.choice((0.0, 0.0, 0.5, 0.9, 0.97)), r.uniform(0.5, 1.0)
+                big = [(cx + (x - cx) * 1.01 + 0.4 * (x > cx) - 0.4 * (x < cx), cy + (y - cy) * 1.01 + 0.4 * (y > cy) - 0.4 * (y < cy)) for x, y in ring]
+                for i in range(len(big)):
+                    p, q = big[i], big[(i + 1) % len(big)]
+                    crowns.face([(p[0], p[1], h - 6), (q[0], q[1], h - 6), (q[0], q[1], h - 1), (p[0], p[1], h - 1)], c=col, s=st)
+        if (h >= 90 and r.random() < 0.3) or (officeish and 25 <= h < 90 and r.random() < 0.08):
+            sign(signs, ring, h, r)
+    print(f"[city] {count} bâtiments, dont {tall} de plus de 90 m")
 
-    # les rues : une lueur au sol, des réverbères, et sur les avenues la circulation
-    for axis in (0, 1):
-        for k in range(-N, N):
-            avenue = k % 5 == 0
-            half = STREET / 2 + (5 if avenue else 0)
-            for s in range(-N * 4, N * 4):
-                t0, t1 = s * P / 4, (s + 1) * P / 4
-                pts = [(k * P, t0), (k * P, t1)] if axis == 0 else [(t0, k * P), (t1, k * P)]
-                (a0, b0), (a1, b1) = pts
-                mx, my = to_world((a0 + a1) / 2, (b0 + b1) / 2)
-                if not in_view(mx, my, 20):
-                    continue
-                if river_dist(mx, my) < RIVER_W / 2:
-                    continue
-                na, nb = (half, 0) if axis == 0 else (0, half)
-                quad = [to_world(a0 - na, b0 - nb), to_world(a1 - na, b1 - nb), to_world(a1 + na, b1 + nb), to_world(a0 + na, b0 + nb)]
-                r = random.Random(axis * 1_000_003 + k * 7_777 + s)
-                ground.face([(q[0], q[1], 0.05) for q in quad], c=(1.0 if avenue else 0.6) * r.uniform(0.8, 1.1))
-                # réverbères des deux côtés, sodium ou LED selon le quartier
-                led = 0.6 if (k // 7 + s // 28) % 3 == 0 else 0.0
-                for side in (-1, 1):
-                    ea, eb = (side * (half - 1), 0) if axis == 0 else (0, side * (half - 1))
-                    for f in (0.25, 0.75) if avenue else (0.5,):
-                        lx, ly = to_world(a0 + (a1 - a0) * f + ea, b0 + (b1 - b0) * f + eb)
-                        billboard(lamps, lx, ly, 8.0, 1.8, c=led, s=r.uniform(0.7, 1.0))
-                if avenue or r.random() < 0.25:
-                    # voitures : phares d'un côté, feux arrière de l'autre
-                    for side, col in ((-1, 0.6), (1, 0.0)):
-                        for _ in range(r.choice((0, 1, 2, 3, 4)) if avenue else r.choice((0, 1))):
-                            f = r.random()
-                            lane = side * r.uniform(2.0, half - 3)
-                            ea, eb = (lane, 0) if axis == 0 else (0, lane)
-                            cx_, cy_ = to_world(a0 + (a1 - a0) * f + ea, b0 + (b1 - b0) * f + eb)
-                            billboard(traffic, cx_, cy_, 0.8, 1.1, c=col, s=r.uniform(0.5, 1.0))
-    # les quais du fleuve, éclairés
-    for side in (-1, 1):
-        for s in range(-80, 80):
-            x = s * 30.0
-            off = side * (RIVER_W / 2 + 6) / math.cos(math.atan(0.32))
-            y = 1650 + 0.32 * x + off
-            if in_view(x, y):
-                billboard(lamps, x, y, 6.0, 1.8, c=0.6, s=0.8)
-    # le fleuve : une large bande d'eau
+    for rd in data["roads"]:
+        street(ground, lamps, traffic, rd)
+
     water = Mesh("water", water_material())
-    off = (RIVER_W / 2 + 4) / math.cos(math.atan(0.32))
-    xa, xb = -FAR, FAR
-    water.face([(xa, 1650 + 0.32 * xa - off, 0.0), (xb, 1650 + 0.32 * xb - off, 0.0), (xb, 1650 + 0.32 * xb + off, 0.0), (xa, 1650 + 0.32 * xa + off, 0.0)])
+    for wa in data["water"]:
+        ring = wa["outer"][:-1]
+        xs, ys = [x for x, _ in ring], [y for _, y in ring]
+        if max(ys) < 0 or min(ys) > FAR or max(xs) < -FAR or min(xs) > FAR:
+            continue
+        loops = [[Vector((x, y, 0.02)) for x, y in rg] for rg in [ring] + [h[:-1] for h in wa["holes"]]]
+        flat = [p for lp in loops for p in lp]
+        for tri in tessellate_polygon(loops):
+            water.face([tuple(flat[k]) for k in tri])
     # sol sous tout le reste
-    ground.face([(-FAR * 2, 0, 0.0), (FAR * 2, 0, 0.0), (FAR * 2, FAR * 1.5, 0.0), (-FAR * 2, FAR * 1.5, 0.0)], c=0.0)
-    for mesh in (m, beacons, crowns, lamps, traffic, ground, water):
-        mesh.build()
+    ground.face([(-FAR * 2, -FAR, 0.0), (FAR * 2, -FAR, 0.0), (FAR * 2, FAR * 1.5, 0.0), (-FAR * 2, FAR * 1.5, 0.0)], c=0.0)
+    for mesh in (m, beacons, crowns, signs, lamps, traffic, ground, water):
+        if mesh.faces:
+            mesh.build()
 
 
 world()
@@ -552,7 +730,7 @@ try:
     scene.view_settings.look = "AgX - Medium High Contrast"
 except TypeError as e:
     print("[city] transformation de vue :", e)
-scene.view_settings.exposure = 0.0
+scene.view_settings.exposure = -0.3  # nuit profonde : la ville ne vole pas la vedette au dev
 print(f"[city] rendu {args.width}×{H}, {args.samples} échantillons, vue {scene.view_settings.view_transform}")
 
 os.makedirs(OUT, exist_ok=True)

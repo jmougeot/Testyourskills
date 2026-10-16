@@ -53,6 +53,17 @@ cabin-lm.webp
 Original work for Testyourskills: lighting of the elevator cabin, baked with
 Cycles in Blender (tools/bake/cabin.py) on a copy of the cabin built in code.
 
+city.webp
+Night view of La Défense from Neuilly-sur-Seine, modelled and rendered in
+Blender (tools/bake/city.py) from OpenStreetMap data: building footprints,
+heights and building parts, streets and water.
+Map data © OpenStreetMap contributors, available under the Open Database
+License (ODbL) 1.0. https://www.openstreetmap.org/copyright
+https://opendatacommons.org/licenses/odbl/1-0/
+Changes: buildings extruded from their tagged or estimated heights; lit
+windows, facades, generic rooftop signs (no real brand), street lights and
+traffic are invented for the render.
+
 plant-v2.glb
 Source: Poly Haven, potted_plant_02, CC0.
 https://polyhaven.com/a/potted_plant_02
