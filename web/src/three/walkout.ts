@@ -27,6 +27,7 @@ import { createBakedLighting } from "./baked";
 import { createCardMesh } from "./cardMesh";
 import { chairMaterial, createChair } from "./chair";
 import { createElevatorSound } from "./elevatorSound";
+import { LensEffect, WhiteBalanceEffect, makeLensDirtTexture, whiteBalanceGains } from "./lens";
 import { createPlayer } from "./player";
 import { createWorkstation } from "./workstation";
 import { createCityBackdrop, createGlassReflection, createStudioEnvironment } from "./stage";
@@ -660,10 +661,25 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
     composer.addPass(new EffectPass(camera, dof));
   }
   const bloom = new BloomEffect({ mipmapBlur: true, luminanceThreshold: 1.0, luminanceSmoothing: 0.2, intensity: 0.6, radius: 0.65 });
-  const vignette = new VignetteEffect({ darkness: 0.55, offset: 0.28 });
+  // Vignettage d'un objectif ouvert : −0,7 IL dans les coins, rien au centre
+  // ni presque au milieu des bords (il faisait −1,7 IL, un effet visible).
+  const vignette = new VignetteEffect({ darkness: 0.35, offset: 0.35 });
   const noise = new NoiseEffect({ blendFunction: BlendFunction.OVERLAY, premultiply: false });
   noise.blendMode.opacity.value = 0.14;
-  composer.addPass(new EffectPass(camera, bloom, vignette, noise, new ToneMappingEffect({ mode: ToneMappingMode.ACES_FILMIC })));
+  // ACES (three.js) plutôt qu'AgX : l'AgX de three.js n'a que le look « Base »
+  // (noirs levés, LED du tier délavées), pas le « Medium High Contrast » du
+  // rendu de la ville dans Blender, déjà une image finie (SPEC §6.3).
+  const toneMapping = new ToneMappingEffect({ mode: ToneMappingMode.ACES_FILMIC });
+  // Balance des blancs : neutre dans la cabine, à la lumière chaude voulue ;
+  // réglée sur 5 600 K une fois dehors, comme une balance automatique qui
+  // s'adapte aux suspensions (≈ 4 500 K) : il leur reste un peu de chaleur.
+  const WB_CABIN = whiteBalanceGains(6504);
+  const WB_OFFICE = whiteBalanceGains(5600);
+  const whiteBalance = new WhiteBalanceEffect(WB_CABIN.clone());
+  // l'objectif (aberration radiale, saleté) : fusionné dans la même passe, coupé sur mobile
+  const lens = low ? null : new LensEffect(bloom.texture, keep(makeLensDirtTexture()), { aberration: 0.001, dirt: 3 });
+  const gradePass = new EffectPass(camera, ...(lens ? [lens] : []), bloom, whiteBalance, vignette, noise, toneMapping);
+  composer.addPass(gradePass);
 
   /* ---------- état ---------- */
   let t0 = 0;
@@ -1087,6 +1103,7 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
     camera_(t, wall);
     bloom.intensity = lerp(0.6, 0.35, seg(t, plan.doors, 1)) + (t >= T_BURST ? 0.8 * (1 - seg(t, T_BURST, 0.5)) : 0);
     noise.blendMode.opacity.value = lerp(0.14, 0.055, seg(t, plan.doors, 1));
+    whiteBalance.gains.lerpVectors(WB_CABIN, WB_OFFICE, inOut(seg(t, plan.doors + 0.3, 1.5)));
     void dt;
 
     if (t >= T_HANDOFF && !handoffSent) {
@@ -1108,6 +1125,8 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
       dof,
       /** Intensités de la lumière précalculée, réglables en direct. */
       light: LIGHT,
+      /** L'objectif et le développement, réglables en direct. */
+      post: { pass: gradePass, bloom, vignette, noise, toneMapping, whiteBalance, lens, setKelvin: (k: number) => WB_OFFICE.copy(whiteBalanceGains(k)) },
       get t() {
         return tNow;
       },
