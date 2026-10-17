@@ -21,7 +21,7 @@ import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeom
 import { TextGeometry } from "three/examples/jsm/geometries/TextGeometry.js";
 import { SVGLoader } from "three/examples/jsm/loaders/SVGLoader.js";
 import { sharedResources, type WalkoutAssets } from "./assets";
-import { CAB_H, DOOR_W, MIRROR_LAYER, createCabin } from "./cabin";
+import { CAB_H, DOOR_W, createCabin } from "./cabin";
 import { MEAN_LUMA, grainAlbedo } from "./albedo";
 import { createBakedLighting } from "./baked";
 import { createCardMesh } from "./cardMesh";
@@ -451,14 +451,9 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
   pack.scale.setScalar(0.62);
   pack.position.copy(PACK_POS);
   scene.add(pack);
-  // le pack, ses étincelles et les objets chromés de la montée se voient
-  // dans les miroirs de la cabine
-  const mirrored = (obj: THREE.Object3D) => obj.traverse((m) => m.layers.enable(MIRROR_LAYER));
-  mirrored(pack);
   const packLight = new THREE.PointLight(accent.a, 2, 5, 1.6);
   packLight.position.set(0, PACK_POS.y + 0.3, PACK_POS.z + 1.0);
   scene.add(packLight);
-  mirrored(packLight);
 
   /* ---------- particules ---------- */
   const bursts: Burst[] = [];
@@ -479,7 +474,6 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
     points.visible = false;
     points.frustumCulled = false;
     scene.add(points);
-    mirrored(points);
     const b = { points, mat, origin: new THREE.Vector3(), vel, start: -99, life, gravity };
     bursts.push(b);
     return b;
@@ -573,13 +567,11 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
   for (const tl of tells) {
     tl.obj.visible = false;
     scene.add(tl.obj);
-    mirrored(tl.obj);
   }
   const tellKey = new THREE.SpotLight(0xffffff, 0, 6, 0.5, 0.6, 1.4);
   tellKey.position.set(0.8, CAB_H - 0.1, TELL_POS.z + 1.6);
   tellKey.target.position.copy(TELL_POS);
   scene.add(tellKey, tellKey.target);
-  mirrored(tellKey);
 
   /* ---------- le dev à son poste ---------- */
   // De dos, face à ses écrans et aux baies ; la chaise pivote vers la caméra juste avant la carte.

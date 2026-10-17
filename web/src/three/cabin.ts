@@ -12,7 +12,6 @@
 import * as THREE from "three";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { RectAreaLightUniformsLib } from "three/examples/jsm/lights/RectAreaLightUniformsLib.js";
-import { Reflector } from "three/examples/jsm/objects/Reflector.js";
 import { limitLights } from "./baked";
 import { createWallScreen, type WallScreen } from "./ledWall";
 
@@ -23,14 +22,12 @@ export const CAB_H = 2.37; // sous le plafond lumineux
 export const CAB_D = 3.0;
 export const DOOR_W = 1.0;
 export const DOOR_H = 2.1;
-/** Ce que reflètent les miroirs de la cabine : la cabine elle-même, et ce
- * que la scène y ajoute (le pack, ses étincelles, les objets chromés de la
- * montée), pas l'open space, caché derrière les portes. */
-export const MIRROR_LAYER = 1;
 /** Les portes palières, dans le mur de l'open space (tools/bake/office.py, z = -0,25). */
 const LANDING_Z = -0.25;
 /** Placage de noyer assombri par un gris neutre ; finition mate et relief discret. */
 const WALNUT_TINT = 0xaaaaaa;
+/** La définition de la photo de la cabine que reflètent les miroirs (px par face). */
+const MIRROR_ENV_SIZE = 1024;
 /** Le marbre noir veiné des joints du sol, réchauffé en brun foncé. */
 const FLOOR_DARK_TINT = 0xb08a70;
 
@@ -73,6 +70,81 @@ function boxProjection(mat: THREE.Material, probe: THREE.Vector3, min: THREE.Vec
       .replace("#include <envmap_physical_pars_fragment>", THREE.ShaderChunk.envmap_physical_pars_fragment.replace(IBL_DIR, `${IBL_DIR}\nreflectVec = boxProjected( reflectVec );`));
   };
   mat.customProgramCacheKey = () => "cabin-box-projection";
+}
+
+/** Les miroirs : la photo de la cabine projetée sur la boîte, et le reflet de
+ * la main courante de la même paroi, un cylindre ovale le long de z. */
+const MIRROR_VERT = /* glsl */ `
+varying vec3 vPos;
+void main() {
+  vec4 world = modelMatrix * vec4( position, 1.0 );
+  vPos = world.xyz;
+  gl_Position = projectionMatrix * viewMatrix * world;
+}`;
+const MIRROR_FRAG = /* glsl */ `
+uniform samplerCube uEnv;
+uniform vec3 uProbe;
+uniform vec3 uBoxMin;
+uniform vec3 uBoxMax;
+uniform vec3 uNormal;
+uniform vec3 uTint;
+uniform vec3 uSteel;
+uniform vec4 uRail; // centre (x, y) et demi-axes de la main courante
+uniform vec2 uRailZ;
+varying vec3 vPos;
+vec3 boxed( vec3 p, vec3 dir ) {
+  vec3 d = dir + sign( dir ) * 1e-5;
+  vec3 t = mix( ( uBoxMin - p ) / d, ( uBoxMax - p ) / d, step( vec3( 0.0 ), dir ) );
+  float f = max( min( min( t.x, t.y ), t.z ), 0.0 );
+  return normalize( p + dir * f - uProbe );
+}
+void main() {
+  vec3 r = reflect( normalize( vPos - cameraPosition ), uNormal );
+  vec3 color = textureCube( uEnv, boxed( vPos, r ) ).rgb;
+  // la main courante : intersection du rayon réfléchi et du cylindre,
+  // bord adouci sur un pixel
+  vec2 o = ( vPos.xy - uRail.xy ) / uRail.zw;
+  vec2 d = r.xy / uRail.zw;
+  float a = max( dot( d, d ), 1e-8 );
+  float b = dot( o, d );
+  float disc = b * b - a * ( dot( o, o ) - 1.0 );
+  float t = ( -b - sqrt( max( disc, 0.0 ) ) ) / a;
+  vec3 h = vPos + r * t;
+  float cover = clamp( disc / max( fwidth( disc ), 1e-6 ) + 0.5, 0.0, 1.0 ) * step( 0.0, t ) * step( uRailZ.x, h.z ) * step( h.z, uRailZ.y );
+  if ( cover > 0.0 ) {
+    vec3 n = normalize( vec3( ( h.xy - uRail.xy ) / ( uRail.zw * uRail.zw ), 0.0 ) );
+    vec3 rail = textureLod( uEnv, boxed( h, reflect( r, n ) ), 6.0 ).rgb * uSteel;
+    color = mix( color, rail, cover );
+  }
+  gl_FragColor = vec4( color * uTint, 1.0 );
+  #include <tonemapping_fragment>
+  #include <colorspace_fragment>
+}`;
+
+/** La main courante d'une paroi (côté `side`), mesurée sur le modèle : son
+ * centre et ses demi-axes dans le plan x-y, sa longueur le long de z. */
+function railOf(mesh: THREE.Mesh, side: -1 | 1, rail: THREE.Vector4, along: THREE.Vector2) {
+  const pos = mesh.geometry.getAttribute("position");
+  const p = new THREE.Vector3();
+  const lo = V(Infinity, Infinity, Infinity);
+  const hi = V(-Infinity, -Infinity, -Infinity);
+  let z0 = Infinity;
+  let z1 = -Infinity;
+  for (let i = 0; i < pos.count; i++) {
+    p.fromBufferAttribute(pos, i).applyMatrix4(mesh.matrixWorld);
+    // la main courante latérale, sans les retours de celle du fond (|x| < 1,13)
+    if (side * p.x < 1.135 || p.y < 0.8 || p.y > 0.95) continue;
+    z0 = Math.min(z0, p.z);
+    z1 = Math.max(z1, p.z);
+    // la section, mesurée aux deux bouts (un tube droit n'a de sommets qu'à
+    // ses extrémités), loin des tiges de fixation (z = 0,65 et 2,3 m)
+    if (p.z > 0.5 && p.z < 2.5) continue;
+    lo.min(p);
+    hi.max(p);
+  }
+  if (!Number.isFinite(lo.x)) return;
+  rail.set((lo.x + hi.x) / 2, (lo.y + hi.y) / 2, (hi.x - lo.x) / 2, (hi.y - lo.y) / 2);
+  along.set(z0, z1);
 }
 
 export interface CabinOptions {
@@ -287,48 +359,52 @@ export function createCabin(o: CabinOptions): Cabin {
   disposables.push(cabinEnv!);
 
   // les miroirs : du sol au plafond, au milieu de chaque paroi latérale, à la
-  // place du panneau de noyer central (entre ses deux joints). De vrais
-  // reflets, rendus en direct, pour que le pack et ses étincelles s'y voient ;
-  // posés après la photographie de la cabine, qui garde le noyer. Ils ne
-  // rendent que la couche MIRROR_LAYER ; quand un miroir se rend, l'autre
-  // est masqué : pas de reflets en cascade, deux rendus de plus au plus, et
-  // aucun hors de la cabine (ils sont alors derrière la caméra).
-  const MIRROR_RES = 0.75; // de la définition de l'image
-  const buffer = new THREE.Vector2();
-  const mirrors = ([-1, 1] as const).map((side) => {
-    const mirror = keep(
-      new Reflector(new THREE.PlaneGeometry(CAB_D / 3 - 0.003, CAB_H), {
-        // la réflectance d'un miroir argenté, avec le léger vert du verre
-        color: new THREE.Color(0.86, 0.89, 0.87),
-        clipBias: 0.002,
+  // place du panneau de noyer central (entre ses deux joints). Leur reflet est
+  // précalculé : la cabine photographiée une fois, nette, depuis le point des
+  // reflets de l'inox, et projetée sur la boîte comme eux (exact pour tout ce
+  // qui est posé sur les parois). Seule la main courante, à 9 cm devant le
+  // miroir, ne figure pas sur la photo vue sous cet angle : son reflet est
+  // calculé dans le shader (un cylindre ovale). Le pack et ses étincelles n'y
+  // apparaissent pas ; le coût est celui d'un panneau texturé.
+  // avec ses mipmaps : le miroir vu en biais reste propre, et la main
+  // courante, en inox satiné, y lit un reflet flou
+  const mirrorEnv = keep(
+    new THREE.WebGLCubeRenderTarget(MIRROR_ENV_SIZE, { type: THREE.HalfFloatType, generateMipmaps: true, minFilter: THREE.LinearMipmapLinearFilter }),
+  );
+  const mirrorCam = new THREE.CubeCamera(0.02, 20, mirrorEnv);
+  mirrorCam.position.copy(probe);
+  mirrorCam.updateMatrixWorld();
+  mirrorCam.update(renderer, scene);
+  cabin.updateMatrixWorld(true);
+  const railMesh = cabin.getObjectsByProperty("isMesh", true).find((m) => ((m as THREE.Mesh).material as THREE.Material).name === "M_Handle") as THREE.Mesh | undefined;
+  for (const side of [-1, 1] as const) {
+    const rail = new THREE.Vector4(0, -10, 1, 1);
+    const railZ = new THREE.Vector2(0, 0);
+    if (railMesh) railOf(railMesh, side, rail, railZ);
+    const material = keep(
+      new THREE.ShaderMaterial({
+        uniforms: {
+          uEnv: { value: mirrorEnv.texture },
+          uProbe: { value: probe },
+          uBoxMin: { value: V(-CAB_W / 2, 0, -0.02) },
+          uBoxMax: { value: V(CAB_W / 2, CAB_H, CAB_D) },
+          uNormal: { value: V(-side, 0, 0) },
+          // la réflectance d'un miroir argenté, avec le léger vert du verre
+          uTint: { value: new THREE.Color(0.86, 0.89, 0.87) },
+          uSteel: { value: new THREE.Color(0.9, 0.9, 0.9) },
+          uRail: { value: rail },
+          uRailZ: { value: railZ },
+        },
+        vertexShader: MIRROR_VERT,
+        fragmentShader: MIRROR_FRAG,
       }),
     );
-    // un reflet multiplié par la réflectance, pas le mélange « overlay » de
-    // Reflector, qui sature les couleurs
-    const material = mirror.material as THREE.ShaderMaterial;
-    material.fragmentShader = material.fragmentShader.replace("blendOverlay( base.rgb, color )", "base.rgb * color");
+    const mirror = new THREE.Mesh(new THREE.PlaneGeometry(CAB_D / 3 - 0.003, CAB_H), material);
+    disposables.push(mirror.geometry);
     mirror.position.set(side * (CAB_W / 2 - 0.006), CAB_H / 2, CAB_D / 2);
     mirror.rotation.y = -side * (Math.PI / 2);
     cabin.add(mirror);
-    return mirror;
-  });
-  for (const [mirror, other] of [mirrors, [...mirrors].reverse()] as const) {
-    const render = mirror.onBeforeRender;
-    mirror.onBeforeRender = (...args) => {
-      // la définition suit celle de l'image (le canvas n'a pas encore sa
-      // taille quand la cabine est créée)
-      args[0].getDrawingBufferSize(buffer);
-      const target = mirror.getRenderTarget();
-      const w = Math.round(buffer.x * MIRROR_RES);
-      const h = Math.round(buffer.y * MIRROR_RES);
-      if (target.width !== w || target.height !== h) target.setSize(w, h);
-      mirror.getReflectionCamera(args[2]).layers.set(MIRROR_LAYER);
-      other.visible = false;
-      render.apply(mirror, args);
-      other.visible = true;
-    };
   }
-  for (const o of [cabin, shaftGap, seam]) o.traverse((m) => m.layers.enable(MIRROR_LAYER));
 
   return {
     doors,
