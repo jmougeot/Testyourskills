@@ -86,6 +86,9 @@ CABIN_WIDTH = 2.6
 CABIN_DEPTH = 3.0
 CABIN_HEIGHT = 2.37
 DOOR_H = 2.1
+DOOR_W = 1.0
+# le chambranle d'inox laissé autour de l'ouverture, dans la façade en noyer (m)
+DOOR_FRAME = 0.05
 # Le calepinage du sol et du plafond, en moulinet (coordonnées three.js) : une
 # dalle centrale entre x = ±0,5 et z = 1 à 2, entourée de quatre grandes dalles
 # qui tournent autour d'elle. Joints et bordure du sol en marbre sombre ;
@@ -521,6 +524,32 @@ def prepare_cabin(spec):
                 u = co.z / 2.4 + (n * 0.382) % 1
                 v = along / 1.3 * (-1 if n % 2 else 1) + (n * 0.618) % 1
                 uv.data[li].uv = (u, 1 - v)
+    # La façade, autour des portes : sa face intérieure passe au noyer, en
+    # deux feuilles de part et d'autre de l'axe, comme le fond ; un chambranle
+    # d'inox de 5 cm reste autour de l'ouverture, avec ses tableaux.
+    facade = find(r"EntryWall")[0]
+    me = facade.data
+    me.materials.append(glass)
+    frame_x, frame_z = DOOR_W / 2 + DOOR_FRAME, DOOR_H + DOOR_FRAME
+    bm = bmesh.new()
+    bm.from_mesh(me)
+    for co, no in [((-frame_x, 0, 0), (1, 0, 0)), ((frame_x, 0, 0), (1, 0, 0)), ((0, 0, frame_z), (0, 0, 1))]:
+        bmesh.ops.bisect_plane(bm, geom=list(bm.verts) + list(bm.edges) + list(bm.faces), plane_co=co, plane_no=no, dist=1e-6)
+    uv = bm.loops.layers.uv.active
+    for f in bm.faces:
+        c = f.calc_center_median()
+        if f.normal.y > -0.9 or abs(c.y) > 0.002 or (abs(c.x) < frame_x and c.z < frame_z):
+            continue
+        f.material_index = len(me.materials) - 1
+        n = 8 + int(c.x >= 0)
+        for loop in f.loops:
+            co = loop.vert.co
+            u = co.z / 2.4 + (n * 0.382) % 1
+            v = co.x / 1.3 * (-1 if n % 2 else 1) + (n * 0.618) % 1
+            loop[uv].uv = (u, 1 - v)
+    bm.to_mesh(me)
+    bm.free()
+    me.update()
     # Platine à quatre commandes, en vraies dimensions, indépendante de
     # l'élargissement des parois. Les coordonnées ci-dessous sont Three.js.
     steel = bpy.data.materials["M_Steel1"]
