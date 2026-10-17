@@ -695,6 +695,7 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
   let cue: WalkoutCue = null;
   let tNow = -1;
   let held: number | null = null;
+  let freeCamera = false; // inspection locale uniquement, via __tys3d
   let frameMs = 16;
   let wallState = "";
   let wallSwitch = -99;
@@ -846,6 +847,7 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
     return a.fov * (2 * s3 - 3 * s2 + 1) + fovTan[i]! * (s3 - 2 * s2 + s) * dt + b.fov * (-2 * s3 + 3 * s2) + fovTan[i + 1]! * (s3 - s2) * dt;
   };
   const camera_ = (t: number, wall: number) => {
+    if (import.meta.env.DEV && freeCamera) return;
     let fov = 40;
     let bokeh = 0;
     if (t < T_SETTLE) {
@@ -1122,6 +1124,8 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
     (window as unknown as { __tys3d?: unknown }).__tys3d = {
       scene,
       camera,
+      get freeCamera() { return freeCamera; },
+      set freeCamera(value: boolean) { freeCamera = value; },
       bloom,
       dof,
       /** Intensités de la lumière précalculée, réglables en direct. */
