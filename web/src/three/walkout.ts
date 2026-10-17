@@ -16,7 +16,7 @@
 //    HTML. Une flèche pour une carte seule, deux pour une comparaison GitHub × CV
 //    (le « double »). Assets : web/src/three/assets.ts.
 import * as THREE from "three";
-import { BloomEffect, DepthOfFieldEffect, EffectComposer, EffectPass, NoiseEffect, RenderPass, ToneMappingEffect, ToneMappingMode, VignetteEffect, BlendFunction } from "postprocessing";
+import { BloomEffect, EffectComposer, EffectPass, NoiseEffect, RenderPass, ToneMappingEffect, ToneMappingMode, VignetteEffect, BlendFunction } from "postprocessing";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import { TextGeometry } from "three/examples/jsm/geometries/TextGeometry.js";
 import { SVGLoader } from "three/examples/jsm/loaders/SVGLoader.js";
@@ -652,15 +652,11 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
   });
 
   /* ---------- post-traitement ---------- */
-  const composer = new EffectComposer(renderer, { frameBufferType: THREE.HalfFloatType, multisampling: low ? 0 : 4 });
+  // Anticrénelage à deux échantillons (quatre avant) : le rendu de la scène,
+  // en demi-flottants, est la passe la plus chère ; plus de flou de
+  // profondeur (décision du 17 octobre 2026), tout est net.
+  const composer = new EffectComposer(renderer, { frameBufferType: THREE.HalfFloatType, multisampling: low ? 0 : 2 });
   composer.addPass(new RenderPass(scene, camera));
-  const dof = low ? null : new DepthOfFieldEffect(camera, { focusDistance: 5, focusRange: 1.4, bokehScale: 0 });
-  const focus = PACK_POS.clone();
-  const deskFocus = V(0, 1.1, DESK_Z);
-  if (dof) {
-    dof.target = focus;
-    composer.addPass(new EffectPass(camera, dof));
-  }
   const bloom = new BloomEffect({ mipmapBlur: true, luminanceThreshold: 1.0, luminanceSmoothing: 0.2, intensity: 0.6, radius: 0.65 });
   // Vignettage d'un objectif ouvert : −0,7 IL dans les coins, rien au centre
   // ni presque au milieu des bords (il faisait −1,7 IL, un effet visible).
@@ -849,21 +845,12 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
   const camera_ = (t: number, wall: number) => {
     if (import.meta.env.DEV && freeCamera) return;
     let fov = 40;
-    let bokeh = 0;
     if (t < T_SETTLE) {
       fov = rail(t);
-      // mise au point : le pack, l'écran ou l'objet chromé, le dev, la carte
-      if (t < T_BURST + 0.3) focus.copy(PACK_POS);
-      else if (t < plan.doors) focus.copy(TELL_POS);
-      else if (t < T_CARD) focus.lerpVectors(TELL_POS, deskFocus, inOut(seg(t, plan.doors, 1.2)));
-      else focus.copy(slam.visible ? slam.position : card.position);
-      bokeh = t < T_BURST + 0.3 ? 3.0 : t < plan.doors ? 0.5 : t < T_CARD ? 0.35 : 2.0;
     } else {
       // pose finale exacte : la carte HTML vient s'y superposer au pixel près
       camPos.copy(F_POS);
       camLook.set(F_POS.x, F_POS.y, F_POS.z - 10);
-      focus.copy(card.position);
-      bokeh = lerp(2.0, 0, inOut(seg(t, T_SETTLE, 0.9)));
     }
     camera.position.copy(camPos);
     // la cabine tasse au départ et à l'arrivée : un simple creux vertical, pas une secousse
@@ -893,7 +880,6 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
       camera.fov = fv;
       camera.updateProjectionMatrix();
     }
-    if (dof) dof.bokehScale = bokeh * 2.2;
   };
 
   const update = (now: number, dt: number) => {
@@ -1133,7 +1119,6 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
       get freeCamera() { return freeCamera; },
       set freeCamera(value: boolean) { freeCamera = value; },
       bloom,
-      dof,
       /** Intensités de la lumière précalculée, réglables en direct. */
       light: LIGHT,
       /** L'objectif et le développement, réglables en direct. */

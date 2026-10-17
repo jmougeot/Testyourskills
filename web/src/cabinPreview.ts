@@ -15,7 +15,6 @@ interface Inspection {
   camera: PerspectiveCamera;
   freeCamera: boolean;
   hold(time: number): void;
-  dof: { bokehScale: number } | null;
 }
 
 const status = document.querySelector<HTMLElement>("#status")!;
@@ -41,7 +40,6 @@ async function start() {
   debug.hold(10.9);
   await scene.ready;
   debug.freeCamera = true;
-  if (debug.dof) debug.dof.bokehScale = 0;
   const controls = new OrbitControls(debug.camera, scene.canvas);
   controls.minDistance = 0.15;
   controls.maxDistance = 5;
