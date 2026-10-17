@@ -12,6 +12,7 @@
 import * as THREE from "three";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { RectAreaLightUniformsLib } from "three/examples/jsm/lights/RectAreaLightUniformsLib.js";
+import { Reflector } from "three/examples/jsm/objects/Reflector.js";
 import { limitLights } from "./baked";
 import { createWallScreen, type WallScreen } from "./ledWall";
 
@@ -22,6 +23,10 @@ export const CAB_H = 2.37; // sous le plafond lumineux
 export const CAB_D = 3.0;
 export const DOOR_W = 1.0;
 export const DOOR_H = 2.1;
+/** Ce que reflètent les miroirs de la cabine : la cabine elle-même, et ce
+ * que la scène y ajoute (le pack, ses étincelles, les objets chromés de la
+ * montée), pas l'open space, caché derrière les portes. */
+export const MIRROR_LAYER = 1;
 /** Les portes palières, dans le mur de l'open space (tools/bake/office.py, z = -0,25). */
 const LANDING_Z = -0.25;
 /** Placage de noyer assombri par un gris neutre ; finition mate et relief discret. */
@@ -280,6 +285,50 @@ export function createCabin(o: CabinOptions): Cabin {
   }
   pmrem.dispose();
   disposables.push(cabinEnv!);
+
+  // les miroirs : du sol au plafond, au milieu de chaque paroi latérale, à la
+  // place du panneau de noyer central (entre ses deux joints). De vrais
+  // reflets, rendus en direct, pour que le pack et ses étincelles s'y voient ;
+  // posés après la photographie de la cabine, qui garde le noyer. Ils ne
+  // rendent que la couche MIRROR_LAYER ; quand un miroir se rend, l'autre
+  // est masqué : pas de reflets en cascade, deux rendus de plus au plus, et
+  // aucun hors de la cabine (ils sont alors derrière la caméra).
+  const MIRROR_RES = 0.75; // de la définition de l'image
+  const buffer = new THREE.Vector2();
+  const mirrors = ([-1, 1] as const).map((side) => {
+    const mirror = keep(
+      new Reflector(new THREE.PlaneGeometry(CAB_D / 3 - 0.003, CAB_H), {
+        // la réflectance d'un miroir argenté, avec le léger vert du verre
+        color: new THREE.Color(0.86, 0.89, 0.87),
+        clipBias: 0.002,
+      }),
+    );
+    // un reflet multiplié par la réflectance, pas le mélange « overlay » de
+    // Reflector, qui sature les couleurs
+    const material = mirror.material as THREE.ShaderMaterial;
+    material.fragmentShader = material.fragmentShader.replace("blendOverlay( base.rgb, color )", "base.rgb * color");
+    mirror.position.set(side * (CAB_W / 2 - 0.006), CAB_H / 2, CAB_D / 2);
+    mirror.rotation.y = -side * (Math.PI / 2);
+    cabin.add(mirror);
+    return mirror;
+  });
+  for (const [mirror, other] of [mirrors, [...mirrors].reverse()] as const) {
+    const render = mirror.onBeforeRender;
+    mirror.onBeforeRender = (...args) => {
+      // la définition suit celle de l'image (le canvas n'a pas encore sa
+      // taille quand la cabine est créée)
+      args[0].getDrawingBufferSize(buffer);
+      const target = mirror.getRenderTarget();
+      const w = Math.round(buffer.x * MIRROR_RES);
+      const h = Math.round(buffer.y * MIRROR_RES);
+      if (target.width !== w || target.height !== h) target.setSize(w, h);
+      mirror.getReflectionCamera(args[2]).layers.set(MIRROR_LAYER);
+      other.visible = false;
+      render.apply(mirror, args);
+      other.visible = true;
+    };
+  }
+  for (const o of [cabin, shaftGap, seam]) o.traverse((m) => m.layers.enable(MIRROR_LAYER));
 
   return {
     doors,
