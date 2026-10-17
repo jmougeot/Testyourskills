@@ -22,6 +22,7 @@ import os
 import re
 import sys
 import urllib.request
+import zipfile
 
 import bmesh
 import bpy
@@ -79,14 +80,25 @@ MODELS = [
 ]
 
 # La cabine, aux cotes de la scène (web/src/three/cabin.ts) : portes de 2,1 m
-# de haut, la face intérieure de la façade en z = 0, la cabine vers +z, 2,6 m
-# de profondeur (le modèle n'en a que 1,5 : la caméra recule jusqu'à 2,45 m).
-CABIN_DEPTH = 2.6
+# de haut, la face intérieure de la façade en z = 0, la cabine vers +z.
+# L'ouverture reste à 1 m pour rejoindre les portes palières de l'open space.
+CABIN_WIDTH = 2.6
+CABIN_DEPTH = 3.0
+CABIN_HEIGHT = 2.37
 DOOR_H = 2.1
+# Le calepinage du sol et du plafond, en moulinet (coordonnées three.js) : une
+# dalle centrale entre x = ±0,5 et z = 1 à 2, entourée de quatre grandes dalles
+# qui tournent autour d'elle. Joints et bordure du sol en marbre sombre ;
+# joints du plafond en creux noirs (m).
+PINWHEEL_X = (-0.5, 0.5)
+PINWHEEL_Z = (1.0, 2.0)
+FLOOR_JOINT = 0.05
+FLOOR_BORDER = 0.08
+CEILING_JOINT = 0.04
 # ce qui ne se voit pas de l'intérieur, ou qui fermerait le passage des portes :
 # les deux coques extérieures, les faces arrière des parois (grille d'Unreal),
 # le doublon de l'afficheur de la boîte à boutons
-CABIN_DROP = r"(Outer_Wall|Int_Wall_Lift|WorldGridMaterial|Plane_44|M_poster)"
+CABIN_DROP = r"(Outer_Wall|Int_Wall_Lift|WorldGridMaterial|Plane_44|M_poster|Lift_Button_Board|LIft_Buttoon)"
 
 
 def env_key():
@@ -240,15 +252,34 @@ def split(ob, name_neg, name_pos):
     return halves
 
 
+def pinwheel():
+    """Les cinq dalles du moulinet (x0, x1, z0, z1, en three.js) : quatre autour de la centrale."""
+    w2, d = CABIN_WIDTH / 2, CABIN_DEPTH
+    (x0, x1), (z0, z1) = PINWHEEL_X, PINWHEEL_Z
+    return [(-w2, x0, 0, z1), (x0, w2, 0, z0), (x1, w2, z0, d), (-w2, x1, z1, d), (x0, x1, z0, z1)]
+
+
+def pinwheel_slab(rects, x, z, border, joint):
+    """L'indice de la dalle sous (x, z), ou None dans la bordure ou un joint."""
+    w2, d = CABIN_WIDTH / 2, CABIN_DEPTH
+    if min(w2 - abs(x), z, d - z) < border:
+        return None
+    for i, (x0, x1, z0, z1) in enumerate(rects):
+        if x0 <= x <= x1 and z0 <= z <= z1:
+            inner = [x - x0 if x0 > -w2 else 1, x1 - x if x1 < w2 else 1, z - z0 if z0 > 0 else 1, z1 - z if z1 < d else 1]
+            return None if min(inner) < joint else i
+    return None
+
+
 def prepare_cabin(spec):
     """La cabine d'ascenseur : tout le décor vient du modèle, la scène n'y
     ajoute que ce qui bouge ou change par carte. Le modèle est remis aux
     cotes de la scène, sa profondeur étirée (verre, inox brossé et pierre
     s'y prêtent), ses deux vantaux séparés, et les pièces que la scène
-    anime nommées : « door_l », « door_r », « cop_display » (le mini-afficheur
+    anime nommées : « door_l », « door_r », « cop_display » (l'afficheur latéral
     de la boîte à boutons), « ceiling_light » (le plafond lumineux),
-    « button_arrival » (l'anneau du bouton de l'étage d'arrivée, en haut à
-    droite) ; le centre des boutons va dans les extras de la scène."""
+    « button_arrival » (l'anneau de destination). La nouvelle platine latérale
+    regroupe l'afficheur et quatre boutons ; leurs centres sont exportés."""
     for o in [o for o in bpy.data.objects if o.type == "MESH"]:
         o.select_set(True)
     bpy.context.view_layer.objects.active = next(o for o in bpy.data.objects if o.type == "MESH")
@@ -264,16 +295,16 @@ def prepare_cabin(spec):
             if m.name == "M_Oil_Bottel1":
                 o.data.materials[i] = glass
     obs = {o.name: o for o in bpy.data.objects}
-    get = lambda pat: [o for n, o in obs.items() if re.search(pat, n)]
+    find = lambda pat: [o for n, o in obs.items() if re.search(pat, n)]
 
     def bounds(objs):
         vs = [v.co for o in objs for v in o.data.vertices]
         return Vector([min(v[i] for v in vs) for i in range(3)]), Vector([max(v[i] for v in vs) for i in range(3)])
 
-    door_lo, door_hi = bounds(get(r"Lift_door"))
+    door_lo, door_hi = bounds(find(r"Lift_door"))
     x0 = (door_lo.x + door_hi.x) / 2
-    y_face = bounds(get(r"EntryWall"))[0].y  # la face intérieure de la façade
-    y_back = bounds(get(r"Back_Wall"))[1].y  # la face du fond
+    y_face = bounds(find(r"EntryWall"))[0].y  # la face intérieure de la façade
+    y_back = bounds(find(r"Back_Wall"))[1].y  # la face du fond
     s = DOOR_H / door_hi.z
     k = CABIN_DEPTH / ((y_face - y_back) * s)
     # cotes de la scène, en Blender (z en haut ; l'export donne y en haut et
@@ -281,44 +312,365 @@ def prepare_cabin(spec):
     for o in bpy.data.objects:
         for v in o.data.vertices:
             y = (v.co.y - y_face) * s
-            v.co = Vector(((v.co.x - x0) * s, y * k if y < 0 else y, v.co.z * s))
+            x = (v.co.x - x0) * s
+            # Élargir les joues, sans étirer l'ouverture ni les vantaux.
+            if abs(x) > 0.5:
+                x = math.copysign(0.5 + (abs(x) - 0.5) * (CABIN_WIDTH - 1), x)
+            v.co = Vector((x, y * k if y < 0 else y, v.co.z * s))
         o.data.update()
-    # le sol : la pierre reprojetée à plat, une seule dalle sur toute la cabine (pas de raccord)
-    for o in get(r"Floor_41"):
-        me = o.data
+    # Fermer l'enveloppe : le modèle source est un assemblage de panneaux
+    # flottants, avec des jours de 3 à 8 cm aux angles, au sol et au plafond.
+    # Les cadres partagent maintenant les mêmes limites et se recouvrent
+    # légèrement dans les angles. Le placage est ensuite prolongé lui-même.
+    for pattern, axis, target in [
+        (r"Left_Wall001|Right_Wall002", 1, (-3.025, 0.008)),
+        (r"Back_Wall_14", 0, (-1.315, 1.315)),
+    ]:
+        group = find(pattern)
+        lo, hi = bounds(group)
+        for o in group:
+            for v in o.data.vertices:
+                t = (v.co[axis] - lo[axis]) / (hi[axis] - lo[axis])
+                v.co[axis] = target[0] + t * (target[1] - target[0])
+            o.data.update()
+    # Le soubassement sombre et son cadre inox disparaissent : le placage
+    # descend jusqu'au sol, les mains courantes se fixent dans le bois.
+    for o in find(r"(Left_Wall001|Right_Wall002|Back_Wall_14).*(M_door_backplate|M_side_Lower)"):
+        bpy.data.objects.remove(o)
+    # Les platines plates des mains courantes deviennent des tiges rondes,
+    # du profil de la main courante jusque dans le bois.
+    handle_mat = bpy.data.materials["M_Handle"]
+    for o in find(r"handle.*M_Handle"):
+        bm = bmesh.new()
+        bm.from_mesh(o.data)
+        seen, parts = set(), []
+        for v in bm.verts:
+            if v in seen:
+                continue
+            seen.add(v)
+            stack, part = [v], []
+            while stack:
+                a = stack.pop()
+                part.append(a)
+                for e in a.link_edges:
+                    b = e.other_vert(a)
+                    if b not in seen:
+                        seen.add(b)
+                        stack.append(b)
+            parts.append(part)
+        # les platines : les pièces qui touchent la paroi
+        wall = max(abs(v.co.x) for v in bm.verts) if "rear" not in o.name else min(v.co.y for v in bm.verts)
+        brackets = [p for p in parts if any(abs(abs(v.co.x) - wall) < 0.002 if "rear" not in o.name else abs(v.co.y - wall) < 0.002 for v in p)]
+        rods = []
+        for p in brackets:
+            lo = Vector([min(v.co[i] for v in p) for i in range(3)])
+            hi = Vector([max(v.co[i] for v in p) for i in range(3)])
+            c = (lo + hi) / 2
+            axis = 0 if hi.x - lo.x > hi.y - lo.y else 1
+            # jusqu'à 1 cm derrière la face du bois
+            end = hi[axis] + 0.01 if hi[axis] > 0 else lo[axis] - 0.01
+            start = lo[axis] if hi[axis] > 0 else hi[axis]
+            mid = c.copy()
+            mid[axis] = (start + end) / 2
+            rods.append((mid, axis, abs(end - start)))
+        bmesh.ops.delete(bm, geom=[v for p in brackets for v in p], context="VERTS")
+        bm.to_mesh(o.data)
+        bm.free()
+        o.data.update()
+        for mid, axis, length in rods:
+            bpy.ops.mesh.primitive_cylinder_add(
+                vertices=32, radius=0.0115, depth=length, end_fill_type="NOTHING", location=mid,
+                rotation=(0, math.pi / 2, 0) if axis == 0 else (math.pi / 2, 0, 0),
+            )
+            rod = bpy.context.object
+            rod.name = "handrail_rod"
+            rod.data.materials.append(handle_mat)
+            bpy.ops.object.shade_smooth()
+    # Même placage, agrandi jusqu'aux raccords : pas de bande de remplissage.
+    # Les UV du bois sont recalculés ci-dessous sur les panneaux entiers,
+    # donc les rallonges ne créent pas de rupture dans le veinage.
+    for o in bpy.data.objects:
+        if not any(m == glass for m in o.data.materials):
+            continue
+        top = max(v.co.z for v in o.data.vertices)
+        if top < 2.2:
+            continue
+        bottom = min(v.co.z for v in o.data.vertices)
+        axis = 0 if "Back_Wall" in o.name else 1
         lo, hi = bounds([o])
-        size = max(hi.x - lo.x, hi.y - lo.y)
+        target = (-1.315, 1.315) if axis == 0 else (-3.025, 0.002)
+        for v in o.data.vertices:
+            t = (v.co[axis] - lo[axis]) / (hi[axis] - lo[axis])
+            v.co[axis] = target[0] + t * (target[1] - target[0])
+            if v.co.z > top - 0.015:
+                v.co.z = CABIN_HEIGHT
+            elif v.co.z < bottom + 0.015:
+                v.co.z = 0
+        o.data.update()
+    # Images PBR embarquées dans le GLB, aussi disponibles
+    # dans Blender : couleur, rugosité et normales de la même surface.
+    def pbr_material(material, asset, cache_name, normal_strength, provider="polyhaven"):
+        folder = os.path.join(CACHE, cache_name)
+        os.makedirs(folder, exist_ok=True)
+        files = {key: os.path.join(folder, key + "_2k.jpg") for key in ["Diffuse", "nor_gl", "Rough"]}
+        missing = [key for key, path in files.items() if not os.path.exists(path)]
+        if missing and provider == "ambientcg":
+            archive = os.path.join(folder, asset + "_2K-JPG.zip")
+            if not os.path.exists(archive):
+                get(f"https://ambientcg.com/get?file={asset}_2K-JPG.zip", archive)
+            suffixes = {"Diffuse": "Color", "nor_gl": "NormalGL", "Rough": "Roughness"}
+            with zipfile.ZipFile(archive) as source:
+                for key in missing:
+                    data = source.read(f"{asset}_2K-JPG_{suffixes[key]}.jpg")
+                    with open(files[key], "wb") as target:
+                        target.write(data)
+        elif missing:
+            source = get(f"https://api.polyhaven.com/files/{asset}")
+            for key in missing:
+                get(source[key]["2k"]["jpg"]["url"], files[key])
+        nodes, links = material.node_tree.nodes, material.node_tree.links
+        nodes.clear()
+        output = nodes.new("ShaderNodeOutputMaterial")
+        surface = nodes.new("ShaderNodeBsdfPrincipled")
+        links.new(surface.outputs["BSDF"], output.inputs["Surface"])
+        surface.inputs["Metallic"].default_value = 0
+        for key, input_name in [("Diffuse", "Base Color"), ("Rough", "Roughness"), ("nor_gl", "Normal")]:
+            tex = nodes.new("ShaderNodeTexImage")
+            tex.image = bpy.data.images.load(files[key])
+            if key != "Diffuse":
+                tex.image.colorspace_settings.name = "Non-Color"
+            if key == "nor_gl":
+                normal = nodes.new("ShaderNodeNormalMap")
+                normal.inputs["Strength"].default_value = normal_strength
+                links.new(tex.outputs["Color"], normal.inputs["Color"])
+                links.new(normal.outputs["Normal"], surface.inputs[input_name])
+            else:
+                links.new(tex.outputs["Color"], surface.inputs[input_name])
+
+    pbr_material(glass, "walnut_veneer_02", "cabin-walnut-veneer-02", 0.15)
+    dark_marble = bpy.data.materials.new("M_Floor_Dark")
+    dark_marble.use_nodes = True
+    pbr_material(dark_marble, "Marble016", "cabin-marble-016", 0.08, provider="ambientcg")
+    # Une dalle de marbre continue, sans quadrillage ; couverture de 3 m.
+    for o in find(r"Floor_41|Threashold_38"):
+        me = o.data
         uv = me.uv_layers.active
         for loop in me.loops:
             co = me.vertices[loop.vertex_index].co
-            uv.data[loop.index].uv = ((hi.x - co.x) / size, (co.y - lo.y) / size)
-    # les boutons : des milliers de facettes pour des pastilles de 3 cm
-    for o in get(r"M_Buttons_01"):
-        mod = o.modifiers.new("decimate", "DECIMATE")
-        mod.ratio = 0.2
-        bpy.context.view_layer.objects.active = o
+            uv.data[loop.index].uv = ((co.x + CABIN_WIDTH / 2) / 3, -co.y / 3)
+    # Le sol en moulinet : cinq dalles de marbre blanc, chacune son morceau de
+    # la feuille, séparées par des joints de marbre sombre et bordées d'une
+    # bande sombre le long des parois. Découpé dans la dalle elle-même, sans
+    # géométrie superposée.
+    pbr_material(bpy.data.materials["M_Floor"], "Marble021", "cabin-marble-021", 0.08, provider="ambientcg")
+    rects = pinwheel()
+    w2, j, b = CABIN_WIDTH / 2, FLOOR_JOINT / 2, FLOOR_BORDER
+    floor = find(r"Floor_41")[0]
+    me = floor.data
+    me.materials.append(dark_marble)
+    bm = bmesh.new()
+    bm.from_mesh(me)
+    cuts = [(x, 0) for x in (-w2 + b, w2 - b, *(c + d for c in PINWHEEL_X for d in (-j, j)))]
+    cuts += [(z, 1) for z in (b, CABIN_DEPTH - b, *(c + d for c in PINWHEEL_Z for d in (-j, j)))]
+    for at, axis in cuts:
+        bmesh.ops.bisect_plane(
+            bm, geom=list(bm.verts) + list(bm.edges) + list(bm.faces),
+            plane_co=(at, 0, 0) if axis == 0 else (0, -at, 0),
+            plane_no=(1, 0, 0) if axis == 0 else (0, 1, 0), dist=1e-6,
+        )
+    uv = bm.loops.layers.uv.active
+    for f in bm.faces:
+        c = f.calc_center_median()
+        slab = pinwheel_slab(rects, c.x, -c.y, b, j)
+        if slab is None:
+            f.material_index = len(me.materials) - 1
+            continue
+        ou, ov = (slab * 0.382) % 1, (slab * 0.618) % 1
+        for loop in f.loops:
+            co = loop.vert.co
+            loop[uv].uv = ((co.x + w2) / 3 + ou, -co.y / 3 + ov)
+    bm.to_mesh(me)
+    bm.free()
+    me.update()
+    # Feuilles de placage à livre ouvert. Découper aux joints pour que les
+    # UV ne s'interpolent pas entre deux feuilles. Même mapping dans Blender
+    # et sur le web ; le motif ne se répète pas deux fois sur la hauteur.
+    for o in list(bpy.data.objects):
+        if glass not in list(o.data.materials):
+            continue
+        side = "Back_Wall" not in o.name
+        bm = bmesh.new()
+        bm.from_mesh(o.data)
+        for plane in [-1, -2] if side else [0]:
+            bmesh.ops.bisect_plane(
+                bm, geom=list(bm.verts) + list(bm.edges) + list(bm.faces),
+                plane_co=(0, plane, 0) if side else (plane, 0, 0),
+                plane_no=(0, 1, 0) if side else (1, 0, 0), dist=1e-6,
+            )
+        bm.to_mesh(o.data)
+        bm.free()
+        me = o.data
+        me.update()
+        uv = me.uv_layers.active or me.uv_layers.new()
+        for poly in me.polygons:
+            c = poly.center
+            n = (int(-c.y >= 1) + int(-c.y >= 2) + (3 if c.x > 0 else 0)) if side else 6 + int(c.x >= 0)
+            for li in poly.loop_indices:
+                co = me.vertices[me.loops[li].vertex_index].co
+                along = -co.y if side else co.x
+                u = co.z / 2.4 + (n * 0.382) % 1
+                v = along / 1.3 * (-1 if n % 2 else 1) + (n * 0.618) % 1
+                uv.data[li].uv = (u, 1 - v)
+    # Platine à quatre commandes, en vraies dimensions, indépendante de
+    # l'élargissement des parois. Les coordonnées ci-dessous sont Three.js.
+    steel = bpy.data.materials["M_Steel1"]
+    glow = bpy.data.materials["M_Glow2"]
+    dark = bpy.data.materials.new("M_Control_Dark")
+    dark.diffuse_color = (0.025, 0.028, 0.032, 1)
+    dark.use_nodes = True
+    dark.node_tree.nodes.get("Principled BSDF").inputs["Base Color"].default_value = dark.diffuse_color
+    dark.node_tree.nodes.get("Principled BSDF").inputs["Roughness"].default_value = 0.65
+    control_steel = bpy.data.materials.new("M_Control_Steel")
+    control_steel.use_nodes = True
+    surface = control_steel.node_tree.nodes.get("Principled BSDF")
+    surface.inputs["Base Color"].default_value = (0.48, 0.5, 0.52, 1)
+    surface.inputs["Metallic"].default_value = 0.8
+    surface.inputs["Roughness"].default_value = 0.42
+
+    def block(name, at, size, mat, bevel=0):
+        bpy.ops.mesh.primitive_cube_add(size=1, location=(at[0], -at[2], at[1]))
+        ob = bpy.context.object
+        ob.name = name
+        ob.dimensions = (size[0], size[2], size[1])
+        bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+        if bevel:
+            mod = ob.modifiers.new("soft_edges", "BEVEL")
+            mod.width, mod.segments = bevel, 3
+            bpy.ops.object.modifier_apply(modifier=mod.name)
+        ob.data.materials.append(mat)
+        return ob
+
+    # Fond plein derrière les cadres : les joints de menuiserie ne donnent
+    # jamais dans le vide. Ces trois panneaux ont une vraie épaisseur pour
+    # le futur calcul de lumière Blender, sans toucher au passage des portes.
+    backing = bpy.data.materials["M_door_backplate"]
+    for side in [-1, 1]:
+        block("wall_backing", (side * 1.345, (CABIN_HEIGHT + 0.08) / 2, 1.505), (0.04, CABIN_HEIGHT + 0.1, 3.05), backing)
+    block("rear_backing", (0, (CABIN_HEIGHT + 0.08) / 2, 3.045), (2.73, CABIN_HEIGHT + 0.1, 0.04), backing)
+
+    # Le plafond en moulinet, comme le sol : cinq panneaux du même marbre
+    # blanc séparés par des creux noirs de 4 cm, un pavé LED carré au centre
+    # et un spot rond dans chacun des quatre grands panneaux. Remplace le
+    # plafond poli et la grande dalle lumineuse du modèle.
+    for o in find(r"Ceiling_16|Ceiling_Light_18"):
+        bpy.data.objects.remove(o)
+    # une copie de la matière du sol : mêmes images (une seule fois dans le
+    # GLB), réglée à part par la scène
+    ceiling_marble = bpy.data.materials["M_Floor"].copy()
+    ceiling_marble.name = "M_Ceiling_Marble"
+    block("ceiling_reveal", (0, CABIN_HEIGHT + 0.04, CABIN_DEPTH / 2), (2.73, 0.01, 3.1), dark)
+    g = CEILING_JOINT / 2
+    for i, (x0, x1, z0, z1) in enumerate(pinwheel()):
+        panel = block("ceiling_panel", ((x0 + x1) / 2, CABIN_HEIGHT + 0.01, (z0 + z1) / 2), (x1 - x0 - 2 * g, 0.02, z1 - z0 - 2 * g), ceiling_marble, 0.002)
+        me = panel.data
+        uv = me.uv_layers.active or me.uv_layers.new()
+        # chaque panneau son morceau de la feuille, décalé de ceux du sol
+        ou, ov = ((i + 7) * 0.382) % 1, ((i + 7) * 0.618) % 1
+        for loop in me.loops:
+            co = panel.matrix_world @ me.vertices[loop.vertex_index].co
+            uv.data[loop.index].uv = ((co.x + CABIN_WIDTH / 2) / 3 + ou, -co.y / 3 + ov)
+    ceiling_glow = bpy.data.materials.new("M_Ceiling_Glow")
+    glows = []
+    cx, cz = sum(PINWHEEL_X) / 2, sum(PINWHEEL_Z) / 2
+    block("ceiling_led_frame", (cx, CABIN_HEIGHT - 0.002, cz), (0.52, 0.004, 0.52), control_steel, 0.001)
+    bpy.ops.mesh.primitive_plane_add(size=0.48, location=(cx, -cz, CABIN_HEIGHT - 0.007), rotation=(math.pi, 0, 0))
+    glows.append(bpy.context.object)
+    for x, z in [(-0.9, 0.5), (0.9, 0.5), (0.9, 2.5), (-0.9, 2.5)]:
+        bpy.ops.mesh.primitive_cylinder_add(vertices=48, radius=0.045, depth=0.004, location=(x, -z, CABIN_HEIGHT - 0.002))
+        bpy.context.object.data.materials.append(control_steel)
+        bpy.ops.mesh.primitive_circle_add(vertices=48, radius=0.032, fill_type="NGON", location=(x, -z, CABIN_HEIGHT - 0.007), rotation=(math.pi, 0, 0))
+        glows.append(bpy.context.object)
+    for o in glows:
+        o.data.materials.append(ceiling_glow)
+    ceiling_light = join(glows, "ceiling_light")
+
+    block("control_gasket", (0.9, 1.46, 0.005), (0.432, 1.092, 0.008), dark, 0.009)
+    block("control_plate", (0.9, 1.46, 0.012), (0.42, 1.08, 0.012), control_steel, 0.006)
+    block("display_bezel", (0.9, 1.75, 0.022), (0.364, 0.344, 0.012), dark, 0.006)
+    # Face plane de l'écran, UV projetés plus bas.
+    bpy.ops.mesh.primitive_plane_add(size=1, location=(0.9, -0.029, 1.75), rotation=(math.pi / 2, 0, 0))
+    display = bpy.context.object
+    display.scale = (0.34, 0.32, 1)
+    display.data.materials.append(bpy.data.materials["M_Glow1"])
+    centers = [(0.9, 1.43, 0.033), (0.83, 1.28, 0.033), (0.97, 1.28, 0.033), (0.9, 1.13, 0.033)]
+    arrival = None
+    for i, (x, y, z) in enumerate(centers):
+        bpy.ops.mesh.primitive_cylinder_add(vertices=32, radius=0.029, depth=0.01, location=(x, -(z - 0.005), y), rotation=(math.pi / 2, 0, 0))
+        button = bpy.context.object
+        button.name = f"control_button_{i}"
+        button.data.materials.append(control_steel)
+        mod = button.modifiers.new("rim", "BEVEL")
+        mod.width, mod.segments = 0.001, 2
         bpy.ops.object.modifier_apply(modifier=mod.name)
-    # le centre de chaque bouton, en coordonnées three.js, du haut vers le bas, de gauche à droite
-    rings = get(r"Buttoon.*M_Glow2")
-    centers = []
-    for o in rings:
-        lo, hi = bounds([o])
-        c = (lo + hi) / 2
-        centers.append((round(c.x, 4), round(c.z, 4), round(-lo.y, 4), o))
-    centers.sort(key=lambda c: (-round(c[1], 2), c[0]))
-    top = max(c[1] for c in centers)
-    arrival = max((c for c in centers if c[1] > top - 0.01), key=lambda c: c[0])[3]
-    bpy.context.scene["buttons"] = json.dumps([c[:3] for c in centers])
-    # le mini-afficheur : uv de 0 à 1, l'image à l'endroit pour qui le regarde depuis la cabine
-    display = get(r"Lift_Button_Board_2_M_Glow1")[0]
+        bpy.ops.mesh.primitive_torus_add(major_segments=32, minor_segments=8, major_radius=0.03, minor_radius=0.0015, location=(x, -(z - 0.001), y), rotation=(math.pi / 2, 0, 0))
+        ring = bpy.context.object
+        ring.data.materials.append(glow if i == 0 else dark)
+        if i == 0:
+            arrival = ring
+    for x in [0.715, 1.085]:
+        for y in [0.945, 1.975]:
+            bpy.ops.mesh.primitive_cylinder_add(vertices=16, radius=0.003, depth=0.002, location=(x, -0.019, y), rotation=(math.pi / 2, 0, 0))
+            bpy.context.object.data.materials.append(steel)
+            block("screw_slot", (x, y, 0.0202), (0.004, 0.0007, 0.0003), dark)
+    block("sill", (0, 0.012, -0.055), (1.0, 0.012, 0.15), steel, 0.002)
+    for z in [-0.105, -0.06, -0.015]:
+        block("sill_track", (0, 0.0182, z), (0.984, 0.0006, 0.005), dark)
+
+    # Deux objets muraux à hauteur des yeux : tirage photo et information.
+    # Leurs cadres font partie du modèle pour le futur calcul de lumière.
+    paper = bpy.data.materials.new("M_Cabin_Paper")
+    paper.use_nodes = True
+    paper_surface = paper.node_tree.nodes.get("Principled BSDF")
+    paper_surface.inputs["Base Color"].default_value = (0.72, 0.69, 0.63, 1)
+    paper_surface.inputs["Roughness"].default_value = 0.9
+    photo = bpy.data.materials.new("M_Cabin_Photo")
+    photo.use_nodes = True
+    photo_surface = photo.node_tree.nodes.get("Principled BSDF")
+    photo_surface.inputs["Roughness"].default_value = 0.82
+    photo_image = photo.node_tree.nodes.new("ShaderNodeTexImage")
+    photo_image.image = bpy.data.images.load(os.path.join(OUT, "cabin-architecture.jpg"))
+    photo.node_tree.links.new(photo_image.outputs["Color"], photo_surface.inputs["Base Color"])
+
+    def wall_frame(name, side, y, z, width, height, inset, material):
+        # Vues depuis l'intérieur, les faces regardent vers le centre.
+        block(name + "_frame", (side * 1.272, y, z), (0.026, height, width), dark, 0.003)
+        block(name + "_mat", (side * 1.257, y, z), (0.004, height - 0.016, width - 0.016), paper)
+        w, h = width - inset * 2, height - inset * 2
+        points = [(side * 1.254, y + dy * h / 2, z + side * dz * w / 2) for dz, dy in [(-1, -1), (1, -1), (1, 1), (-1, 1)]]
+        mesh = bpy.data.meshes.new(name)
+        mesh.from_pydata([(x, -z0, y0) for x, y0, z0 in points], [], [(0, 1, 2, 3)])
+        mesh.materials.append(material)
+        uv = mesh.uv_layers.new()
+        for loop, co in zip(uv.data, [(0, 0), (1, 0), (1, 1), (0, 1)]):
+            loop.uv = co
+        ob = bpy.data.objects.new(name, mesh)
+        bpy.context.collection.objects.link(ob)
+        return ob
+
+    wall_frame("wall_photo", -1, 1.57, 0.55, 0.46, 0.66, 0.045, photo)
+    notice = wall_frame("wall_notice", 1, 1.53, 0.55, 0.32, 0.44, 0.014, paper)
+    # Appliquer les transformations avant la projection UV et la fusion.
+    bpy.ops.object.select_all(action="SELECT")
+    bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+    bpy.context.scene["buttons"] = json.dumps(centers)
     me = display.data
     lo, hi = bounds([display])
     uv = me.uv_layers.active
     for loop in me.loops:
         co = me.vertices[loop.vertex_index].co
         uv.data[loop.index].uv = ((co.x - lo.x) / (hi.x - lo.x), (co.z - lo.z) / (hi.z - lo.z))
-    door_l, door_r = split(get(r"Lift_door")[0], "door_l", "door_r")
-    named = {"cop_display": display, "ceiling_light": get(r"Ceiling_Light_18_M_Glow")[0], "button_arrival": arrival}
+    door_l, door_r = split(find(r"Lift_door")[0], "door_l", "door_r")
+    named = {"cop_display": display, "ceiling_light": ceiling_light, "button_arrival": arrival, "wall_notice": notice}
     for n, o in named.items():
         o.name = o.data.name = n
     # le reste, immobile, en un seul objet (un maillage par matière dans three.js)
@@ -327,7 +679,7 @@ def prepare_cabin(spec):
     lo, hi = bounds(list(bpy.data.objects))
     print(f"[prepare] {spec['out']}: {sum(len(o.data.polygons) for o in bpy.data.objects)} faces, échelle {s:.4f}, profondeur ×{k:.3f}, "
           f"{hi.x - lo.x:.3f} × {hi.z - lo.z:.3f} × {hi.y - lo.y:.3f} m (l × h × p), {len(centers)} boutons", flush=True)
-    textures(1024)
+    textures(2048)
     bpy.ops.object.select_all(action="SELECT")
     export(spec)
 

@@ -2,7 +2,7 @@
 // entreprise, dans un décor qui parle à tout le monde : l'ascenseur qui monte
 // jusqu'à l'étage du dev.
 // 1. le pack flotte dans la cabine d'un ascenseur de nuit ; il éclate ;
-// 2. l'ascenseur monte : l'étage défile sur l'afficheur au-dessus des portes,
+// 2. l'ascenseur monte : l'étage défile sur l'afficheur à droite des portes,
 //    et la lumière des paliers passe dans le jour entre les portes ;
 // 3. sur l'écran, et en 3D chromée devant lui : le poste, le langage (le
 //    drapeau), la ligue (GitHub, CV, ou les deux), puis le club, qui se fait
@@ -126,7 +126,7 @@ const CEIL = 3.3;
 const DESK_Z = -7.8;
 /** Le pack et la caméra dans la cabine ; pose finale de la caméra (regard droit vers -z) et emplacement de la carte. */
 const PACK_POS = V(0, 1.5, 0.7);
-const CAB_CAM = V(0, 1.5, 2.45);
+const CAB_CAM = V(0, 1.5, 2.8);
 const F_POS = V(0, 1.5, -3.2);
 const CARD_POS = V(0, 1.45, -6.3);
 const CARD_W3 = 1.2;
@@ -236,7 +236,7 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
   };
 
   const accentGlow = new THREE.MeshBasicMaterial({ color: hdr(accent.a, 2), toneMapped: false });
-  const cab = createCabin({ scene, renderer, accent: accent.a, model: assets.cabin, wood: assets.wood, floor: Math.max(1, Math.min(99, o.overall)) });
+  const cab = createCabin({ scene, renderer, accent: accent.a, model: assets.cabin, floor: Math.max(1, Math.min(99, o.overall)) });
   disposables.push(cab);
   const sound = createElevatorSound({ depart: plan.depart, arrive: plan.arrive, doors: plan.doors }, o.muted ?? false);
   disposables.push(sound);
@@ -788,7 +788,7 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
    * dans l'axe de l'allée et vient se poser face à la carte. Images-clés
    * interpolées par des splines d'Hermite en temps, tangentes monotones
    * (Fritsch-Carlson) : position, visée et focale continues, leur vitesse
-   * aussi, sans dépassement. Tout reste dans l'axe (x = 0). */
+   * aussi, sans dépassement. La translation reste dans l'axe (x = 0). */
   interface Key {
     t: number;
     pos: THREE.Vector3;
@@ -798,9 +798,9 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
   const K = (t: number, pos: THREE.Vector3, look: THREE.Vector3, fov: number): Key => ({ t, pos, look, fov });
   const keys: Key[] = [
     K(0, CAB_CAM.clone(), PACK_POS.clone().add(V(0, 0.05, 0)), 54),
-    K(plan.depart, V(0, 1.48, 2.42), V(0, 1.62, 0), 64),
-    K(plan.league[0], V(0, 1.48, 2.32), V(0, 1.6, 0), 64),
-    K(plan.club[1], V(0, 1.48, 2.12), V(0, 1.56, 0), 62),
+    K(plan.depart, V(0, 1.48, 2.77), V(0.12, 1.55, 0), 60),
+    K(plan.league[0], V(0, 1.48, 2.67), V(0.12, 1.53, 0), 60),
+    K(plan.club[1], V(0, 1.48, 2.47), V(0.08, 1.5, 0), 58),
     K(plan.doors + 0.35, V(0, 1.5, 1.95), V(0, 1.4, -6), 58),
     K(plan.doors + 2.0, V(0, 1.53, -1.5), V(0, 1.2, DESK_Z), 44),
     K(T_TURN - 0.4, V(0, 1.51, -2.9), V(0, 1.25, DESK_Z), 41),
@@ -872,6 +872,12 @@ export function createWalkout(o: WalkoutOptions): WalkoutHandle {
       return p > 0 && p < 1 ? sign * 0.018 * Math.sin(Math.PI * p) * (1 - p * 0.4) : 0;
     };
     camera.position.y += lurch(plan.depart, -1) + lurch(plan.arrive - 0.1, 1);
+    // En portrait, garder toute la platine latérale dans le cadre pendant
+    // la montée et l'arrivée, puis revenir dans l'axe en sortant.
+    if (camera.aspect < 0.8) {
+      const lookDistance = (camera.position.z - camLook.z) / Math.max(camera.position.z, 1.5);
+      camLook.x += 0.22 * lookDistance * inOut(seg(t, T_BURST + 0.3, 1.1)) * (1 - inOut(seg(t, plan.doors + 0.65, 0.85)));
+    }
     camera.lookAt(camLook);
     // une seule secousse : l'éclatement du pack (traumatisme au carré, en rotation)
     const trauma = t >= T_BURST ? Math.max(0, 0.5 * (1 - (t - T_BURST) / 0.6)) : 0;

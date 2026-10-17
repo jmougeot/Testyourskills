@@ -77,11 +77,14 @@ Changes: environment sphere removed; rescaled to 24 cm, textures 512 px.
 cabin.glb
 "JNKM Design - Elevator Cab Interior" by Josh Nelson (JNKM Design), CC BY 4.0.
 https://sketchfab.com/3d-models/jnkm-design-elevator-cab-interior-be05f33b31dc4b4ebf7ad7ff4cea1631
-Changes: rescaled to 2.1 m doors and stretched to 2.6 m deep, outer shells
-removed, door split into two leaves, button meshes decimated, back-wall photo
-replaced by the white glass of the side walls, floor UVs reprojected
-(tools/bake/prepare.py); materials tuned and the floor display, button
-numbers and tier-coloured details added in the renderer.
+Changes: rescaled to 2.1 m doors, 2.6 m cabin width and 3 m depth; outer shells
+removed, door split into two leaves, control panel rebuilt with four buttons
+and a lateral display. Back-wall photo replaced by the side-wall material,
+rendered as walnut veneer. Wall panels and ceiling extended to meet, upper
+metal borders removed in favor of continuous veneer, solid wall backing added.
+Floor UVs reprojected; framed photo and notice added (tools/bake/prepare.py).
+Materials, continuous panel UVs, display, button numbers and
+tier-coloured details tuned in the renderer.
 
 All models above: textures converted to WebP, meshopt compression
 (tools/bake/prepare.py). CC BY 4.0: https://creativecommons.org/licenses/by/4.0/
@@ -146,3 +149,45 @@ barlow-800.typeface.json
 Barlow Condensed ExtraBold, Jeremy Tribby, SIL Open Font License 1.1.
 https://github.com/jpt/barlow
 Converted to Three.js typeface format.
+
+cabin-architecture.jpg (also embedded in cabin.glb)
+Generated with the built-in imagegen tool, 2026-10-16. Fictional architectural
+photograph for the framed print in the cabin; not a photograph of this building.
+Converted to a 768 px JPEG for the project. Original generated PNG preserved.
+Prompt:
+Use case: photorealistic-natural. Asset type: a photographic print texture to be
+placed inside a small real 3D frame on an office elevator wall. Create a single
+understated black-and-white architectural photograph of an ordinary mid-century
+European office building, viewed from pavement level looking slightly upwards,
+showing a concrete facade, repetitive window bays and a mature tree partly
+crossing one corner. Editorial analog photography, authentic weathered concrete,
+subtle photographic grain, soft overcast daylight, quiet everyday atmosphere.
+Portrait 2:3 composition. Only the photograph itself, full bleed, no frame, no
+mat, no elevator, no poster mockup, no text, no logos, no watermarks. Restrained
+tonal range with natural gray midtones, no dramatic cinematic lighting, no
+artificial CGI polish.
+
+Cabin floor (embedded in cabin.glb)
+Source: ambientCG, Marble021, CC0.
+https://ambientcg.com/view?id=Marble021
+Source method: procedural PBR material supplied as bitmap textures (not a scan).
+Changes: 2K color, OpenGL normal and roughness maps embedded as WebP;
+pinwheel layout of five slabs on the floor and five panels on the ceiling,
+each with its own offset in the 3 m texture. Native white color, subtle
+normal strength, satin roughness and slight entrance traffic polish.
+
+Cabin floor joints and border, dark marble (embedded in cabin.glb)
+Source: ambientCG, Marble016, CC0.
+https://ambientcg.com/view?id=Marble016
+Source method: procedural PBR material supplied as bitmap textures (not a scan).
+Changes: 2K color, OpenGL normal and roughness maps embedded as WebP;
+5 cm joints between the pinwheel slabs and an 8 cm border along the walls,
+cut into the floor slab; runtime warm tint toward a dark emperador brown.
+
+Cabin walnut veneer (embedded in cabin.glb; separate from the desk walnut)
+Source: Poly Haven, walnut_veneer_02 by Jenelle van Heerden, CC0.
+https://polyhaven.com/a/walnut_veneer_02
+Changes: 2K diffuse, OpenGL normal and roughness maps embedded as WebP.
+Vertical grain with 2.4 m longitudinal / 1.3 m transverse texture coverage;
+individual panel UVs, alternating mirrored leaves, continuous corner coverage.
+Runtime neutral tint, subtle normal strength and matte roughness range.

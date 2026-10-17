@@ -2,33 +2,32 @@
 // (« JNKM Design - Elevator Cab Interior », Sketchfab, CC BY 4.0), préparé par
 // tools/bake/prepare.py : inox brossé, plafond lumineux, mains courantes,
 // boîte à boutons, portes et seuil. Ses parois de verre blanc sont habillées
-// du placage de noyer de la scène (Poly Haven, celui du bureau du dev), en
-// panneaux à livre ouvert. La scène n'y ajoute que ce qui bouge ou change par
-// carte : l'ouverture des portes, l'afficheur, le bouton de l'étage d'arrivée
-// à la couleur du tier, les numéros des boutons, les filets du tier et la
-// lumière des paliers dans le jour entre les portes.
+// d'un placage de noyer photographié (Poly Haven), embarqué dans le GLB, en
+// panneaux à livre ouvert du sol au plafond ; les mains courantes y sont
+// fixées par des tiges rondes ; le sol de marbre blanc et le plafond d'inox
+// brossé sont calepinés en moulinet (textures ambientCG). La scène n'y ajoute que ce qui bouge ou
+// change par carte : l'ouverture des portes, l'afficheur, le bouton de
+// l'étage d'arrivée à la couleur du tier, les numéros des boutons, la
+// pancarte et la lumière des paliers dans le jour entre les portes.
 import * as THREE from "three";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import { RectAreaLightUniformsLib } from "three/examples/jsm/lights/RectAreaLightUniformsLib.js";
-import type { PbrSet } from "./assets";
 import { limitLights } from "./baked";
 import { createWallScreen, type WallScreen } from "./ledWall";
 
 /* ---------- géométrie (mètres) : sol à y = 0, la façade intérieure en z = 0, la cabine vers +z ----------
  * Les cotes du modèle remis à l'échelle par prepare.py (portes de 2,1 m). */
-export const CAB_W = 2.0; // x de -1 à 1
+export const CAB_W = 2.6; // x de -1,3 à 1,3 ; ouverture conservée à 1 m
 export const CAB_H = 2.37; // sous le plafond lumineux
-export const CAB_D = 2.6;
+export const CAB_D = 3.0;
 export const DOOR_W = 1.0;
 export const DOOR_H = 2.1;
 /** Les portes palières, dans le mur de l'open space (tools/bake/office.py, z = -0,25). */
 const LANDING_Z = -0.25;
-/** Le noyer huilé des parois : la teinte du scan (le même placage que le
- * bureau du dev), foncée par un gris neutre. Sous le plafonnier, qui éclaire
- * plus fort et plus uniformément que les six spots de l'ancienne cabine, la
- * paroi sort à l'écran à la clarté de l'ancienne cabine (L* 54 mesuré sur capture, contre 59 avant). */
-const WALNUT_TINT = 0x7a7a7a;
+/** Placage de noyer assombri par un gris neutre ; finition mate et relief discret. */
+const WALNUT_TINT = 0xaaaaaa;
+/** Le marbre noir veiné des joints du sol, réchauffé en brun foncé. */
+const FLOOR_DARK_TINT = 0xb08a70;
 
 const hdr = (hex: THREE.ColorRepresentation, k: number) => new THREE.Color(hex).multiplyScalar(k);
 const V = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z);
@@ -74,12 +73,10 @@ function boxProjection(mat: THREE.Material, probe: THREE.Vector3, min: THREE.Vec
 export interface CabinOptions {
   scene: THREE.Scene;
   renderer: THREE.WebGLRenderer;
-  /** Couleur du tier (filets de LED, bouton de l'étage). */
+  /** Couleur du tier (afficheur et bouton de l'étage). */
   accent: string;
   /** Le modèle de la cabine (cabin.glb, tools/bake/prepare.py). */
   model: GLTF;
-  /** Le placage de noyer des parois (Poly Haven, 1 m par tuile). */
-  wood: PbrSet;
   /** L'étage d'arrivée (la note) : numéros de la boîte à boutons. */
   floor: number;
 }
@@ -87,7 +84,7 @@ export interface CabinOptions {
 export interface Cabin {
   /** Portes de la cabine et portes palières ; `closed` : x en position fermée. */
   doors: { mesh: THREE.Object3D; dir: number; closed: number }[];
-  /** L'afficheur au-dessus des portes. */
+  /** L'afficheur sur la platine à droite de la porte. */
   screen: WallScreen;
   /** L'inox de la façade, repris pour les tableaux de la porte côté bureaux. */
   brushedSteel: THREE.MeshStandardMaterial;
@@ -147,7 +144,7 @@ export function createCabin(o: CabinOptions): Cabin {
   const matNamed = (name: string) => cabinMats.find((m) => m.name === name);
   // l'inox poli de la façade et des portes : la texture du modèle donne le brossé
   const facade = matNamed("M_Steel1")!;
-  facade.roughness = 0.18;
+  facade.roughness = 0.28;
   facade.envMapIntensity = 1;
   // les portes : le même inox, plus mat, sinon le reflet du plafond fait une
   // barre blanche qui écrase le joint central
@@ -159,35 +156,46 @@ export function createCabin(o: CabinOptions): Cabin {
   // les parois : le verre blanc du modèle est habillé de noyer, en panneaux
   // à livre ouvert séparés par des joints (woodPanels) ; la couleur, le
   // relief et la rugosité viennent du scan, posés en mètres sur la paroi
-  const glassSrc = matNamed("M_White_Glass");
-  let walnut: THREE.MeshStandardMaterial | null = null;
-  if (glassSrc) {
-    walnut = keep(
-      new THREE.MeshStandardMaterial({
-        name: glassSrc.name,
-        map: o.wood.map,
-        normalMap: o.wood.normalMap,
-        normalScale: new THREE.Vector2(0.25, 0.25),
-        roughnessMap: o.wood.roughnessMap,
-        color: WALNUT_TINT,
-        roughness: 0.55,
-        envMapIntensity: 0.6,
-      }),
-    );
-    cabinMats.splice(cabinMats.indexOf(glassSrc), 1, walnut);
-    cabin.traverse((m) => {
-      const mesh = m as THREE.Mesh;
-      if (mesh.isMesh && mesh.material === glassSrc) mesh.material = walnut!;
-    });
+  const walnut = matNamed("M_White_Glass");
+  if (walnut) {
+    walnut.color.set(WALNUT_TINT);
+    walnut.normalScale.set(0.15, 0.15);
+    walnut.roughness = 0.9;
+    walnut.envMapIntensity = 0.3;
+    for (const texture of [walnut.map, walnut.normalMap, walnut.roughnessMap]) {
+      if (texture) texture.anisotropy = 8;
+    }
+  }
+  // le plafond : le marbre blanc du sol, poli ; il ne reçoit pas la lumière
+  // du plafonnier, tournée vers le bas : seulement le reflet de la cabine
+  const ceilingMarble = matNamed("M_Ceiling_Marble");
+  if (ceilingMarble) {
+    ceilingMarble.roughness = 0.42;
+    ceilingMarble.normalScale.set(0.08, 0.08);
+    ceilingMarble.envMapIntensity = 1.4;
   }
   // les mains courantes : inox satiné, pas le gris mat de l'export
   const handle = matNamed("M_Handle");
   if (handle) handle.roughness = 0.3;
-  const floorMat = matNamed("M_Floor");
-  if (floorMat) {
-    floorMat.roughness = 0.45;
-    floorMat.envMapIntensity = 0.5;
+  // le sol en moulinet : dalles de marbre blanc, joints et bordure en marbre
+  // sombre, teinté brun comme un emperador
+  const floorMats = [matNamed("M_Floor"), matNamed("M_Floor_Dark")].filter((m) => m !== undefined);
+  matNamed("M_Floor_Dark")?.color.set(FLOOR_DARK_TINT);
+  for (const floorMat of floorMats) {
+    floorMat.roughness = 0.42;
+    floorMat.normalScale.set(0.08, 0.08);
+    floorMat.envMapIntensity = 0.45;
+    if (floorMat.map) floorMat.map.anisotropy = 8;
+    if (floorMat.normalMap) floorMat.normalMap.anisotropy = 8;
+    if (floorMat.roughnessMap) floorMat.roughnessMap.anisotropy = 8;
   }
+
+  // La photo est embarquée dans le GLB ; le texte de la pancarte est tracé
+  // à haute résolution, sur un papier mat qui reçoit la lumière de la cabine.
+  const noticeTexture = keep(makeCabinNotice());
+  const noticeMaterial = keep(new THREE.MeshStandardMaterial({ map: noticeTexture, roughness: 0.92, envMapIntensity: 0.15 }));
+  cabinMats.push(noticeMaterial);
+  (parts.wall_notice as THREE.Mesh).material = noticeMaterial;
 
   // les portes : les deux vantaux du modèle, et leur copie pour les portes palières
   const doors: Cabin["doors"] = [];
@@ -203,31 +211,18 @@ export function createCabin(o: CabinOptions): Cabin {
   }
   const doorBox = new THREE.Box3().setFromObject(parts.door_l!);
 
-  // le plafond lumineux, et la lumière en direct qu'il donne à la cabine
+  // le pavé LED et les quatre spots du plafond, et la lumière en direct
+  // qu'ils donnent à la cabine : une seule lumière rectangulaire, de la taille
+  // de l'ancienne dalle lumineuse, pour garder l'éclairage de la cabine
   const ceiling = parts.ceiling_light as THREE.Mesh;
   const glowMat = new THREE.MeshBasicMaterial({ color: hdr("#fff3e4", 2.2), toneMapped: false });
   ceiling.material = keep(glowMat);
-  const glowBox = new THREE.Box3().setFromObject(ceiling);
-  const glowSize = glowBox.getSize(new THREE.Vector3());
-  const glowAt = glowBox.getCenter(new THREE.Vector3());
   RectAreaLightUniformsLib.init();
   const LIGHT = 9;
-  const cabinLight = new THREE.RectAreaLight(0xfff0de, LIGHT, glowSize.x, glowSize.z);
-  cabinLight.position.copy(glowAt).setY(glowBox.min.y - 0.005);
-  cabinLight.lookAt(glowAt.x, 0, glowAt.z);
+  const cabinLight = new THREE.RectAreaLight(0xfff0de, LIGHT, 1.6, 1.6);
+  cabinLight.position.set(0, CAB_H - 0.005, CAB_D / 2);
+  cabinLight.lookAt(0, 0, CAB_D / 2);
   cabin.add(cabinLight);
-
-  // les filets de LED à la couleur du tier : dans les angles des portes et sous le plafond
-  const ledStrip = new THREE.MeshBasicMaterial({ color: hdr(o.accent, 1.1), toneMapped: false });
-  const strip = (w: number, h: number, d: number, x: number, y: number, z: number) => {
-    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), ledStrip);
-    m.position.set(x, y, z);
-    cabin.add(m);
-  };
-  for (const sx of [-1, 1]) {
-    strip(0.007, CAB_H - 0.14, 0.007, sx * (CAB_W / 2 - 0.006), 0.1 + (CAB_H - 0.14) / 2, 0.01);
-    strip(0.007, 0.007, CAB_D, sx * (CAB_W / 2 - 0.006), CAB_H - 0.012, CAB_D / 2);
-  }
 
   // la gaine, vue par le jour entre les portes : la lumière des paliers défile
   const shaftTex = keep(makeShaftTexture());
@@ -240,29 +235,16 @@ export function createCabin(o: CabinOptions): Cabin {
   seam.position.set(0, DOOR_H / 2, doorBox.max.z + 0.003);
   scene.add(seam);
 
-  // l'afficheur, dans l'imposte : verre noir sur l'inox, entre les portes et le plafond
-  const DISP = { w: 0.9, h: 0.18 };
+  // Un seul afficheur, à hauteur des yeux, sur la platine latérale du modèle.
+  const DISP = { w: 0.34, h: 0.32 };
   const screen = keep(createWallScreen(o.accent, DISP));
-  const dispY = (DOOR_H + CAB_H) / 2 + 0.005;
-  const glassBlack = keep(new THREE.MeshPhysicalMaterial({ color: 0x040506, metalness: 0, roughness: 0.06, clearcoat: 1, envMapIntensity: 1 }));
-  cabinMats.push(glassBlack);
-  const bezel = new THREE.Mesh(new RoundedBoxGeometry(DISP.w + 0.04, DISP.h + 0.04, 0.01, 3, 0.004), glassBlack);
-  bezel.position.set(0, dispY, 0.005);
-  const display = new THREE.Mesh(new THREE.PlaneGeometry(DISP.w, DISP.h), screen.material);
-  display.position.set(0, dispY, 0.0105);
-  cabin.add(bezel, display);
-  // le mini-afficheur de la boîte à boutons montre la même image
+  // Les UV du GLB ont déjà été retournés par l'export glTF.
+  screen.texture.flipY = false;
   (parts.cop_display as THREE.Mesh).material = screen.material;
 
-  // les boutons : l'anneau de l'étage d'arrivée à la couleur du tier, les autres en blanc froid,
-  // et leurs numéros (l'arrivée en haut à droite, puis les étages en descendant)
-  const btnOff = keep(new THREE.MeshBasicMaterial({ color: hdr("#d9e2ec", 0.18), toneMapped: false }));
+  // Destination, ouverture, fermeture, alarme. Seule la destination s'allume.
   const btnOn = keep(new THREE.MeshBasicMaterial({ color: hdr(o.accent, 0.35), toneMapped: false }));
   (parts.button_arrival as THREE.Mesh).material = btnOn;
-  cabin.traverse((m) => {
-    const mesh = m as THREE.Mesh;
-    if (mesh.isMesh && !Array.isArray(mesh.material) && mesh.material.name === "M_Glow2") mesh.material = btnOff;
-  });
   const buttons = JSON.parse(String(o.model.scene.userData.buttons ?? "[]")) as [number, number, number][];
   if (buttons.length) {
     const labels = keep(makeButtonLabels(buttons, o.floor));
@@ -277,6 +259,12 @@ export function createCabin(o: CabinOptions): Cabin {
   // vraie place et se décale quand la caméra avance
   const probe = V(0, 1.45, 1.4);
   for (const m of cabinMats) boxProjection(m, probe, V(-CAB_W / 2, 0, -0.02), V(CAB_W / 2, CAB_H, CAB_D));
+  for (const floorMat of floorMats) floorFinish(floorMat);
+  // Traces dans la rugosité : surtout lisibles en reflet, liées aux surfaces
+  // (et non à la caméra), y compris quand les portes coulissent.
+  const wear = keep(makeSteelWear());
+  const controlSteel = matNamed("M_Control_Steel");
+  for (const mat of [facade, doorSteel, ...(controlSteel ? [controlSteel] : [])]) steelWear(mat, wear);
   // les côtés en trois panneaux de noyer, le fond en deux (le modèle n'a qu'une vitre par paroi)
   if (walnut) woodPanels(walnut, [CAB_D / 3, (2 * CAB_D) / 3], [0]);
   // seules la dalle du plafond et l'éclat du pack éclairent la cabine : les
@@ -313,41 +301,34 @@ export function createCabin(o: CabinOptions): Cabin {
   };
 }
 
-/** Le noyer des parois, posé en mètres sur la paroi d'après la position dans
- * la cabine (vBoxPos, déclaré par boxProjection) : le modèle n'a qu'une vitre
- * par paroi, aux uv quelconques. Chaque panneau prend un autre morceau de la
- * feuille de placage, un sur deux en miroir, comme les feuilles « à livre
- * ouvert » des vraies cabines, le fil à la verticale ; entre les panneaux, un
- * joint de 3 mm, la tôle sombre derrière. `alongZ` : joints des parois
+/** Les UV des feuilles de noyer sont préparés dans Blender, avec le fil
+ * vertical et des morceaux différents par panneau. Le shader ajoute les
+ * joints de 3 mm et une finition mate. `alongZ` : joints des parois
  * latérales (z) ; `alongX` : du fond (x). */
 function woodPanels(mat: THREE.Material, alongZ: number[], alongX: number[]) {
   const previous = mat.onBeforeCompile;
   const f = (x: number) => x.toFixed(3);
   const nearest = (v: number[]) => v.map((x) => `abs( woodC - ${f(x)} )`).reduce((a, b) => `min( ${a}, ${b} )`);
-  const count = (v: number[]) => v.map((x) => `step( ${f(x)}, woodC )`).join(" + ");
-  const chunk = (name: keyof typeof THREE.ShaderChunk, uv: string) => THREE.ShaderChunk[name].replace(new RegExp(uv, "g"), "woodUv");
   mat.onBeforeCompile = (shader, renderer) => {
     previous.call(mat, shader, renderer);
+    shader.vertexShader = shader.vertexShader
+      .replace("#include <common>", "#include <common>\nvarying vec3 vWoodNormal;")
+      .replace("#include <beginnormal_vertex>", "#include <beginnormal_vertex>\nvWoodNormal = normalize( mat3( modelMatrix ) * objectNormal );");
     shader.fragmentShader = shader.fragmentShader
+      .replace("#include <common>", "#include <common>\nvarying vec3 vWoodNormal;")
       .replace(
         "#include <clipping_planes_fragment>",
         `#include <clipping_planes_fragment>
         // paroi latérale : le long de z ; fond : le long de x
-        bool woodSide = abs( vBoxPos.x ) > ${f(CAB_W / 2 - 0.1)};
+        // L'orientation de la face, pas sa proximité avec l'angle : le fond
+        // doit garder le même veinage jusque sur ses bords élargis.
+        bool woodSide = abs( vWoodNormal.x ) > abs( vWoodNormal.z );
         float woodC = woodSide ? vBoxPos.z : vBoxPos.x;
         float woodD = woodSide ? ${nearest(alongZ)} : ${nearest(alongX)};
-        float woodJoint = 1.0 - smoothstep( 0.0015, 0.0015 + 1.5 * fwidth( woodC ), woodD );
-        // le numéro du panneau, propre à chaque paroi
-        float woodN = woodSide ? ${count(alongZ)} + ( vBoxPos.x > 0.0 ? ${f(alongZ.length + 1)} : 0.0 ) : ${count(alongX)} + ${f(2 * alongZ.length + 2)};
-        float woodMirror = mod( woodN, 2.0 );
-        // le fil à la verticale : la feuille tournée d'un quart de tour (u le long de la hauteur)
-        vec2 woodUv = vec2( vBoxPos.y + fract( woodN * 0.382 ) * 3.0, mix( woodC, -woodC, woodMirror ) + fract( woodN * 0.618 ) * 3.0 );`,
+        float woodJoint = 1.0 - smoothstep( 0.0015, 0.0015 + 1.5 * fwidth( woodC ), woodD );`,
       )
-      .replace("#include <map_fragment>", chunk("map_fragment", "vMapUv"))
       .replace("#include <color_fragment>", "#include <color_fragment>\n        diffuseColor.rgb *= 1.0 - 0.85 * woodJoint;")
-      .replace("#include <roughnessmap_fragment>", `${chunk("roughnessmap_fragment", "vRoughnessMapUv")}\n        roughnessFactor = mix( roughnessFactor, 0.8, woodJoint );`)
-      .replace("#include <normal_fragment_begin>", chunk("normal_fragment_begin", "vNormalMapUv"))
-      .replace("#include <normal_fragment_maps>", chunk("normal_fragment_maps", "vNormalMapUv"));
+      .replace("#include <roughnessmap_fragment>", "#include <roughnessmap_fragment>\n        roughnessFactor = mix( clamp( roughnessFactor, 0.55, 0.82 ), 0.8, woodJoint );");
   };
   const key = mat.customProgramCacheKey.bind(mat);
   mat.customProgramCacheKey = () => `wood-panels|${key()}`;
@@ -375,31 +356,15 @@ function makeShaftTexture(): THREE.CanvasTexture {
   return t;
 }
 
-/** Les étages de la boîte à boutons : `n` numéros, l'arrivée d'abord, puis en descendant jusqu'au rez-de-chaussée et aux sous-sols. */
-function panelFloors(top: number, n: number): string[] {
-  const out: number[] = [];
-  for (let k = 0; k < n; k++) out.push(Math.round(top - (top * k) / (n - 1)));
-  // peu d'étages : les numéros se suivent, puis les sous-sols
-  const seen = new Set<number>();
-  let next = top;
-  return out.map((v0) => {
-    let v = Math.min(v0, next);
-    while (seen.has(v)) v--;
-    seen.add(v);
-    next = v - 1;
-    return v < 0 ? `-${-v}` : String(v);
-  });
-}
-
-/** Les numéros rétroéclairés des boutons (1 px = 0,5 mm, fond transparent), posés sur la boîte à boutons du modèle. */
+/** Marquage gris discret et pictogrammes dessinés, sans glyphes emoji dépendants de l'OS. */
 function makeButtonLabels(buttons: [number, number, number][], top: number) {
   const PX = 2000;
-  const PAD = 0.03;
+  const PAD = 0.06;
   const xs = buttons.map((b) => b[0]);
   const ys = buttons.map((b) => b[1]);
   const x0 = Math.min(...xs) - PAD;
   const x1 = Math.max(...xs) + PAD;
-  const y0 = Math.min(...ys) - PAD;
+  const y0 = Math.min(...ys) - 0.11;
   const y1 = Math.max(...ys) + PAD;
   const c = document.createElement("canvas");
   c.width = Math.round((x1 - x0) * PX);
@@ -407,30 +372,187 @@ function makeButtonLabels(buttons: [number, number, number][], top: number) {
   const g = c.getContext("2d")!;
   g.textAlign = "center";
   g.textBaseline = "middle";
-  // les rangées de trois sont les étages ; la dernière rangée, plus courte, ouvre et ferme les portes, et l'alarme
-  const rows = new Map<number, [number, number][]>();
-  for (const [x, y] of buttons) {
-    const k = Math.round(y * 100);
-    rows.set(k, [...(rows.get(k) ?? []), [x, y]]);
-  }
-  const ordered = [...rows.entries()].sort((a, b) => b[0] - a[0]).map(([, r]) => r.sort((a, b) => a[0] - b[0]));
-  const wide = Math.max(...ordered.map((r) => r.length));
-  const floorRows = ordered.filter((r) => r.length === wide);
-  const labels = panelFloors(top, floorRows.length * wide);
-  const symbols = ["◀|▶", "▶|◀", "🔔", "☎"];
-  let s = 0;
-  ordered.forEach((row) => {
-    const fi = floorRows.indexOf(row);
-    row.forEach(([x, y], col) => {
-      // l'arrivée en haut à droite : on lit chaque rangée de droite à gauche
-      const label = fi >= 0 ? labels[fi * wide + (row.length - 1 - col)]! : symbols[s++ % symbols.length]!;
-      g.fillStyle = "rgba(236,239,243,0.92)";
-      g.font = `700 ${label.length > 2 ? 22 : 28}px 'Barlow Condensed', 'Arial Narrow', sans-serif`;
-      g.fillText(label, (x - x0) * PX, (y1 - y) * PX + 1);
-    });
+  g.fillStyle = g.strokeStyle = "#202327";
+  g.lineWidth = 3;
+  g.lineCap = g.lineJoin = "round";
+  buttons.forEach(([x, y], i) => {
+    g.save();
+    g.translate((x - x0) * PX, (y1 - y) * PX);
+    if (i === 0) {
+      g.font = "600 40px 'Barlow Condensed', 'Arial Narrow', sans-serif";
+      g.fillText(String(top), 0, 1);
+    } else if (i === 1 || i === 2) {
+      for (const side of [-1, 1]) {
+        const dir = side * (i === 1 ? 1 : -1);
+        const cx = side * 12;
+        g.beginPath();
+        g.moveTo(cx + dir * 7, 0);
+        g.lineTo(cx - dir * 6, -10);
+        g.lineTo(cx - dir * 6, 10);
+        g.closePath();
+        g.fill();
+      }
+      g.fillRect(-1.5, -12, 3, 24);
+    } else {
+      g.beginPath();
+      g.moveTo(-14, 10);
+      g.quadraticCurveTo(-9, 5, -9, -4);
+      g.bezierCurveTo(-9, -17, 9, -17, 9, -4);
+      g.quadraticCurveTo(9, 5, 14, 10);
+      g.closePath();
+      g.stroke();
+      g.beginPath();
+      g.arc(0, 14, 3, 0, Math.PI);
+      g.stroke();
+    }
+    g.restore();
   });
+  g.font = "500 14px 'Arial', sans-serif";
+  g.fillText("1000 kg · 13 pers.", c.width / 2, c.height - 30);
   const texture = new THREE.CanvasTexture(c);
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.anisotropy = 8;
   return { texture, w: x1 - x0, h: y1 - y0, x: (x0 + x1) / 2, y: (y0 + y1) / 2, dispose: () => texture.dispose() };
+}
+
+/** Marbre blanc satiné : la texture est conservée, avec un léger
+ * polissage de passage près du seuil. Coordonnées de la cabine en mètres. */
+function floorFinish(mat: THREE.MeshStandardMaterial) {
+  const previous = mat.onBeforeCompile;
+  mat.onBeforeCompile = (shader, renderer) => {
+    previous.call(mat, shader, renderer);
+    shader.fragmentShader = shader.fragmentShader
+      .replace("#include <roughnessmap_fragment>", `#include <roughnessmap_fragment>
+        float passage = exp(-pow(vBoxPos.x / 0.65, 4.0)) * exp(-max(vBoxPos.z, 0.0) * 1.8);
+        roughnessFactor = mix(clamp(roughnessFactor, 0.32, 0.52), 0.27, passage * 0.3);
+        diffuseColor.rgb *= 1.0 - passage * 0.018;`);
+  };
+  const key = mat.customProgramCacheKey.bind(mat);
+  mat.customProgramCacheKey = () => `cabin-floor|${key()}`;
+}
+
+/** Une information d'immeuble imprimée sur papier, sans émission lumineuse. */
+function makeCabinNotice(): THREE.CanvasTexture {
+  const c = document.createElement("canvas");
+  c.width = 768;
+  c.height = 1084;
+  const g = c.getContext("2d")!;
+  g.fillStyle = "#e5e0d4";
+  g.fillRect(0, 0, c.width, c.height);
+  // Papier légèrement irrégulier ; aucune saleté très contrastée.
+  let seed = 29;
+  const random = () => ((seed = (1664525 * seed + 1013904223) >>> 0) / 4294967296);
+  for (let i = 0; i < 6500; i++) {
+    g.fillStyle = `rgba(87,75,54,${random() * 0.035})`;
+    g.fillRect(random() * c.width, random() * c.height, 1 + random(), 1 + random());
+  }
+  g.fillStyle = "#405b62";
+  g.fillRect(54, 62, 64, 6);
+  g.font = "500 20px 'JetBrains Mono', monospace";
+  g.fillText("VIE DE L’IMMEUBLE", 54, 108);
+  g.fillStyle = "#242b2d";
+  g.font = "600 66px 'Barlow Condensed', sans-serif";
+  g.fillText("INFORMATIONS", 50, 198);
+  g.font = "400 25px Arial, sans-serif";
+  g.fillStyle = "#606461";
+  g.fillText("Quelques repères au quotidien.", 54, 250);
+  const entries = [
+    ["01", "ACCUEIL", "Rez-de-chaussée", "Pour toute question sur l’immeuble."],
+    ["02", "ESPACES COMMUNS", "Des lieux à partager", "Merci de les laisser propres."],
+    ["03", "ASCENSEUR", "Un passage pour tous", "Merci de laisser les portes libres."],
+  ];
+  entries.forEach(([n, title, line1, line2], i) => {
+    const y = 340 + i * 195;
+    g.fillStyle = "#405b62";
+    g.font = "500 22px 'JetBrains Mono', monospace";
+    g.fillText(n!, 54, y);
+    g.fillStyle = "#b9b8ad";
+    g.fillRect(54, y + 24, 660, 1);
+    g.fillStyle = "#303638";
+    g.font = "600 31px 'Barlow Condensed', sans-serif";
+    g.fillText(title!, 125, y);
+    g.font = "400 27px Arial, sans-serif";
+    g.fillText(line1!, 125, y + 68);
+    g.fillStyle = "#606461";
+    g.font = "400 23px Arial, sans-serif";
+    g.fillText(line2!, 125, y + 108);
+  });
+  g.fillStyle = "#777a72";
+  g.font = "400 22px Arial, sans-serif";
+  g.fillText("Merci de votre attention.", 54, 1008);
+  // Petit coin plié, presque ton sur ton.
+  g.fillStyle = "#cdc8bb";
+  g.beginPath();
+  g.moveTo(c.width - 24, 0);
+  g.lineTo(c.width - 24, 24);
+  g.lineTo(c.width, 24);
+  g.closePath();
+  g.fill();
+  const texture = new THREE.CanvasTexture(c);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.flipY = false; // UV du panneau exportés par glTF
+  texture.anisotropy = 8;
+  return texture;
+}
+
+/** RGB = traces de doigts, rayures, dépôts. Placement en mètres sur l'inox. */
+function makeSteelWear(): THREE.CanvasTexture {
+  const c = document.createElement("canvas");
+  c.width = c.height = 1024;
+  const g = c.getContext("2d")!;
+  g.fillStyle = "#000";
+  g.fillRect(0, 0, c.width, c.height);
+  const px = (x: number) => (x / CAB_W + 0.5) * c.width;
+  const py = (y: number) => (1 - y / CAB_H) * c.height;
+  let seed = 71;
+  const random = () => ((seed = (1664525 * seed + 1013904223) >>> 0) / 4294967296);
+  const mark = (x: number, y: number, w: number, h: number, rgb: string, opacity: number) => {
+    g.save();
+    g.translate(px(x), py(y));
+    g.scale(w * c.width / CAB_W, h * c.height / CAB_H);
+    const fade = g.createRadialGradient(0, 0, 0, 0, 0, 1);
+    fade.addColorStop(0, `rgba(${rgb},${opacity})`);
+    fade.addColorStop(1, `rgba(${rgb},0)`);
+    g.fillStyle = fade;
+    g.fillRect(-1, -1, 2, 2);
+    g.restore();
+  };
+  // Toucher : autour des commandes, quelques traces sur les vantaux.
+  for (const [x, y] of [[0.9, 1.43], [0.83, 1.28], [0.97, 1.28], [0.9, 1.13], [-0.3, 1.3], [0.25, 1.05]]) {
+    for (let i = 0; i < 5; i++) mark(x + (random() - 0.5) * 0.09, y + (random() - 0.5) * 0.08, 0.015 + random() * 0.025, 0.025 + random() * 0.035, "255,0,0", 0.22);
+  }
+  // Frottements courts au bas des portes ; pas une couche de bruit uniforme.
+  g.lineWidth = 0.65;
+  for (let i = 0; i < 85; i++) {
+    const x = (random() - 0.5) * 0.95;
+    const y = 0.07 + random() * random() * 0.65;
+    g.strokeStyle = `rgba(0,255,0,${0.08 + random() * 0.22})`;
+    g.beginPath();
+    g.moveTo(px(x), py(y));
+    g.lineTo(px(x + 0.008 + random() * 0.055), py(y + (random() - 0.5) * 0.009));
+    g.stroke();
+  }
+  for (let i = 0; i < 28; i++) mark((random() - 0.5) * CAB_W, 0.02 + random() * 0.045, 0.025 + random() * 0.06, 0.035, "0,0,255", 0.3);
+  const texture = new THREE.CanvasTexture(c);
+  texture.anisotropy = 8;
+  return texture;
+}
+
+function steelWear(mat: THREE.MeshStandardMaterial, texture: THREE.Texture) {
+  const previous = mat.onBeforeCompile;
+  mat.onBeforeCompile = (shader, renderer) => {
+    previous.call(mat, shader, renderer);
+    shader.uniforms.uSteelWear = { value: texture };
+    shader.vertexShader = shader.vertexShader
+      .replace("#include <common>", "#include <common>\nvarying vec2 vSteelWearUv;")
+      .replace("#include <begin_vertex>", `#include <begin_vertex>\nvSteelWearUv = vec2(position.x / ${CAB_W.toFixed(3)} + 0.5, position.y / ${CAB_H.toFixed(3)});`);
+    shader.fragmentShader = shader.fragmentShader
+      .replace("#include <common>", "#include <common>\nuniform sampler2D uSteelWear;\nvarying vec2 vSteelWearUv;")
+      .replace("#include <roughnessmap_fragment>", `#include <roughnessmap_fragment>
+        vec3 wear = texture2D(uSteelWear, vSteelWearUv).rgb;
+        roughnessFactor = clamp(roughnessFactor + wear.r * 0.35 + wear.g * 0.25 + wear.b * 0.3, 0.0, 1.0);
+        diffuseColor.rgb *= 1.0 - wear.r * 0.06 - wear.b * 0.18;`);
+  };
+  const key = mat.customProgramCacheKey.bind(mat);
+  mat.customProgramCacheKey = () => `steel-wear|${key()}`;
 }

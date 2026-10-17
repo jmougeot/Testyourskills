@@ -1,5 +1,5 @@
-// L'afficheur de l'ascenseur, au-dessus des portes : à gauche la flèche et
-// l'étage qui défile (la note), à droite le statut atteint (« STATUT ·
+// L'afficheur de l'ascenseur, à côté des portes : en haut la flèche et
+// l'étage qui défile (la note), en dessous le statut atteint (« STATUT ·
 // PADAWAN »). Un canvas affiché par un shader qui imite la matrice de LED
 // (points, parasites pendant les transitions).
 import * as THREE from "three";
@@ -68,6 +68,7 @@ export function createWallScreen(accent: string, size: DisplaySize): WallScreen 
   const material = new THREE.ShaderMaterial({ vertexShader: VERT, fragmentShader: frag(size), uniforms: { ...uniforms, uMap: { value: texture } }, fog: false });
   const W = canvas.width;
   const H = canvas.height;
+  const stacked = size.w / size.h < 2;
   const SPLIT = W * 0.36;
 
   let floorN = 0;
@@ -102,6 +103,18 @@ export function createWallScreen(accent: string, size: DisplaySize): WallScreen 
     g.fillRect(0, 0, W, H);
     // l'étage
     const arrows = floorMoving ? "▲".repeat(floorArrows) : "";
+    if (stacked) {
+      text(arrows, W * 0.18, H * 0.31, H * 0.12, { font: MONO, color: accent, spacing: 0 });
+      text(String(floorN).padStart(2, "0"), W / 2, H * 0.3, H * 0.43, { spacing: 1 });
+      g.fillStyle = accent;
+      g.globalAlpha = 0.35;
+      g.fillRect(W * 0.12, H * 0.57, W * 0.76, 1);
+      g.globalAlpha = 1;
+      if (label) text(label.toUpperCase(), W / 2, H * 0.69, H * 0.075, { font: MONO, weight: 600, color: accent, spacing: 1, maxWidth: W * 0.88 });
+      if (value) text(value.toUpperCase(), W / 2, H * (label ? 0.84 : 0.76), H * 0.13, { spacing: 0.5, maxWidth: W * 0.88 });
+      texture.needsUpdate = true;
+      return;
+    }
     text(arrows, SPLIT * 0.24, H / 2, H * 0.34, { font: MONO, color: accent, glow: accent, spacing: 4 });
     text(String(floorN).padStart(2, "0"), SPLIT * 0.66, H / 2 + 3, H * 0.78, { color: "#ffffff", spacing: 4 });
     g.fillStyle = accent;
